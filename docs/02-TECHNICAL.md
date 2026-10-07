@@ -2,7 +2,7 @@
 
 Companion to [`01-PLAN.md`](01-PLAN.md).
 Behaviour reference: [`../mockup/index.html`](../mockup/index.html) (working prototype).
-Visual direction: **C · Sunrise**, implemented in the prototype (`mockup/index.html`). Earlier explorations: `ui-options.html`, `ui-bc-variations.html`.
+Visual direction: **Rail · dark** (variation 3 in `ui-bc-variations.html`), implemented in the prototype (`mockup/index.html`).
 
 > Owner decisions (2026-10-07): **Vercel** hosts the app, **Dexie Cloud** is the database, **personal use only** (the office biometric stays official), **one Dexie Cloud user** (the admin). Employees are records, not accounts.
 > Items marked **[verify]** depend on Dexie Cloud or Vercel plan details to confirm before building.
@@ -258,25 +258,28 @@ Sync status is shown subtly (a dot in the header: green synced / amber pending /
 
 ---
 
-## 9. UI implementation notes (style C · Sunrise)
+## 9. UI implementation notes (style Rail · dark)
 
 The prototype `mockup/index.html` is the reference: port its CSS and markup.
-- **Palette**: background `#fff8ef`, surface `#fff`, lines `#f1dfcb`, ink `#2b1d12`, muted `#8a6d55`, dark buttons `#2b1d12` with gold text `#ffd38a`.
-- **Slot tiles** (2×2): AM IN orange `#ff9a3c→#ff6a3d`, AM OUT yellow `#f6c445→#f39c12`, PM IN teal `#2ec4b6→#1a9c8f`, PM OUT indigo `#6d6df0→#3d3db8`; labels always shown (colour is never the only cue).
-- **Quick buttons**: Leave 🌴 · Day-off 🏠 · **Holiday 🎌** · Others ✏️ (4-column row).
-- **Code box** shows `0 2 _`; auto-submits on the 3rd digit. Keypad pinned to the bottom for thumb reach; **My DTR** and ⌫ sit beside 0.
-- **Confirmation** = bottom sheet: slot icon, greeting, 54 px time, late/on-time box, flexi time out, Undo / Change time / Done, auto-close 8 s (cancelled on touch).
+- **Palette**: background `#0a0f1c`, surface `#141b2d`, surface-2 `#1d2640`, lines `#26304a`, text `#eef2fa`, muted `#7c8aa8`, accent (teal) `#5eead4` on `#062a26`. Status colours: on time `#5eead4`/`#123b37`, late `#fb923c`/`#3d2312`, remark `#c4b5fd`/`#2a1f4a`, holiday `#fb7185`/`#4a1d2b`, incomplete `#facc15`/`#3b3410`.
+- **Slot tiles** (one row of 4): AM IN orange `#ff9a3c→#ff6a3d`, AM OUT yellow `#f6c445→#f39c12`, PM IN teal `#2ec4b6→#1a9c8f`, PM OUT indigo `#6d6df0→#3d3db8`. Unselected 32% opacity, recorded 80% with the time in a chip, selected 100% + ✓. Labels always shown.
+- **Remembered user**: `localStorage['dtrv.lastCode']` → the rail shows that person's times for today; "not you?" clears it.
+- **Quick buttons**: Leave 🌴 · Day-off 🏠 · **Holiday 🎌** · Others ✏️ (dashed pills, 4 columns).
+- **Code entry**: 3 dots with a teal glow; auto-submit on the 3rd digit; shake + red on an unknown code.
+- **Round dialer** pinned to the bottom (`margin-top:auto`), key size from `--k`; **My DTR** and ⌫ beside 0.
+- **Confirmation** = dark bottom sheet: slot icon, greeting, 56 px time, late box with bar / on-time box, flexi time out, today's 4-segment progress, Undo / Change time / Done, auto-close 5 s (cancelled on touch).
+- **My DTR**: late hero card, 7-column calendar (`<button>` cells), legend, selected-day detail with 4 colour time chips + Edit.
 - **Safe areas**:
   ```css
   /* <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> */
   :root { --sat: max(env(safe-area-inset-top), 16px); --sab: max(env(safe-area-inset-bottom), 16px); }
-  .scr   { min-height: 100dvh; padding: calc(var(--sat) + 12px) 18px calc(var(--sab) + 14px); }
+  .scr   { min-height: 100dvh; padding: calc(var(--sat) + 10px) 16px calc(var(--sab) + 14px); }
   .sheet { padding-bottom: calc(var(--sab) + 16px); max-height: calc(100dvh - var(--sat) - 8px); }
   .toast { top: calc(var(--sat) + 6px); }
   ```
-- **Height steps**: ≤ 780 px slightly smaller; ≤ 720 px compact (tile subtitles and chip icons hidden, 42 px keys). Verified from 568 px (iPhone SE) to 932 px (Pro Max).
-- Scroll only inside the day list (`.mdays`), never the page (a `scrollIntoView` there would also scroll the page and expose hidden sheets).
-- Fonts: Poppins (UI) and Space Grotesk (clock and digits), self-hosted in `/public/fonts` so they work offline. `theme-color` `#fff8ef`.
+- **Height steps** (`--k` key size): 66 → 58 (≤ 800 px) → 50 (≤ 720 px, tile subtitles hidden) → 44 px (≤ 620 px). Verified from 568 px (iPhone SE) to 932 px (Pro Max).
+- Never call `scrollIntoView` inside the app (it also scrolls the page and exposes hidden sheets).
+- Fonts: Poppins (UI) and Space Grotesk (clock, digits), self-hosted in `/public/fonts`. `theme-color` `#0a0f1c`; `color-scheme: dark` on inputs so the native time and date pickers are dark too.
 
 ---
 

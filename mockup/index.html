@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fff8ef">
+<meta name="theme-color" content="#0a0f1c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <title>DTRV Prototype</title>
 <style>
 :root{
-  --bg:#f4eee7; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#14213d; --muted:#64708a; --line:#dde3ec;
-  --brand:#e0592a; --brand-2:#2b1d12; --brand-soft:#fff1e6;
+  --bg:#e9edf3; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#14213d; --muted:#64708a; --line:#dde3ec;
+  --brand:#0f766e; --brand-2:#0a0f1c; --brand-soft:#ccfbf1;
   --ok:#1b8a5a; --ok-soft:#e2f4ea; --late:#c2410c; --late-soft:#fdeee4; --warn:#a16207; --warn-soft:#fdf6dc;
   --leave:#6d28d9; --leave-soft:#efe8fd;
   --r:14px; --shadow:0 8px 30px rgba(20,33,61,.12);
@@ -48,123 +48,154 @@ input,select{font:inherit;color:var(--ink)}
 .btn.danger{color:var(--late)}
 .btn.sm{flex:0 0 auto;padding:7px 12px;font-size:13px;border-radius:9px}
 
-/* ---------- employee app (style C · Sunrise) ---------- */
+/* ---------- employee app (style: Rail · dark) ---------- */
 .stage{display:flex;justify-content:center;gap:32px;padding:24px 16px 48px;flex-wrap:wrap;align-items:flex-start}
 .phone{
   --sat:47px; --sab:34px;                     /* simulated iPhone safe areas (top notch / bottom home bar) */
-  --cbg:#fff8ef; --csurf:#fff; --cline:#f1dfcb; --cline2:#f6e8d8; --cink:#2b1d12; --cmuted:#8a6d55; --cdark:#2b1d12; --cgold:#ffd38a;
-  width:390px;max-width:100%;height:844px;background:var(--cbg);color:var(--cink);border-radius:46px;border:10px solid #10151f;
-  box-shadow:0 18px 44px rgba(16,21,31,.25);overflow:hidden;position:relative;display:flex;flex-direction:column;font-family:Poppins,system-ui,sans-serif}
-.sbar{position:absolute;top:0;left:0;right:0;height:var(--sat);display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font:600 14px "Space Grotesk",sans-serif;z-index:30;pointer-events:none}
-.sbar .isl{width:118px;height:32px;background:#10151f;border-radius:20px}
-.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#2b1d12;opacity:.85;z-index:30;pointer-events:none}
-.scr{flex:1;display:flex;flex-direction:column;min-height:0;padding:calc(var(--sat) + 12px) 18px calc(var(--sab) + 14px)}
+  --rbg:#0a0f1c; --rsurf:#141b2d; --rsurf2:#1d2640; --rink:#eef2fa; --rmuted:#7c8aa8; --rline:#26304a;
+  --acc:#5eead4; --acc-ink:#062a26; --rlate:#fb923c; --rlate-bg:#3d2312; --rok:#5eead4; --rok-bg:#123b37;
+  --rrem:#c4b5fd; --rrem-bg:#2a1f4a; --rhol:#fb7185; --rhol-bg:#4a1d2b; --rwarn:#facc15; --rwarn-bg:#3b3410;
+  width:390px;max-width:100%;height:844px;background:var(--rbg);color:var(--rink);border-radius:46px;border:10px solid #000;
+  box-shadow:0 18px 44px rgba(16,21,31,.35);overflow:hidden;position:relative;display:flex;flex-direction:column;font-family:Poppins,system-ui,sans-serif}
+.sbar{position:absolute;top:0;left:0;right:0;height:var(--sat);display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font:600 14px "Space Grotesk",sans-serif;z-index:30;pointer-events:none;color:#fff}
+.sbar .isl{width:118px;height:32px;background:#000;border-radius:20px}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#fff;opacity:.85;z-index:30;pointer-events:none}
+.scr{flex:1;display:flex;flex-direction:column;min-height:0;padding:calc(var(--sat) + 10px) 16px calc(var(--sab) + 14px)}
 
 .g1{background:linear-gradient(140deg,#ff9a3c,#ff6a3d)}
 .g2{background:linear-gradient(140deg,#f6c445,#f39c12)}
 .g3{background:linear-gradient(140deg,#2ec4b6,#1a9c8f)}
 .g4{background:linear-gradient(140deg,#6d6df0,#3d3db8)}
 
-.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
-.top .date{font-size:13px;color:var(--cmuted);font-weight:500}
-.top .clock{font:600 44px/1 "Space Grotesk",sans-serif;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
-.top .clock small{font-size:16px;color:#ff6a3d;margin-left:3px;letter-spacing:0}
-.logo{width:44px;height:44px;border-radius:14px;border:0;background:var(--cdark);color:var(--cgold);font-weight:800;font-size:12px;cursor:pointer;font-family:Poppins}
+.rtop{display:flex;justify-content:space-between;align-items:center;font:500 11px "Space Grotesk",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--rmuted)}
+.rtop .sync{display:flex;align-items:center;gap:6px;letter-spacing:.08em}
+.rtop .sync i{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.rtop button{width:34px;height:34px;border-radius:50%;border:0;background:var(--rsurf);color:var(--rmuted);cursor:pointer;display:grid;place-items:center}
+.rclock{text-align:center;margin-top:2px}
+.rclock .date{font:500 11px "Space Grotesk",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--rmuted)}
+.rclock .clock{font:600 64px/1.02 "Space Grotesk",sans-serif;letter-spacing:-2.5px;font-variant-numeric:tabular-nums}
+.rclock .clock small{font-size:20px;color:var(--acc);margin-left:4px;letter-spacing:0}
+.today{display:flex;justify-content:space-between;align-items:baseline;margin:12px 2px 6px;font-size:11px;color:var(--rmuted)}
+.today b{color:var(--rink);font-weight:600}
+.today a{color:var(--rmuted);cursor:pointer;text-decoration:underline dotted}
 
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tg{border:0;border-radius:20px;padding:12px 13px;color:#fff;position:relative;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;opacity:.45;cursor:pointer;transition:transform .15s,opacity .15s,box-shadow .15s;font-family:Poppins}
-.tg b{font-size:18px;font-weight:800;line-height:1}
-.tg small{font-size:11px;font-weight:500;opacity:.92}
-.tg.on{opacity:1;transform:scale(1.02);box-shadow:0 10px 22px rgba(255,106,61,.3)}
-.tg.on::after{content:"✓";position:absolute;top:10px;right:12px;width:22px;height:22px;border-radius:50%;background:#fff;color:#ff6a3d;font-size:12px;font-weight:800;display:grid;place-items:center}
+.rail{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.tg{border:0;border-radius:18px;padding:10px 4px 9px;color:#fff;position:relative;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;opacity:.32;cursor:pointer;transition:transform .15s,opacity .15s,box-shadow .15s;font-family:Poppins}
+.tg b{font-size:13px;font-weight:800;line-height:1.05}
+.tg .st{font-size:9.5px;font-weight:500;opacity:.92}
+.tg .st.tm{font:600 12px "Space Grotesk",sans-serif;background:rgba(0,0,0,.22);border-radius:7px;padding:1px 6px;opacity:1}
+.tg.done{opacity:.8}
+.tg.on{opacity:1;transform:translateY(-2px);box-shadow:0 8px 22px rgba(255,140,60,.28)}
+.tg.on::after{content:"✓";position:absolute;top:-6px;right:-4px;width:20px;height:20px;border-radius:50%;background:#fff;color:#ff6a3d;font-size:11px;font-weight:800;display:grid;place-items:center}
 
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
-.chip{border:1.5px solid var(--cline);background:var(--csurf);border-radius:14px;padding:7px 2px;font:600 11.5px Poppins,sans-serif;color:var(--cmuted);cursor:pointer;line-height:1.2}
-.chip i{display:block;font-style:normal;font-size:16px;margin-bottom:1px}
-.chip.on{border-color:#5b5bd6;background:#ececfd;color:#3d3db8}
-.chip[data-r=HOLIDAY].on{border-color:#e11d48;background:#ffe4e9;color:#be123c}
+.chip{border:1.5px dashed var(--rline);background:transparent;border-radius:99px;padding:6px 0;font:600 11px Poppins,sans-serif;color:var(--rmuted);cursor:pointer;white-space:nowrap}
+.chip.on{border-style:solid;border-color:var(--rrem);background:var(--rrem-bg);color:var(--rrem)}
+.chip[data-r=HOLIDAY].on{border-color:var(--rhol);background:var(--rhol-bg);color:var(--rhol)}
 
-.codebox{margin-top:12px;background:var(--csurf);border-radius:18px;border:1.5px solid var(--cline);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;min-height:62px}
-.codebox .l{font-size:10.5px;color:var(--cmuted);font-weight:700;letter-spacing:.06em;line-height:1.25;max-width:90px}
-.codebox .v{font:700 32px "Space Grotesk",sans-serif;letter-spacing:12px;margin-right:-12px}
-.codebox .v i{color:#e7d3bd;font-style:normal}
-.codebox .hint{font-size:11px;color:var(--cmuted);width:70px;text-align:right;line-height:1.2}
-.codebox.err{border-color:#e11d48;animation:shake .35s}
-.codebox.err .hint{color:#e11d48;font-weight:700}
-@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.code{margin-top:14px;text-align:center}
+.dots{display:flex;justify-content:center;gap:18px}
+.dots div{width:16px;height:16px;border-radius:50%;border:2px solid var(--rline);transition:.15s}
+.dots div.f{background:var(--acc);border-color:var(--acc);box-shadow:0 0 14px rgba(94,234,212,.6)}
+.dots.err{animation:shake .35s}.dots.err div{border-color:var(--rhol)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.code .l{margin-top:7px;font:500 10px "Space Grotesk",sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--rmuted)}
+.code .l b{color:var(--acc);font-weight:600}
+.code .hint{font-size:11px;color:var(--rmuted);min-height:14px;margin-top:2px}
+.code .hint.bad{color:var(--rhol);font-weight:600}
 
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:auto;padding-top:12px}
-.keys button{background:var(--csurf);border:1.5px solid var(--cline2);border-radius:16px;height:54px;font:600 24px "Space Grotesk",sans-serif;color:var(--cink);cursor:pointer}
-.keys button:active{background:#fff1e6}
-.keys .m{background:none;border:0;font:600 13px Poppins,sans-serif;color:var(--cmuted)}
+.keys{display:grid;grid-template-columns:repeat(3,var(--k,66px));gap:var(--kg,12px) 28px;justify-content:center;margin-top:auto;padding-top:10px}
+.keys button{width:var(--k,66px);height:var(--k,66px);border-radius:50%;border:0;background:var(--rsurf);color:var(--rink);font:500 27px "Space Grotesk",sans-serif;cursor:pointer;transition:background .1s}
+.keys button:active{background:var(--rsurf2)}
+.keys .m{background:none;font:600 12px Poppins,sans-serif;color:var(--rmuted);white-space:nowrap}
 
-/* toast (small info) */
-.toast{position:absolute;left:14px;right:14px;top:calc(var(--sat) + 6px);background:var(--cdark);color:#fff;border-radius:16px;padding:12px 16px;transform:translateY(calc(-100% - var(--sat) - 24px));transition:transform .3s cubic-bezier(.2,.9,.3,1.2);z-index:25;font-size:14px;cursor:pointer}
+/* toast */
+.toast{position:absolute;left:14px;right:14px;top:calc(var(--sat) + 6px);background:var(--rsurf2);border:1px solid var(--rline);color:var(--rink);border-radius:16px;padding:12px 16px;transform:translateY(calc(-100% - var(--sat) - 24px));transition:transform .3s cubic-bezier(.2,.9,.3,1.2);z-index:25;font-size:13.5px;cursor:pointer}
 .toast.show{transform:none}
-.toast b{color:var(--cgold)}
+.toast b{color:var(--acc)}
 
 /* bottom sheet */
-.scrim{position:absolute;inset:0;background:rgba(43,29,18,.38);opacity:0;pointer-events:none;transition:.2s;z-index:20}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.2s;z-index:20}
 .scrim.show{opacity:1;pointer-events:auto}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--csurf);border-radius:30px 30px 0 0;padding:12px 20px calc(var(--sab) + 16px);transform:translateY(105%);transition:transform .3s ease;z-index:21;max-height:calc(100% - var(--sat) - 8px);overflow:auto;box-shadow:0 -12px 30px rgba(43,29,18,.18)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--rsurf);border-radius:30px 30px 0 0;padding:12px 20px calc(var(--sab) + 16px);transform:translateY(105%);transition:transform .3s ease;z-index:21;max-height:calc(100% - var(--sat) - 8px);overflow:auto;border-top:1px solid var(--rline)}
 .sheet.show{transform:none}
-.sheet:not(.show){box-shadow:none;visibility:hidden;transition:transform .3s ease,visibility 0s .3s}
-.sheet .grab{width:40px;height:5px;background:var(--cline);border-radius:3px;margin:0 auto 14px}
+.sheet:not(.show){visibility:hidden;transition:transform .3s ease,visibility 0s .3s}
+.sheet .grab{width:40px;height:5px;background:var(--rline);border-radius:3px;margin:0 auto 14px}
 .sheet h3{margin:0 0 2px;font-size:19px}
-.sheet .sub{color:var(--cmuted);font-size:13px;margin-bottom:14px}
+.sheet .sub{color:var(--rmuted);font-size:13px;margin-bottom:14px}
 .sheet .field{margin-bottom:11px}
-.sheet .field label{display:block;font-size:12px;color:var(--cmuted);margin-bottom:4px;font-weight:600}
-.sheet .field input,.sheet .field select{width:100%;border:1.5px solid var(--cline);border-radius:12px;padding:10px 12px;background:#fff;font:500 15px Poppins,sans-serif;color:var(--cink)}
-.sheet .field input[type=time].big{font:600 30px "Space Grotesk",sans-serif;text-align:center}
+.sheet .field label{display:block;font-size:12px;color:var(--rmuted);margin-bottom:4px;font-weight:600}
+.sheet .field input,.sheet .field select{width:100%;min-width:0;max-width:100%;border:1.5px solid var(--rline);border-radius:12px;padding:10px 12px;background:var(--rbg);font:500 15px Poppins,sans-serif;color:var(--rink);color-scheme:dark}
+.sheet .field input[type=time].big{font:600 32px "Space Grotesk",sans-serif;text-align:center}
 .sheet .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
-.sheet .field input{min-width:0;max-width:100%}
 .sheet .btns,.sheet .act{display:flex;gap:8px;margin-top:8px}
-.sheet .btn,.sheet .act button{flex:1;border:1.5px solid var(--cline);background:var(--cbg);border-radius:14px;padding:12px 4px;font:600 13.5px Poppins,sans-serif;color:var(--cink);cursor:pointer;white-space:nowrap}
-.sheet .btn.primary,.sheet .act .p{background:var(--cdark);border-color:var(--cdark);color:var(--cgold)}
-.sheet .btn.danger{color:#be123c}
+.sheet .btn,.sheet .act button{flex:1;border:0;background:var(--rsurf2);border-radius:14px;padding:12px 4px;font:600 13.5px Poppins,sans-serif;color:var(--rink);cursor:pointer;white-space:nowrap}
+.sheet .btn.primary,.sheet .act .p{background:var(--acc);color:var(--acc-ink)}
+.sheet .btn.danger{color:var(--rhol)}
 .res .hd{display:flex;align-items:center;gap:12px}
-.res .ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;flex:none}
+.res .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;flex:none}
 .res .hd b{font-size:19px;display:block;line-height:1.15}
-.res .hd small{color:var(--cmuted);font-size:12px}
-.res .bigt{font:600 54px/1 "Space Grotesk",sans-serif;text-align:center;margin:14px 0 10px;letter-spacing:-1.5px}
-.res .late{background:#fff1e6;color:#c2410c;border-radius:14px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.res .hd small{color:var(--rmuted);font-size:12px}
+.res .bigt{font:600 56px/1 "Space Grotesk",sans-serif;text-align:center;margin:14px 0 10px;letter-spacing:-2px}
+.res .late{background:var(--rlate-bg);color:var(--rlate);border-radius:14px;padding:10px 12px;font-size:13px}
+.res .late .r{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .res .late b{font-size:19px}
-.res .ok{background:#dcf5f2;color:#138a7e;border-radius:14px;padding:10px 12px;font-size:13px;text-align:center;font-weight:600}
-.res .note{font-size:12.5px;color:var(--cmuted);text-align:center;margin-top:8px}
-.res .note b{color:var(--cink)}
-.res .auto{font-size:11px;color:var(--cmuted);text-align:center;margin-top:10px}
-.tagE{display:inline-block;font-size:10px;font-weight:700;background:#eef2ff;color:#4338ca;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+.res .late .bar{height:6px;border-radius:3px;background:rgba(251,146,60,.2);margin-top:8px;overflow:hidden}
+.res .late .bar i{display:block;height:100%;background:linear-gradient(90deg,#fb923c,#f43f5e);border-radius:3px}
+.res .ok{background:var(--rok-bg);color:var(--rok);border-radius:14px;padding:10px 12px;font-size:13px;text-align:center;font-weight:600}
+.res .note{font-size:12.5px;color:var(--rmuted);text-align:center;margin-top:8px}
+.res .note b{color:var(--rink)}
+.res .track{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px}
+.res .track div{text-align:center;font-size:10px;color:var(--rmuted);font-weight:600;line-height:1.3}
+.res .track div i{display:block;height:6px;border-radius:3px;background:var(--rsurf2);margin-bottom:4px}
+.res .track div.d{color:var(--rink)}
+.res .track div i.g1{background:linear-gradient(90deg,#ff9a3c,#ff6a3d)} .res .track div i.g2{background:linear-gradient(90deg,#f6c445,#f39c12)}
+.res .track div i.g3{background:linear-gradient(90deg,#2ec4b6,#1a9c8f)} .res .track div i.g4{background:linear-gradient(90deg,#6d6df0,#3d3db8)}
+.res .auto{font-size:11px;color:var(--rmuted);text-align:center;margin-top:10px}
+.tagE{display:inline-block;font-size:10px;font-weight:700;background:#25284a;color:#a5b4fc;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 
 /* My DTR */
 .mtop{display:flex;justify-content:space-between;align-items:center}
-.mtop a{font-weight:600;font-size:14px;color:var(--cink);cursor:pointer}
-.mtop .sw{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
-.mtop .sw button{width:32px;height:32px;border-radius:10px;border:1.5px solid var(--cline);background:var(--csurf);cursor:pointer;font-size:15px}
+.mtop a{font-weight:600;font-size:14px;cursor:pointer}
+.mtop .sw{display:flex;align-items:center;gap:6px;font:600 13px "Space Grotesk",sans-serif}
+.mtop .sw button{width:32px;height:32px;border-radius:50%;border:0;background:var(--rsurf);color:var(--rink);cursor:pointer;font-size:15px}
 .mname{margin-top:10px}
-.mname .sub{font-size:12px;color:var(--cmuted)}
-.mname .nm{font-size:21px;font-weight:800;line-height:1.2}
-.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.mstats div{border-radius:18px;padding:10px;color:#fff}
-.mstats b{font:700 26px/1.1 "Space Grotesk",sans-serif;display:block}
-.mstats span{font-size:10px;font-weight:600;opacity:.92}
-.mdays{position:relative;flex:1;overflow:auto;margin:12px -4px 0;padding:0 4px;display:flex;flex-direction:column;gap:6px;min-height:0}
-.dcard{background:var(--csurf);border-radius:16px;padding:8px 10px;display:flex;align-items:center;gap:10px;border:1.5px solid var(--cline2);cursor:pointer}
-.dcard.today{border-color:#ff9a3c}
-.dcard.we{background:transparent;border-style:dashed}
-.dcard .d{width:38px;height:38px;border-radius:12px;background:var(--cbg);display:grid;place-items:center;text-align:center;font:700 15px/1 "Space Grotesk",sans-serif;flex:none}
-.dcard .d small{display:block;font:600 8px Poppins,sans-serif;color:var(--cmuted);margin-top:2px}
-.dcard .t{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;flex:1}
-.dcard .t span{text-align:center;font:600 11.5px "Space Grotesk",sans-serif;border-radius:8px;padding:5px 0;background:var(--cbg)}
-.dcard .t span.l{background:#ffe7d6;color:#c2410c}
-.dcard .t span.e{color:#d9c3ad}
-.dcard .rm{flex:1;text-align:center;font-size:11.5px;font-weight:700;border-radius:8px;padding:6px;background:#ececfd;color:#3d3db8}
-.dcard .rm.hol{background:#ffe4e9;color:#be123c}
-.dcard .rm.inc{background:#fdf6dc;color:#a16207}
-.dcard .muted{flex:1;font-size:12px;color:var(--cmuted)}
-.dcard .flag{font-size:9px;font-weight:700;color:#4338ca}
-.mbtn{display:flex;gap:8px;padding-top:12px}
-.mbtn button{flex:1;border-radius:16px;padding:13px;font:600 14px Poppins,sans-serif;border:1.5px solid var(--cline);background:var(--csurf);color:var(--cink);cursor:pointer}
-.mbtn .p{background:var(--cdark);color:var(--cgold);border-color:var(--cdark)}
+.mname .sub{font:500 11px "Space Grotesk",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--rmuted)}
+.mname .nm{font-size:20px;font-weight:700;line-height:1.2}
+.hero{margin-top:10px;border-radius:18px;padding:12px 14px;display:flex;gap:14px;align-items:center;color:#fff}
+.hero .n{font:700 46px/1 "Space Grotesk",sans-serif}
+.hero .t{font-size:12px;line-height:1.45}
+.hero .t b{font-size:14px}
+.hero.calm{background:var(--rsurf)}
+.hero.calm .n{color:var(--acc)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal .h{font:500 9px "Space Grotesk",sans-serif;color:var(--rmuted);text-align:center;letter-spacing:.1em;padding-bottom:2px}
+.cal .c{aspect-ratio:1.12;border-radius:10px;background:var(--rsurf);display:grid;place-items:center;font:600 12px "Space Grotesk",sans-serif;color:var(--rink);border:0;cursor:pointer;position:relative}
+.cal .c.ok{background:var(--rok-bg);color:var(--rok)}
+.cal .c.lt{background:var(--rlate-bg);color:var(--rlate)}
+.cal .c.lt::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--rlate)}
+.cal .c.rm{background:var(--rrem-bg);color:var(--rrem)}
+.cal .c.hol{background:var(--rhol-bg);color:var(--rhol)}
+.cal .c.inc{background:var(--rwarn-bg);color:var(--rwarn)}
+.cal .c.we{background:transparent;color:var(--rmuted);opacity:.55}
+.cal .c.pad{visibility:hidden}
+.cal .c.td{outline:2px solid var(--acc);outline-offset:-2px}
+.cal .c.sel{box-shadow:0 0 0 2px #fff inset}
+.legend{display:flex;gap:10px;justify-content:center;font-size:10px;color:var(--rmuted);margin:8px 0 2px;flex-wrap:wrap}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px;vertical-align:0}
+.detail{margin-top:8px;background:var(--rsurf);border-radius:16px;padding:10px 12px}
+.detail .dh{display:flex;justify-content:space-between;align-items:center;font:600 11px "Space Grotesk",sans-serif;letter-spacing:.06em;color:var(--rmuted);margin-bottom:8px;text-transform:uppercase}
+.detail .dh em{font-style:normal;font-family:Poppins;letter-spacing:0;font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px}
+.detail .dh em.rm{background:var(--rrem-bg);color:var(--rrem)} .detail .dh em.hol{background:var(--rhol-bg);color:var(--rhol)} .detail .dh em.lt{background:var(--rlate-bg);color:var(--rlate)} .detail .dh em.inc{background:var(--rwarn-bg);color:var(--rwarn)}
+.detail .dh button{border:0;background:var(--rsurf2);color:var(--rink);border-radius:99px;padding:4px 10px;font:600 11px Poppins,sans-serif;cursor:pointer;letter-spacing:0;text-transform:none}
+.tchips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tchips div{border-radius:10px;padding:5px 0;text-align:center;color:#fff;font:600 13px/1.15 "Space Grotesk",sans-serif}
+.tchips div small{display:block;font:500 8.5px Poppins,sans-serif;opacity:.9}
+.tchips div.e{background:var(--rsurf2)!important;color:var(--rmuted)}
+.mspace{flex:1;min-height:8px}
+.mbtn{display:flex;gap:8px}
+.mbtn button{flex:1;border-radius:16px;padding:13px;font:600 14px Poppins,sans-serif;border:0;background:var(--rsurf);color:var(--rink);cursor:pointer}
+.mbtn .p{background:var(--acc);color:var(--acc-ink)}
 
 .explain{max-width:360px;font-size:14px;line-height:1.55;color:var(--muted)}
 .explain h3{color:var(--ink);margin:0 0 8px}
@@ -172,20 +203,17 @@ input,select{font:inherit;color:var(--ink)}
 .explain code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 4px}
 .explain .sa{display:flex;gap:10px;margin-top:12px;background:#fff;border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
 
-/* shorter phones (iPhone SE etc.) */
-@media (max-height:780px){ .tg{min-height:76px} .keys button{height:48px} .top .clock{font-size:38px} .top{margin-bottom:10px} }
-@media (max-height:720px){
-  .tg{min-height:60px;padding:9px 11px} .tg small{display:none} .tg b{font-size:16px}
-  .chip i{display:none} .chips{margin-top:8px} .chip{padding:8px 2px}
-  .codebox{min-height:48px;margin-top:8px;padding:4px 12px} .codebox .v{font-size:26px}
-  .keys{gap:6px;padding-top:8px} .keys button{height:42px;font-size:21px}
-  .top .clock{font-size:32px} .top .date{font-size:12px} .logo{width:38px;height:38px}
-}
-/* real phone: go full screen and use the device's real safe areas */
+/* height steps — keep the dialer above the home bar on every phone */
+@media (max-height:800px){ .phone{--k:58px;--kg:10px} .rclock .clock{font-size:54px} .tg{min-height:86px} }
+@media (max-height:720px){ .phone{--k:50px;--kg:8px} .rclock .clock{font-size:44px} .tg{min-height:70px;padding:8px 4px} .tg .st:not(.tm){display:none}
+  .today{margin:8px 2px 5px} .chips{margin-top:8px} .code{margin-top:10px} .dots div{width:14px;height:14px} .keys button{font-size:23px} .cal .c{aspect-ratio:1.35} }
+@media (max-height:620px){ .phone{--k:44px;--kg:7px} .rclock .clock{font-size:38px} .tg{min-height:60px} .code .hint{display:none} }
+/* real phone: full screen with the device's real safe areas */
 @media (max-width:520px){
   .demo,.explain,.sbar,.homebar{display:none!important}
   .stage{padding:0}
   .phone{--sat:max(env(safe-area-inset-top),16px);--sab:max(env(safe-area-inset-bottom),16px);width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none}
+  body{background:#0a0f1c}
 }
 
 /* ---------- admin (desktop) ---------- */
@@ -290,23 +318,26 @@ select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padd
 
       <!-- Record screen -->
       <div class="scr" id="p-record">
-        <header class="top">
-          <div><div class="date" id="hDate"></div><div class="clock" id="hTime"></div></div>
-          <button class="logo" id="toAdmin" title="Admin">DTR</button>
-        </header>
-        <div class="tiles" id="toggles">
-          <button class="tg g1" data-s="am_in"><span data-ic="sun"></span><span><b>AM IN</b><br><small>Good morning</small></span></button>
-          <button class="tg g2" data-s="am_out"><span data-ic="fork"></span><span><b>AM OUT</b><br><small>Lunch break</small></span></button>
-          <button class="tg g3" data-s="pm_in"><span data-ic="cup"></span><span><b>PM IN</b><br><small>Back to work</small></span></button>
-          <button class="tg g4" data-s="pm_out"><span data-ic="home"></span><span><b>PM OUT</b><br><small>Going home</small></span></button>
+        <div class="rtop"><span class="sync"><i></i>Synced</span><button id="toAdmin" title="Admin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+        <div class="rclock"><div class="date" id="hDate"></div><div class="clock" id="hTime"></div></div>
+        <div class="today" id="todayLine"></div>
+        <div class="rail" id="toggles">
+          <button class="tg g1" data-s="am_in"><span data-ic="sun"></span><b>AM<br>IN</b><span class="st">Arrive</span></button>
+          <button class="tg g2" data-s="am_out"><span data-ic="fork"></span><b>AM<br>OUT</b><span class="st">Lunch</span></button>
+          <button class="tg g3" data-s="pm_in"><span data-ic="cup"></span><b>PM<br>IN</b><span class="st">Back</span></button>
+          <button class="tg g4" data-s="pm_out"><span data-ic="home"></span><b>PM<br>OUT</b><span class="st">Home</span></button>
         </div>
         <div class="chips" id="chips">
-          <button class="chip" data-r="LEAVE"><i>🌴</i>Leave</button>
-          <button class="chip" data-r="DAYOFF"><i>🏠</i>Day-off</button>
-          <button class="chip" data-r="HOLIDAY"><i>🎌</i>Holiday</button>
-          <button class="chip" data-r="OTHER"><i>✏️</i>Others</button>
+          <button class="chip" data-r="LEAVE">🌴 Leave</button>
+          <button class="chip" data-r="DAYOFF">🏠 Day-off</button>
+          <button class="chip" data-r="HOLIDAY">🎌 Holiday</button>
+          <button class="chip" data-r="OTHER">✏️ Others</button>
         </div>
-        <div class="codebox" id="empno"><span class="l" id="modeLabel"></span><span class="v" id="empVal"></span><span class="hint" id="empHint"></span></div>
+        <div class="code">
+          <div class="dots" id="empno"><div></div><div></div><div></div></div>
+          <div class="l" id="modeLabel"></div>
+          <div class="hint" id="empHint"></div>
+        </div>
         <div class="keys" id="keys">
           <button>1</button><button>2</button><button>3</button>
           <button>4</button><button>5</button><button>6</button>
@@ -319,24 +350,27 @@ select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padd
       <div class="scr" id="p-my" style="display:none">
         <div class="mtop"><a id="myBack">‹ Back</a><div class="sw"><button id="mPrev">‹</button><span id="mLabel"></span><button id="mNext">›</button></div></div>
         <div class="mname"><div class="sub" id="myNo"></div><div class="nm" id="myName"></div></div>
-        <div class="mstats" id="myStats"></div>
-        <div class="mdays" id="myDays"></div>
+        <div id="myStats"></div>
+        <div class="cal" id="myDays"></div>
+        <div class="legend"><span><i style="background:var(--rok)"></i>On time</span><span><i style="background:var(--rlate)"></i>Late</span><span><i style="background:var(--rrem)"></i>Remark</span><span><i style="background:var(--rhol)"></i>Holiday</span><span><i style="background:var(--rwarn)"></i>Incomplete</span></div>
+        <div class="detail" id="myDetail"></div>
+        <div class="mspace"></div>
         <div class="mbtn"><button id="myRemark">+ Remark</button><button class="p" id="myPrint">Print DTR</button></div>
       </div>
       <div class="homebar"></div>
     </div>
 
     <div class="explain">
-      <h3>How it works</h3>
+      <h3>How it works (Rail · dark)</h3>
       <ol>
-        <li>A tile is <b>pre-selected</b> by the time of day. Tap another tile if needed.</li>
-        <li>Type your <b>3-digit code</b> (e.g. <code>024</code>). It records <b>on the 3rd digit</b>.</li>
-        <li>A sheet slides up with the time in large digits, and a <b>Late</b> warning plus your <b>late count this month</b>. Flexi employees also see their time out.</li>
-        <li><b>Change time</b> to match the biometric, <b>Undo</b> if you mistyped, or <b>Done</b>. It closes by itself after 8 s.</li>
+        <li>The <b>4 tiles in a row</b> show today's times for the <b>last code used on this phone</b> (your phone remembers you). A tile is pre-selected by time of day; tap another if needed.</li>
+        <li>Type your <b>3-digit code</b> on the round keypad. It records <b>on the 3rd digit</b>.</li>
+        <li>A sheet slides up: the time in large digits, <b>Late by N min · Nth late this month</b>, today's progress (1 of 4), and the flexi time out.</li>
+        <li><b>Change time</b> to match the biometric, <b>Undo</b> a mistyped code, or <b>Done</b>. It closes by itself after 5 s.</li>
         <li><b>Leave · Day-off · Holiday · Others</b>: tap one, type your code, pick the dates.</li>
-        <li><b>My DTR</b>: tap it, type your code. You'll see your month, lates, edits and Print.</li>
+        <li><b>My DTR</b>: late count, a colour calendar, and tap a day to see or edit it. Print without the admin PIN.</li>
       </ol>
-      <div class="sa"><span>📱</span><span><b>Safe spacing:</b> content starts below the notch/status bar and ends above the home bar. On a real phone it uses the phone's own safe-area values, so nothing hides under the notch or the gesture bar.</span></div>
+      <div class="sa"><span>📱</span><span><b>Safe spacing:</b> content starts below the notch and ends above the home bar. Smaller phones get smaller keys so nothing is ever cut off.</span></div>
       <p>Tip: open this file on your phone. It switches to full screen automatically.</p>
     </div>
   </div>
@@ -539,9 +573,10 @@ const firstName = n => { const f = n.split(' ')[0]; return f.charAt(0) + f.slice
 const remarkText = r => r ? (r.code==='OTHER' ? r.text : REMARKS[r.code]) : '';
 
 let selSlot = 'am_in', selRemark = null, typed = '', pendingMy = false;
+let lastCode = null;   // the phone remembers the last code used (real app: localStorage)
 function tick(){
   const {date,time} = now(); const d = new Date(date+'T'+time);
-  $('#hDate').textContent = d.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'});
+  $('#hDate').textContent = d.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).replace(/,/g,' ·');
   const [h,mi] = time.split(':'); $('#hTime').innerHTML = `${(+h%12||12)}:${mi}<small>${+h<12?'AM':'PM'}</small>`;
 }
 function autoToggle(){
@@ -550,13 +585,22 @@ function autoToggle(){
   selRemark = null; pendingMy = false; paintToggles();
 }
 function paintToggles(){
-  document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', !selRemark && !pendingMy && b.dataset.s===selSlot));
+  const e = lastCode ? get(lastCode, now().date) : null;
+  document.querySelectorAll('.tg').forEach(b => {
+    const k = b.dataset.s, t = e?.[k], st = b.querySelector('.st');
+    b.classList.toggle('on', !selRemark && !pendingMy && k===selSlot);
+    b.classList.toggle('done', !!t);
+    st.className = 'st' + (t ? ' tm' : ''); st.textContent = t ? tPrint(t) : ({am_in:'Arrive',am_out:'Lunch',pm_in:'Back',pm_out:'Home'})[k];
+  });
   document.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.r===selRemark));
-  $('#modeLabel').innerHTML = pendingMy ? 'CODE TO OPEN<br>MY DTR' : selRemark ? `CODE FOR<br>${REMARK_LABEL[selRemark].toUpperCase()}` : `YOUR CODE<br><span style="color:#ff6a3d">${SLOT_LABEL[selSlot]}</span>`;
-  $('#empHint').textContent = pendingMy ? '' : selRemark ? 'then pick dates' : 'records on 3rd digit';
+  $('#modeLabel').innerHTML = pendingMy ? 'Code to open <b>My DTR</b>' : selRemark ? `Code for <b>${REMARK_LABEL[selRemark]}</b>` : `Code to record <b>${SLOT_LABEL[selSlot]}</b>`;
+  const h = $('#empHint'); h.className = 'hint'; h.textContent = pendingMy ? '' : selRemark ? 'then pick the dates' : 'records on the 3rd digit';
   $('#empno').classList.remove('err');
+  const p = lastCode && emp(lastCode);
+  $('#todayLine').innerHTML = p ? `<span>Today · <b>${p.name}</b></span><a id="forget">not you?</a>` : `<span>Today</span><span>type your code to start</span>`;
+  const f = $('#forget'); if(f) f.onclick = () => { lastCode = null; paintToggles(); };
 }
-function paintEmp(){ $('#empVal').innerHTML = typed + '<i>' + '_'.repeat(3-typed.length) + '</i>'; }
+function paintEmp(){ document.querySelectorAll('#empno div').forEach((d,i) => d.classList.toggle('f', i < typed.length)); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { selSlot=b.dataset.s; selRemark=null; pendingMy=false; paintToggles(); });
 document.querySelectorAll('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; pendingMy=false; paintToggles(); });
 function pressDigit(d){ if(typed.length >= 3) return; typed += d; paintEmp(); if(typed.length === 3) setTimeout(submit, 150); }
@@ -571,11 +615,11 @@ document.addEventListener('keydown', ev => {
   if(/^\d$/.test(ev.key)) pressDigit(ev.key);
   if(ev.key==='Backspace'){ typed=typed.slice(0,-1); paintEmp(); }
 });
-function bad(){ typed=''; paintEmp(); const el=$('#empno'); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); $('#empHint').textContent='Code not found'; }
+function bad(){ typed=''; paintEmp(); const el=$('#empno'); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); const h=$('#empHint'); h.textContent='Code not found'; h.className='hint bad'; }
 
 function submit(){
   const p = emp(typed); if(!p){ bad(); return; }
-  typed=''; paintEmp();
+  typed=''; paintEmp(); lastCode = p.no;
   if(pendingMy){ pendingMy=false; paintToggles(); openMy(p.no); return; }
   if(selRemark){ const c = selRemark; openRemarkSheet(p.no, now().date, now().date, c); return; }
   const {date,time} = now(); const e = ensure(p.no, date);
@@ -604,12 +648,14 @@ function showResult(no, date, slot, opt){
              : (slot==='pm_in' && sc.pmLate) ? lateMinutes({pm_in:e.pm_in}, sc) : 0;
   const st = monthStats(no, ym), exp = slot==='am_in' ? expectedOut(e, sc) : null;
   const status = opt.already ? 'already recorded' : opt.updated ? 'time updated' : 'recorded';
+  const track = SLOTS.map(s => `<div class="${e[s]?'d':''}"><i class="${e[s]?SLOT_UI[s].g:''}"></i>${SLOT_LABEL[s]}<br>${e[s]?tPrint(e[s]):'—'}</div>`).join('');
   openSheet(`
     <div class="hd"><div class="ic ${u.g}">${ICONS[u.ic]}</div><div><b>${opt.already?'Already done':u.greet}, ${firstName(p.name)}!</b><small>${SLOT_LABEL[slot]} ${status} · #${p.no}${e.edited?'<span class="tagE">edited</span>':''}</small></div></div>
     <div class="bigt">${t12(e[slot])}</div>
-    ${late ? `<div class="late"><span>⚠ Late by <b>${late}</b> min</span><span><b>${ordinal(st.lates)}</b> late this ${MONTHS[+ym.slice(5)-1]}</span></div>`
+    ${late ? `<div class="late"><div class="r"><span>⚠ Late by <b>${late}</b> min</span><span><b>${ordinal(st.lates)}</b> late this ${MONTHS[+ym.slice(5)-1]}</span></div><div class="bar"><i style="width:${Math.min(100, late/60*100)}%"></i></div></div>`
            : slot==='am_in' ? `<div class="ok">✓ On time · ${st.lates} late${st.lates===1?'':'s'} this month</div>` : ''}
     ${exp ? `<div class="note">Your time out today: <b>${t12(exp)}</b> (flexi)</div>` : ''}
+    <div class="track">${track}</div>
     <div class="act">${opt.fresh?'<button id="rsUndo">Undo</button>':''}<button id="rsChange">Change time</button><button class="p" id="rsDone">Done</button></div>
     <div class="auto" id="rsAuto"></div>`, 'res');
   $('#rsDone').onclick = closeSheet;
@@ -618,7 +664,7 @@ function showResult(no, date, slot, opt){
     e[slot] = null; if(!SLOTS.some(s=>e[s]) && !e.remark) delete S.e[key(no,date)];
     closeSheet(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed for ${p.name}`);
   };
-  let left = 8; const tickAuto = () => { $('#rsAuto') && ($('#rsAuto').textContent = `Closes in ${left} s · tap anywhere here to keep it open`); if(left-- <= 0) closeSheet(); };
+  let left = 5; const tickAuto = () => { const a=$('#rsAuto'); if(a) a.textContent = `Closes in ${left} s · touch to keep open`; if(left-- <= 0) closeSheet(); };
   tickAuto(); autoTimer = setInterval(tickAuto, 1000);
   $('#sheet').addEventListener('pointerdown', () => { clearInterval(autoTimer); const a=$('#rsAuto'); if(a) a.textContent=''; }, {once:true});
 }
@@ -640,7 +686,7 @@ function openRemarkSheet(no, from, to, code, text=''){
     <div class="field"><label>Type</label><select id="rCode">${remarkOptions(code)}</select></div>
     <div class="field" id="rTxtF"><label>Text to print (max 24)</label><input id="rTxt" maxlength="24" value="${text}" placeholder="e.g. NO TIME-OUT, OB, SICK LEAVE"></div>
     <div class="row2"><div class="field"><label>From</label><input type="date" id="rFrom" value="${from}"></div><div class="field"><label>To</label><input type="date" id="rTo" value="${to}"></div></div>
-    <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--cink)"><input type="checkbox" id="rSkip" checked style="width:auto"> Skip Sundays in the range</label></div>
+    <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--rink)"><input type="checkbox" id="rSkip" checked style="width:auto"> Skip Sundays in the range</label></div>
     <div class="btns"><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
   const sync = () => $('#rTxtF').style.display = $('#rCode').value==='OTHER' ? '' : 'none'; sync();
   $('#rCode').onchange = sync; $('#rCancel').onclick = () => { closeSheet(); selRemark=null; paintToggles(); };
@@ -657,7 +703,7 @@ function openRemarkSheet(no, from, to, code, text=''){
 /* =================== employee: my DTR =================== */
 let myNo=null, myYM=null;
 $('#toAdmin').onclick = () => document.querySelector('[data-v="v-admin"]').click();
-function openMy(no){ myNo=no; myYM=now().date.slice(0,7); $('#p-record').style.display='none'; $('#p-my').style.display='flex'; paintMy(); }
+function openMy(no){ mySel=null; myNo=no; myYM=now().date.slice(0,7); $('#p-record').style.display='none'; $('#p-my').style.display='flex'; paintMy(); }
 $('#myBack').onclick = () => { $('#p-my').style.display='none'; $('#p-record').style.display='flex'; autoToggle(); };
 $('#mPrev').onclick = () => { myYM = shiftYM(myYM,-1); paintMy(); };
 $('#mNext').onclick = () => { myYM = shiftYM(myYM, 1); paintMy(); };
@@ -672,28 +718,41 @@ $('#pBack').onclick = () => {
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-emp'));
 };
 const shiftYM = (ym,k) => { const d=new Date(ym+'-01T00:00'); d.setMonth(d.getMonth()+k); return ymd(d).slice(0,7); };
+let mySel = null;
+function dayClass(e, ds, wd, sc, today){
+  const has = e && SLOTS.some(s=>e[s]);
+  if(e?.remark && !has) return e.remark.code==='HOLIDAY' ? 'hol' : 'rm';
+  if(has){
+    if(lateMinutes(e, sc)) return 'lt';
+    if(SLOTS.some(s=>!e[s]) && !e.remark && ds<today) return 'inc';
+    return e.remark ? (e.remark.code==='HOLIDAY'?'hol':'rm') : 'ok';
+  }
+  return (wd===0||wd===6) ? 'we' : '';
+}
 function paintMy(){
   const p = emp(myNo), sc = schedOf(p), [Y,M] = myYM.split('-').map(Number), n = new Date(Y,M,0).getDate(), st = monthStats(myNo,myYM);
-  $('#myName').textContent = p.name; $('#myNo').textContent = '#'+p.no+' · '+(sc.mode==='flexi'?`Flexi ${t12(sc.flexStart)}–${t12(sc.flexEnd)}`:`Time in ${t12(sc.amIn)}`);
+  const today = now().date;
+  if(!mySel || mySel.slice(0,7)!==myYM) mySel = today.slice(0,7)===myYM ? today : `${myYM}-01`;
+  $('#myName').textContent = p.name; $('#myNo').textContent = '#'+p.no+' · '+(sc.mode==='flexi'?`Flexi ${t12(sc.flexStart)}–${t12(sc.flexEnd)}`:`Fixed ${t12(sc.amIn)}`);
   $('#mLabel').textContent = MONTHS[M-1].slice(0,3)+' '+Y;
-  $('#myStats').innerHTML = `<div class="g3"><b>${st.present}</b><span>Present</span></div><div class="g1"><b>${st.lates}</b><span>Lates${st.lateMin?` · ${st.lateMin}m`:''}</span></div><div class="g4"><b>${st.remarks}</b><span>Remarks</span></div>`;
-  const today = now().date; let h='';
+  $('#myStats').innerHTML = `<div class="hero ${st.lates?'g1':'calm'}"><div class="n">${st.lates}</div><div class="t"><b>late${st.lates===1?'':'s'} in ${MONTHS[M-1]}</b><br>${st.lateMin} min total · ${st.present} days present · ${st.remarks} remark${st.remarks===1?'':'s'}</div></div>`;
+  let h = ['SU','MO','TU','WE','TH','FR','SA'].map(d=>`<div class="h">${d}</div>`).join('');
+  h += '<button class="c pad"></button>'.repeat(new Date(Y,M-1,1).getDay());
   for(let d=1; d<=n; d++){
-    const ds=`${myYM}-${pad(d)}`, wd=new Date(Y,M-1,d).getDay(), e=get(myNo,ds), has=e&&SLOTS.some(s=>e[s]);
-    const lateAm = e?.am_in && lateMinutes({am_in:e.am_in},{...sc,pmLate:false});
-    const latePm = sc.pmLate && e?.pm_in && lateMinutes({pm_in:e.pm_in},sc);
-    let mid;
-    if(has) mid = `<div class="t">${SLOTS.map(s=>`<span class="${!e[s]?'e':((s==='am_in'&&lateAm)||(s==='pm_in'&&latePm))?'l':''}">${e[s]?tPrint(e[s]):'—'}</span>`).join('')}</div>`;
-    else if(e?.remark) mid = `<div class="rm ${e.remark.code==='HOLIDAY'?'hol':''}">${remarkText(e.remark)}</div>`;
-    else mid = `<div class="muted">${(wd===0||wd===6)?(wd===0?'Sunday':'Saturday'):(ds<today?'No record':'')}</div>`;
-    let extra = '';
-    if(has && e.remark) extra = `<div class="rm ${e.remark.code==='HOLIDAY'?'hol':''}" style="flex:0 0 auto;max-width:76px;font-size:9.5px">${remarkText(e.remark)}</div>`;
-    else if(has && SLOTS.some(s=>!e[s]) && ds<today) extra = `<div class="rm inc" style="flex:0 0 auto;font-size:9.5px">Incomplete</div>`;
-    h += `<div class="dcard ${ds===today?'today':''} ${(wd===0||wd===6)&&!has&&!e?.remark?'we':''}" data-d="${ds}"><div class="d">${d}<small>${DOW[wd].toUpperCase()}${e?.edited?' ✎':''}</small></div>${mid}${extra}</div>`;
+    const ds=`${myYM}-${pad(d)}`, wd=new Date(Y,M-1,d).getDay();
+    h += `<button class="c ${dayClass(get(myNo,ds), ds, wd, sc, today)} ${ds===today?'td':''} ${ds===mySel?'sel':''}" data-d="${ds}">${d}</button>`;
   }
   $('#myDays').innerHTML = h;
-  document.querySelectorAll('#myDays .dcard').forEach(r => r.onclick = () => openDaySheet(myNo, r.dataset.d));
-  const t = $('#myDays .dcard.today'), box = $('#myDays'); if(t) box.scrollTop = t.offsetTop - box.clientHeight/2;   // scroll only the list, never the page
+  document.querySelectorAll('#myDays .c[data-d]').forEach(c => c.onclick = () => { mySel = c.dataset.d; paintMy(); });
+  // selected day detail
+  const e = get(myNo, mySel), wd = new Date(mySel+'T00:00').getDay(), cls = dayClass(e, mySel, wd, sc, today);
+  const late = lateMinutes(e, sc);
+  const badge = e?.remark ? `<em class="${e.remark.code==='HOLIDAY'?'hol':'rm'}">${remarkText(e.remark)}</em>`
+              : late ? `<em class="lt">Late ${late}m</em>` : cls==='inc' ? `<em class="inc">Incomplete</em>` : '';
+  const lateAm = e?.am_in && lateMinutes({am_in:e.am_in},{...sc,pmLate:false});
+  $('#myDetail').innerHTML = `<div class="dh"><span>${new Date(mySel+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}${e?.edited?' · ✎ edited':''}</span><span style="display:flex;gap:6px;align-items:center">${badge}<button id="myEdit">Edit</button></span></div>
+    <div class="tchips">${SLOTS.map(s=>`<div class="${e?.[s]?SLOT_UI[s].g:'e'}" ${s==='am_in'&&lateAm?'style="box-shadow:0 0 0 2px var(--rlate) inset"':''}>${e?.[s]?tPrint(e[s]):'—'}<small>${SLOT_LABEL[s]}</small></div>`).join('')}</div>`;
+  $('#myEdit').onclick = () => openDaySheet(myNo, mySel);
 }
 function openDaySheet(no, ds){
   const e = get(no, ds) || { am_in:null, am_out:null, pm_in:null, pm_out:null, remark:null, edited:false };
@@ -815,6 +874,7 @@ $('#pEmp').onchange = renderPrint; $('#pMonth').onchange = renderPrint;
 
 /* =================== refresh =================== */
 function afterChange(){
+  paintToggles();
   if($('#p-my').style.display!=='none' && myNo) paintMy();
   const keep = $('#pEmp').value;
   $('#pEmp').innerHTML = S.emps.map(p=>`<option value="${p.no}">${p.name}</option>`).join('');

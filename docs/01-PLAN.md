@@ -5,12 +5,12 @@ Purpose: **personal records only.** It does **not** replace the office biometric
 
 Scale: **one Dexie Cloud user (the admin)**. Employees are **records** in the database, not accounts.
 
-Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, style **C · Sunrise**, runs in the browser with demo data. On a phone it opens full screen.
+Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, style **Rail · dark** (variation 3 of the B + C set), runs in the browser with demo data. On a phone it opens full screen.
 
 ### v3 decisions (2026-10-07)
 | Topic | Decision |
 |-------|----------|
-| Visual style | **C · Sunrise**: warm cream background, 4 coloured slot tiles, bottom-sheet confirmation |
+| Visual style | **Rail · dark** (B + C variation 3): dark screen, centred big clock, 4 coloured slot tiles in one row showing today's times, round dialer, bottom-sheet confirmation, calendar My DTR |
 | Mobile spacing | Content respects the phone's **safe areas**: nothing under the notch/status bar or the home/gesture bar. Layout steps down for short phones (iPhone SE) so the keypad never gets cut off |
 | Holiday | **Quick button** on the main screen next to Leave / Day-off / Others |
 | Users | **1 Dexie Cloud user** (admin). No per-employee or per-office accounts |
@@ -44,60 +44,63 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, s
 
 ---
 
-## 3. Employee app (style C · Sunrise, phone-first)
+## 3. Employee app (style Rail · dark, phone-first)
 
 ### 3.1 Record screen
 ```
 ┌──────────────────────────────┐
 │ ░░ status bar / notch ░░     │  ← safe area top (never used for content)
-│ Wednesday, October 7    [DTR]│  ← DTR = admin
-│ 8:20 AM                      │
-│ ┌────────────┐┌────────────┐ │
-│ │☀ AM IN   ✓ ││🍴 AM OUT   │ │  ← orange / yellow
-│ │Good morning││Lunch break │ │
-│ └────────────┘└────────────┘ │
-│ ┌────────────┐┌────────────┐ │
-│ │☕ PM IN     ││⌂ PM OUT    │ │  ← teal / indigo
-│ └────────────┘└────────────┘ │
-│ [🌴Leave][🏠Day-off][🎌Holiday][✏️Others]
-│ YOUR CODE · AM IN    0 2 _   │
+│ ● SYNCED                 ⚙   │  ← ⚙ = admin (PIN)
+│      WED · OCT 7 · 2026      │
+│          8:20 AM             │  ← centred, large
+│ Today · JUAN A. DELA CRUZ  not you?
+│ ┌────┐┌────┐┌────┐┌────┐     │
+│ │ ☀  ││ 🍴 ││ ☕ ││ ⌂  │     │  ← 4 tiles in a row: orange / yellow / teal / indigo
+│ │AM  ││AM  ││PM  ││PM  │     │
+│ │IN  ││OUT ││IN  ││OUT │     │
+│ │7:58││Lunch│Back││Home│     │  ← recorded time replaces the subtitle
+│ └────┘└────┘└────┘└────┘     │
+│ (Leave)(Day-off)(Holiday)(Others)
+│          ●  ●  ○             │  ← 3 glowing dots
+│   CODE TO RECORD AM OUT      │
 │                              │
-│    1      2      3           │  ← keypad pinned to the bottom (thumb reach)
-│    4      5      6           │
-│    7      8      9           │
-│  My DTR   0      ⌫           │
+│      (1)   (2)   (3)         │  ← round dialer, pinned to the bottom
+│      (4)   (5)   (6)         │
+│      (7)   (8)   (9)         │
+│    My DTR  (0)    ⌫          │
 │ ░░ home / gesture bar ░░     │  ← safe area bottom
 └──────────────────────────────┘
 ```
-- One tile is **pre-selected by time of day** (before 11:00 AM IN · to 12:29 AM OUT · to 1:59 PM IN · after PM OUT). Tap another tile to change it.
-- Type the **3-digit code**; it records **on the 3rd digit**. Unknown code → the box shakes, "Code not found".
-- Already recorded today → the sheet says "Already done" with the existing time; nothing is overwritten.
-- No personal data (lates etc.) is shown until a code is entered.
+- **Rail shows today's times** of the **last code used on this phone** (remembered on the device; on a personal phone that's you). "not you?" clears it. Typing any other code switches to that person.
+- One tile is **pre-selected by time of day** (before 11:00 AM IN · to 12:29 AM OUT · to 1:59 PM IN · after PM OUT). Tap another to change it.
+- Type the **3-digit code**: the dots fill and it records **on the 3rd digit**. Unknown code → dots shake red, "Code not found".
+- Already recorded → the sheet says "Already done" with the existing time; nothing is overwritten.
 
-### 3.2 Confirmation sheet (slides up from the bottom)
-- Coloured icon of the slot + greeting: *Good morning, Juan!* / *Enjoy your lunch* / *Welcome back* / *Ingat pauwi*
-- The time in large digits (54 px)
-- AM IN late → **⚠ Late by 20 min · 3rd late this October**; on time → **✓ On time · 2 lates this month**
+### 3.2 Confirmation sheet (slides up from the bottom, dark)
+- Coloured slot icon + greeting: *Good morning, Juan!* / *Enjoy your lunch* / *Welcome back* / *Ingat pauwi*
+- The time in large digits (56 px)
+- AM IN late → **⚠ Late by 20 min · 3rd late this October** with a lateness bar; on time → **✓ On time · 2 lates this month**
 - Flexi → **Your time out today: 5:20 PM**
-- Buttons: **Undo** (only right after recording) · **Change time** (time picker, to match the biometric) · **Done**
-- Closes by itself after **8 s**; touching the sheet keeps it open.
+- **Today's progress**: 4 segments (AM IN 8:20 · AM OUT — · PM IN — · PM OUT —)
+- Buttons: **Undo** (only right after recording) · **Change time** (to match the biometric) · **Done**
+- Closes by itself after **5 s** so the next person can type; touching the sheet keeps it open.
 
 ### 3.3 Quick buttons: Leave · Day-off · Holiday · Others
-Tap one → type the code → sheet with type (pre-filled), From/To dates (default today), "Skip Sundays", and for **Others** the text to print (max 24 chars, e.g. `NO TIME-OUT`, `OB`, `SICK LEAVE`). Save → small top message "Saved · HOLIDAY · 1 day".
+Tap one → type the code → sheet with type (pre-filled), From/To (default today), "Skip Sundays", and for **Others** the text to print (max 24 chars). Save → top message "Saved · HOLIDAY · 1 day".
 Printed text: Leave → `ON LEAVE`, Day-off → `DAY-OFF`, **Holiday → `HOLIDAY`**, Others → the typed text.
 
 ### 3.4 My DTR
-Tap **My DTR** on the keypad → type the code:
+Tap **My DTR** → type the code:
 - Month switcher, name, code and schedule.
-- 3 colour cards: **Present** (teal), **Lates · minutes** (orange), **Remarks** (indigo).
-- Day cards: the 4 times as chips (a late AM IN chip is orange), remark badge (holiday in red, others in indigo), *Incomplete* for a past day with a missing time, ✎ for edited days. The list opens centred on today.
-- Tap a day → edit the 4 times + remark, or delete the day.
-- **Print DTR** → print preview for that month. **No admin PIN needed** to print your own DTR.
+- **Big late number** card (orange when there are lates): "2 lates in October · 16 min total · 6 days present · 1 remark".
+- **Calendar**: green on time, orange late (with a dot), purple remark, red holiday, yellow incomplete, faded weekends; today outlined.
+- Tap a day → detail under the calendar: the 4 times as coloured chips, remark/late badge, ✎ if edited, **Edit** (times + remark, or delete the day).
+- **Print DTR** → print preview for the month. **No admin PIN needed** for your own DTR.
 
 ### 3.5 Mobile spacing rules
-- `viewport-fit=cover`; top padding = `safe-area-inset-top + 12px`, bottom = `safe-area-inset-bottom + 14px` (min 16px each when the phone reports 0).
-- Sheets add the bottom safe area to their padding, so their buttons sit above the home bar.
-- Height steps: > 780 px full size · ≤ 780 px slightly smaller · ≤ 720 px compact (tile subtitles and chip icons hidden, keys 42 px). Tested at 568, 640, 664, 701, 740, 780, 844 and 932 px heights: the keypad always ends ≥ 30 px above the bottom edge.
+- `viewport-fit=cover`; top padding = `safe-area-inset-top + 10px`, bottom = `safe-area-inset-bottom + 14px` (min 16px each when the phone reports 0). Sheets add the bottom safe area too.
+- Height steps for the round dialer: > 800 px keys 66 px · ≤ 800 px keys 58 px · ≤ 720 px keys 50 px (tile subtitles hidden) · ≤ 620 px keys 44 px.
+- Tested at 568, 640, 664, 701, 740, 780, 844 and 932 px heights: the keypad always ends 30 px above the bottom edge (16 px safe area + 14 px padding).
 
 ---
 
