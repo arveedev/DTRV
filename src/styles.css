@@ -480,3 +480,15 @@ input,select{font:inherit}
 /* this month's lates, under the clock */
 .latechip{display:inline-block;margin-top:8px;padding:5px 14px;border-radius:99px;background:var(--rlate-bg);color:var(--rlate);font:600 12.5px Poppins,sans-serif;animation:rise .5s cubic-bezier(.2,.9,.3,1.2) backwards}
 .latechip[hidden]{display:none}
+
+.biobtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:12px;padding:11px;border-radius:16px;border:1px solid rgba(94,234,212,.45);background:linear-gradient(160deg,rgba(94,234,212,.16),rgba(255,255,255,.03));color:var(--acc);font:600 14px Poppins,sans-serif;cursor:pointer;transition:transform .25s cubic-bezier(.3,1.5,.5,1),background .25s}
+.biobtn:active{transform:scale(.96)}
+.biobtn[hidden]{display:none}
+.biobtn svg{animation:biopulse 2.6s ease-in-out infinite}
+@keyframes biopulse{50%{transform:scale(1.14);opacity:.75}}
+.biobtn.busy{opacity:.6;pointer-events:none}
+#p-record.setup .biobtn{display:none}
+.bioask{margin-top:10px;padding:12px;border-radius:16px;background:rgba(94,234,212,.09);border:1px solid rgba(94,234,212,.3);text-align:center;font-size:13px;color:#cfe;line-height:1.45}
+.bioask .row{display:flex;gap:8px;margin-top:10px}
+.bioask button{flex:1;border:0;border-radius:12px;padding:11px;font:700 13px Poppins,sans-serif;background:var(--rsurf2);color:var(--rink);cursor:pointer}
+.bioask button.p{background:var(--acc);color:var(--acc-ink)}

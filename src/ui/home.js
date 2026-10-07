@@ -10,6 +10,7 @@ import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
 import { cloudInfo, saveKeyFrom, setSyncKey } from './cloud.js';
 import { sync } from '../data/db.js';
+import { bioInit, bioAvailable, bioFor, bioClear, bioEnroll, bioVerify, bioSkip, bioSkipped } from './bio.js';
 import { afterChange } from './app.js';
 
 const SLOT_UI = {
@@ -30,7 +31,7 @@ let lastCode = store.get('dtrv.lastCode');
 let lastH = '', lastM = '', lastDate = '';
 
 export const rememberedUser = () => lastCode;
-export function forgetUser() { lastCode = null; store.set('dtrv.lastCode', null); autoToggle(); }
+export function forgetUser() { bioClear(); lastCode = null; store.set('dtrv.lastCode', null); autoToggle(); }
 
 const entryOf = no => no ? get(no, now().date) : undefined;
 const stateOf = no => dayState(entryOf(no));
@@ -98,6 +99,7 @@ export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
   if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
+  { const b = bioFor(); $('#bioBtn').hidden = !(bioAvailable() && b && lastCode && b.code === lastCode && emp(b.code)); }
   { const p = lastCode && emp(lastCode), ym = now().date.slice(0, 7), n = p ? monthStats(lastCode, ym).lates : 0, chip = $('#lateChip');
     const txt = n ? `⚠ ${n} late${n === 1 ? '' : 's'} in ${MONTHS[+ym.slice(5) - 1]}` : '';
     if (chip.textContent !== txt) { chip.textContent = txt; chip.hidden = !n; if (n) { chip.style.animation = 'none'; void chip.offsetWidth; chip.style.animation = ''; } } }
@@ -146,9 +148,17 @@ export function showResult(no, date, slot, opt = {}) {
     ${late ? `<div class="late" data-st><div class="r"><span>⚠ Late by <b id="lateN">0</b> min</span><span><b>${ordinal(st.lates)}</b> late this ${MONTHS[+ym.slice(5) - 1]}</span></div><div class="bar"><i style="--w:${Math.min(100, Math.max(8, late / 60 * 100))}%"></i></div></div>`
       : slot === 'am_in' ? `<div class="ok" data-st><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16 9.5"/></svg><span>On time · ${st.lates} late${st.lates === 1 ? '' : 's'} this month</span></div>` : ''}
     ${exp ? `<div class="note" data-st>Your time out today: <b>${t12(exp)}</b> (flexi)</div>` : ''}
+    ${bioAvailable() && opt.fresh && !(bioFor()?.code === no) && !bioSkipped(no) ? `<div class="bioask" data-st>Use your face or fingerprint next time, instead of typing your code?<div class="row"><button id="rsBioNo">Not now</button><button class="p" id="rsBioYes">Turn on</button></div></div>` : ''}
     <div class="act" data-st>${opt.fresh ? '<button id="rsUndo">Undo</button>' : ''}<button id="rsChange">Change time</button><button class="p" id="rsDone">Done</button></div>`, 'res');
   setTimeout(() => { countUp($('#lateN'), late); if (!late && slot === 'am_in') burst($('#rsIc').parentElement); }, 250);
   $('#rsDone').onclick = closeSheet;
+  if ($('#rsBioYes')) {
+    $('#rsBioNo').onclick = () => { bioSkip(no); $('.bioask').remove(); };
+    $('#rsBioYes').onclick = async () => {
+      try { await bioEnroll(no, p.name); $('.bioask').remove(); paintToggles(); toast('Face / fingerprint is on for this phone'); }
+      catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') toast(esc(e?.message || 'Could not turn it on'), 'err'); }
+    };
+  }
   $('#rsChange').onclick = () => openTimeSheet(no, date, slot, 'result');
   if (opt.fresh) $('#rsUndo').onclick = async () => {
     await undoRecord(no, date, slot); closeSheet(); autoToggle(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed`);
@@ -176,6 +186,10 @@ async function submit() {
   const p = emp(typed); typed = ''; const box = $('#empno'); paintDots(3);
   if (!p || p.active === false) { dotsFlash(box, 'err'); toast('Code not found', 'err'); return; }
   dotsFlash(box, 'ok');
+  return proceed(p);
+}
+/** Everything that follows once we know who it is: typed code or face / fingerprint. */
+async function proceed(p) {
   if (pendingMy) { pendingMy = false; paintToggles(); setTimeout(() => openMy(p.no, 'rec'), 420); return; }   // just looking: never changes whose phone this is
   const switched = p.no !== lastCode; lastCode = p.no; store.set('dtrv.lastCode', p.no);
   const st = stateOf(p.no);
@@ -225,6 +239,16 @@ export function initHome() {
     }
     openGate();
   };
+  $('#bioBtn').onclick = async () => {
+    const btn = $('#bioBtn'); btn.classList.add('busy');
+    try {
+      const code = await bioVerify(), p = emp(code);
+      if (!p || p.active === false) { toast('This person is no longer on the list', 'err'); return; }
+      await proceed(p);
+    } catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') toast(esc(e?.message || 'Could not check face / fingerprint'), 'err'); }
+    finally { btn.classList.remove('busy'); }
+  };
+  bioInit().then(paintToggles);
   $('#wAlt').onclick = () => { setSyncKey(null); location.reload(); };
   tick(); autoToggle(); paintDots();
   setInterval(tick, 1000);

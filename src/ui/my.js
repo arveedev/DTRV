@@ -3,11 +3,13 @@ import { $, $$, pad, t12, tPrint, shiftYM, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, dayClass } from '../lib/rules.js';
 import { get, emp, schedOf, monthStats, ensureMonth } from '../data/repo.js';
-import { go, countUp } from './core.js';
+import { go, countUp, toast } from './core.js';
 import { SLOT_G, autoToggle } from './home.js';
 import { openRemarkSheet, openDaySheet } from './remarks.js';
 import { openPreview } from './print.js';
 import { renderAdmin } from './admin.js';
+import { bioFor, bioClear } from './bio.js';
+import { afterChange } from './app.js';
 
 let myNo = null, myYM = null, mySel = null, myFrom = 'rec';
 export const myOpen = () => myNo;
@@ -23,6 +25,7 @@ export function initMy() {
   $('#myBack').onclick = () => { if (myFrom === 'admin') { go('p-admin', 'l'); renderAdmin(); } else { go('p-record', 'l'); autoToggle(); } };
   $('#mPrev').onclick = () => monthTo(-1);
   $('#mNext').onclick = () => monthTo(1);
+  $('#bioOff').onclick = () => { bioClear(); $('#bioOff').hidden = true; afterChange(); toast('Face / fingerprint turned off on this phone'); };
   $('#myRemark').onclick = () => openRemarkSheet(myNo, 'OTHER', mySel || now().date);
   $('#myPrint').onclick = () => openPreview({ nos: [myNo], ym: myYM, page: 0 }, 'my');
 }
@@ -54,4 +57,5 @@ function paintMy(o = {}) {
     <div class="tchips">${SLOTS.map((s, i) => `<div style="--i:${i}" class="${e?.[s] ? SLOT_G(s) : 'e'}" ${s === 'am_in' && lateAm ? 'data-late' : ''}>${e?.[s] ? tPrint(e[s]) : '—'}<small>${SLOT_LABEL[s]}</small></div>`).join('')}</div>
     ${e?.remark?.code === 'OTHER' ? `<div class="rmkline">✏️ ${esc(e.remark.text)}</div>` : ''}</div>`;
   $('#myEdit').onclick = () => openDaySheet(myNo, mySel);
+  $('#bioOff').hidden = !(bioFor() && bioFor().code === myNo);
 }

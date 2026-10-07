@@ -367,3 +367,6 @@ removeHoliday(date):      remove HOLIDAY remarks for that date (never touches da
 - **Admin PIN** is an app lock (PBKDF2, salted), not security: anyone who can open the browser's storage can read the data. First run asks the admin to create the PIN.
 - **Backup/restore** (Settings) exports/imports all tables as JSON.
 - **Tests:** `npm test` (36 unit tests, fake-indexeddb) and `npm run build && npm run e2e` (Chromium, fake clock).
+- **Face / fingerprint** (`src/ui/bio.js`): a WebAuthn platform passkey created on the person's own phone after a normal clock-in (opt-in, per phone, stored in localStorage as `dtrv.bio` = {code, credentialId}). Tapping "Use face or fingerprint" asks the phone to verify its owner, then the app acts for the enrolled person exactly as if they had typed their code. It is a local convenience, not server-verified identity. Turn off in My DTR or via Settings → Forget this phone's user. Tested with a virtual authenticator, not yet on real phones.
+- **Printing on an iPhone home-screen app:** iOS cannot open the print dialog from a web page there, so the Print button builds a PDF (jsPDF + html2canvas, loaded on demand) and opens the share sheet, which has Print. Everywhere else the pages are printed from a hidden frame.
+

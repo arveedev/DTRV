@@ -76,6 +76,20 @@ try {
   await keys(pB, '331'); await wait(pB, 1200);                                    // someone records on another tab
   await pA.waitForTimeout(900); await wait(pA, 900);
   ok(await pA.$eval('#keys', k => k.classList.contains('pin')), 'armed keypad survives a change from another tab / sync');
+  /* face / fingerprint (a virtual platform authenticator stands in for the phone's sensor) */
+  const pF = await fresh('2026-10-07T08:05:00', '?demo=1');
+  const cdp = await pF.context().newCDPSession(pF); await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+  await pF.reload(); await pF.waitForSelector('html[data-ready]'); await pF.waitForTimeout(1200);
+  await keys(pF, '205'); await wait(pF, 1200);
+  ok(await pF.isVisible('#rsBioYes'), 'after a clock-in the sheet offers face / fingerprint');
+  await pF.click('#rsBioYes'); await wait(pF, 800);
+  ok(!(await pF.isVisible('#rsBioYes')) && await pF.evaluate(() => !!localStorage.getItem('dtrv.bio')), 'face / fingerprint turned on for this phone');
+  await pF.click('#rsDone'); await wait(pF, 600);
+  ok(await pF.isVisible('#bioBtn'), 'the face / fingerprint button shows for the remembered user');
+  await pF.click('#bioBtn'); await wait(pF, 1500);
+  ok((await pF.textContent('#sheet')).includes('Enjoy your lunch, Maria'), 'the button clocks in the next time with no code typed');
+  ok(pF.errs.length === 0, 'no console errors (face / fingerprint) ' + pF.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);
