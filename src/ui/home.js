@@ -57,7 +57,7 @@ const WICONS = {
   sync: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 0-14-5.3L4 9"/><path d="M4 4v5h5"/><path d="M4 12a8 8 0 0 0 14 5.3L20 15"/><path d="M20 20v-5h-5"/></svg>',
   user: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>',
 };
-let wState = '', wSig = '', connecting = false;
+let wState = '', wSig = '', connecting = false, syncSlow = false, slowT = 0;
 function welcomeState() {
   if (S.emps.length) return '';
   const ci = cloudInfo();
@@ -71,7 +71,7 @@ export function paintWelcome() {
   const st = welcomeState(), w = $('#welcome'), scr = $('#p-record');
   scr.classList.toggle('setup', !!st); w.hidden = !st;
   if (!st) { if (wState) { wState = ''; wSig = ''; stagger(scr, 40); } return; }
-  const sig = [st, sync.phase, cloudInfo().error].join('|'); if (sig === wSig) return; wSig = sig;
+  const sig = [st, sync.phase, cloudInfo().error, syncSlow].join('|'); if (sig === wSig) return; wSig = sig;
   const set = (icon, title, text, btn, opts = {}) => {
     $('#wIc').innerHTML = icon; $('#welcome b').textContent = title; $('#welcome p').textContent = text;
     $('#keyIn').hidden = !opts.input; const b = $('#startSetup'); b.hidden = !btn; b.textContent = btn || '';
@@ -82,7 +82,7 @@ export function paintWelcome() {
   };
   if (st === 'connect') set(WICONS.link, 'Connect this phone', 'Paste the sync key or setup link from your admin. This brings your people and PIN to this phone.', 'Connect', { input: true });
   else if (st === 'connecting') set(WICONS.link, 'Connecting…', 'Saving the key and starting sync.', '', { busy: true });
-  else if (st === 'syncing') set(WICONS.sync, 'Syncing your data…', 'Getting your people and settings. This takes a few seconds.', '', { busy: true });
+  else if (st === 'syncing') { set(WICONS.sync, 'Syncing your data…', `Getting your people and settings. This takes a few seconds. (${sync.phase || 'starting'})`, '', { busy: true, alt: syncSlow ? 'Taking long? Reload' : '' }); clearTimeout(slowT); if (!syncSlow) slowT = setTimeout(() => { syncSlow = true; wSig = ''; paintWelcome(); }, 12000); }
   else if (st === 'trouble') set(WICONS.sync, sync.phase === 'offline' ? "You're offline" : "Couldn't sync", sync.phase === 'offline' ? 'Connect to the internet and this continues by itself.' : (cloudInfo().error || sync.error || 'Check the sync key.'), '', { alt: 'Use a different key' });
   else if (st === 'empty') set(WICONS.user, 'No people yet', 'Open the admin area (✦ at the top right) and add the first person.', 'Open admin');
   else set(WICONS.user, 'Welcome to DTRV', 'Create your admin PIN, then add the first person.', 'Set up');
@@ -277,7 +277,7 @@ export function initHome() {
     openGate();
   };
   bioInit().then(paintToggles);
-  $('#wAlt').onclick = () => { setSyncKey(null); location.reload(); };
+  $('#wAlt').onclick = () => { if (wState === 'syncing') { location.reload(); return; } setSyncKey(null); location.reload(); };
   tick(); autoToggle(); paintDots();
   setInterval(tick, 1000);
 }
