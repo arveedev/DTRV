@@ -132,6 +132,8 @@ function staleCleanup() {
   pending = 0; skipped = false;
 }
 export const shutdown = staleCleanup;
+/** True when no database write is running or waiting: a safe moment to swap the database connection. */
+export const idle = () => pending === 0 && Object.keys(timers).length === 0;
 
 /* ---------- audit ---------- */
 const auditRow = (action, no, date, before, after) => ({ id: uid(), at: new Date().toISOString(), actor: 'device', action, employeeId: no ?? null, date: date ?? null, before: before ?? null, after: after ?? null });

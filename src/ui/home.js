@@ -9,7 +9,7 @@ import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
 import { cloudInfo, saveKeyFrom, setSyncKey } from './cloud.js';
-import { sync, cloudEnabled } from '../data/db.js';
+import { sync, cloudEnabled, syncNote } from '../data/db.js';
 import { bioInit, bioAvailable, bioFor, bioClear, bioEnroll, bioVerify, bioSkip, bioSkipped } from './bio.js';
 import { afterChange } from './app.js';
 
@@ -72,7 +72,7 @@ export function paintWelcome() {
   const st = welcomeState(), w = $('#welcome'), scr = $('#p-record');
   scr.classList.toggle('setup', !!st); w.hidden = !st;
   if (!st) { if (wState) { wState = ''; wSig = ''; stagger(scr, 40); } return; }
-  const sig = [st, sync.phase, cloudInfo().error, syncSlow].join('|'); if (sig === wSig) return; wSig = sig;
+  const sig = [st, sync.phase, cloudInfo().error, syncSlow, syncNote.text].join('|'); if (sig === wSig) return; wSig = sig;
   const set = (icon, title, text, btn, opts = {}) => {
     $('#wIc').innerHTML = icon; $('#welcome b').textContent = title; $('#welcome p').textContent = text;
     $('#keyIn').hidden = !opts.input; const b = $('#startSetup'); b.hidden = !btn; b.textContent = btn || '';
@@ -82,7 +82,7 @@ export function paintWelcome() {
     if (!opts.busy && sp) sp.remove();
   };
   if (st === 'connect') set(WICONS.link, 'Connect this phone', 'Paste the sync key or setup link from your admin. This brings your people and PIN to this phone.', 'Connect', { input: true });
-  else if (st === 'nosync') set(WICONS.sync, "Sync isn't running", "Your people and settings aren't on this phone yet, and it couldn't reach the sync service (the connection is slow or off). Check the connection, then try again.", 'Try again');
+  else if (st === 'nosync') set(WICONS.sync, "Sync isn't running", `Your people and settings aren't on this phone yet. ${syncNote.text ? syncNote.text + '. ' : ''}It connects by itself as soon as it can; you can also try again.`, 'Try again');
   else if (st === 'connecting') set(WICONS.link, 'Connecting…', 'Saving the key and starting sync.', '', { busy: true });
   else if (st === 'syncing') { set(WICONS.sync, 'Syncing your data…', `Getting your people and settings. This takes a few seconds. (${sync.phase || 'starting'})`, '', { busy: true, alt: syncSlow ? 'Taking long? Reload' : '' }); clearTimeout(slowT); if (!syncSlow) slowT = setTimeout(() => { syncSlow = true; wSig = ''; paintWelcome(); }, 12000); }
   else if (st === 'trouble') set(WICONS.sync, sync.phase === 'offline' ? "You're offline" : "Couldn't sync", sync.phase === 'offline' ? 'Connect to the internet and this continues by itself.' : (cloudInfo().error || sync.error || 'Check the sync key.'), '', { alt: 'Use a different key' });
