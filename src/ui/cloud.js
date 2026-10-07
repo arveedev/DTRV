@@ -9,6 +9,11 @@ const validUrl = u => { try { return new URL(u).protocol === 'https:'; } catch {
 /** '' when sync is off, or when the configured address is not a valid https URL (the app then stays local-only). */
 export const cloudUrl = validUrl(rawUrl) ? rawUrl.replace(/\/$/, '') : '';
 export const cloudInfo = () => ({ on: !!cloudUrl, bad: !!rawUrl && !cloudUrl, hasKey: !!store.get('dtrv.syncKey'), error: lastError });
+/** Accepts the bare key or a whole setup link. */
+export function saveKeyFrom(text) {
+  const t = String(text || '').trim(), m = /[#&?]key=([^&\s]+)/.exec(t);
+  const k = m ? decodeURIComponent(m[1]) : t; if (!k) return false; setSyncKey(k); return true;
+}
 let lastError = '';
 export const setSyncKey = k => store.set('dtrv.syncKey', k || null);
 

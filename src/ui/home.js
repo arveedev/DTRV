@@ -8,7 +8,7 @@ import { ICONS, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, 
 import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
-import { cloudInfo } from './cloud.js';
+import { cloudInfo, saveKeyFrom } from './cloud.js';
 import { afterChange } from './app.js';
 
 const SLOT_UI = {
@@ -55,7 +55,10 @@ export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
   $('#welcome').hidden = S.emps.length > 0;
   if (!$('#welcome').hidden) {
-    const pin = hasAdminPin(), cloud = cloudInfo().on;
+    const pin = hasAdminPin(), ci = cloudInfo(), cloud = ci.on, connect = cloud && !ci.hasKey;
+    $('#welcome b').textContent = connect ? 'Connect this phone' : 'Welcome to DTRV';
+    $('#keyIn').hidden = !connect; $('#startSetup').hidden = false;
+    if (connect) { $('#welcome p').textContent = 'Paste the sync key (or the setup link) from your admin. Do this before anything else, so your data comes from sync.'; $('#startSetup').textContent = 'Connect'; return; }
     $('#welcome p').textContent = pin
       ? `No people on this phone yet. ${cloud ? 'If you already added people on another device, wait a few seconds for sync, or reload. ' : ''}Otherwise tap the button and enter your PIN to add the first person.`
       : `Create your admin PIN, then add the first person. ${cloud ? 'Set up on one device only; the others will receive it by sync.' : 'Everything stays on this phone.'}`;
@@ -169,13 +172,17 @@ export function initHome() {
     pressDigit, () => { typed = typed.slice(0, -1); paintDots(); });
   document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') { $('#picker').classList.contains('show') ? $('#pkScrim').click() : closeSheet(); }
+    if (ev.target.closest?.('input,textarea')) return;                 // typing in a field is not the keypad
     if (!isOn('p-record') || $('#sheet').classList.contains('show')) return;
     if (/^\d$/.test(ev.key)) pressDigit(ev.key);
     if (ev.key === 'Backspace') { typed = typed.slice(0, -1); paintDots(); }
   });
   onSheetClose(() => { if (selRemark) { selRemark = null; paintToggles(); } });   // dismissing a remark sheet also un-arms the pill
   $('#toAdmin').onclick = () => openGate();
-  $('#startSetup').onclick = () => openGate();
+  $('#startSetup').onclick = () => {
+    if (!$('#keyIn').hidden) { if (!saveKeyFrom($('#keyIn').value)) { shake($('#keyIn')); return; } location.reload(); return; }
+    openGate();
+  };
   tick(); autoToggle(); paintDots();
   setInterval(tick, 1000);
 }

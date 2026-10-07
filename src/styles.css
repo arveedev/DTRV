@@ -1,4 +1,6 @@
 *{touch-action:manipulation}
+#keyIn{width:100%;margin:2px 0 10px;padding:13px 14px;border-radius:14px;border:1px solid var(--rline);background:#0b1020;color:var(--rink);font:500 15px Poppins,sans-serif;text-align:center;user-select:text}
+#keyIn:focus{outline:2px solid var(--acc)}
 /* DTRV — styles. Theme: "Rail · dark". Mobile-first; on a desktop it is a centred column. */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
