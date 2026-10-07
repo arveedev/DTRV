@@ -21,6 +21,11 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 | Secret admin | A faint ✦ replaces the settings icon |
 | Flexi | Affects **clock in & out only**; lunch is identical in fixed and flexi |
 | Print | Admin can print **many people at once** |
+| PIN again | Tapping *My DTR* turns the keypad teal and the key becomes *Cancel*: "type your PIN again" |
+| Clocked in → no Leave | Once there's a time today, **Leave / Day-off / Holiday switch off**; only **Others** remains |
+| Leave day → no clock-in | After Leave / Day-off / Holiday for today, **all 4 tiles lock** and the app says *"Enjoy your leave, Juan!"* |
+| Own pickers | Themed **time picker** and **date / range picker** replace the phone's native ones |
+| Flexi | Clock in & out only. Lunch fixed 12–1 PM for everyone. **No grace period** |
 | One time per slot | Each of AM IN / AM OUT / PM IN / PM OUT can be recorded **once a day**, and **in order** (a slot can't be recorded after a later one). Mistakes are fixed with *Change time* / My DTR, not by recording again |
 | Nicknames | Admin sets a **nickname** per person; greetings use it ("Good morning, Juan!") |
 | Quiet home screen | No sync indicator, no user name, no "not you". The phone silently remembers its user so the tiles show *their* times |
@@ -104,10 +109,24 @@ Time = **the phone's clock**. If it's wrong, use Change time.
 - **Does not auto-close.** Close with Done, the dim area or Esc.
 - (Removed: the 4-slot progress strip. The home tiles already show it.)
 
+### 3.3b Leave / Day-off / Holiday vs clocking in
+| Today's state | Home screen |
+|---------------|-------------|
+| No times yet | All four pills work |
+| **Any time recorded** | **Leave, Day-off, Holiday are dimmed (dotted)**; tapping one says *"You've already clocked in today, so Leave isn't available. Use Others for a reason."* **Others** still works |
+| **Leave / Day-off / Holiday set for today** | **All 4 tiles locked** (dim, "—"); tapping a tile or typing the code shows *🌴 Enjoy your leave, Juan! No clock-in needed today.* (🏠 day-off · 🎌 holiday) |
+| Range includes a day with times | Save is refused: *"You clocked in on Tue, Oct 7, so it can't be Leave. Use Others for a reason."* |
+| Undo a mistaken leave | My DTR → the day → Edit → remark *None* |
+
 ### 3.4 Quick buttons: Leave · Day-off · Holiday · Others
 Tap one → type the code → a sheet with a 4-way switch (Leave · Day-off · Holiday · Others).
-- **Leave / Day-off / Holiday**: From / To dates (default today), "Skip Sundays". Prints `ON LEAVE` / `DAY-OFF` / `HOLIDAY` in the Undertime column for each day.
+- **Leave / Day-off / Holiday**: one **date-range** field (opens the calendar; quick chips *Today · Tomorrow · This week · Next week*), "Skip Sundays". Prints `ON LEAVE` / `DAY-OFF` / `HOLIDAY` in the Undertime column for each day.
 - **Others** = a **reason** for one day (e.g. clocked in AM, then out in the field). Type where you went or why (max 40 chars) and pick the **date** (default today; one day, no range). **Suggestions are the person's own past reasons**, most used first (up to 6), so "FIELD WORK – CITY HALL" is one tap the second time. Nothing is suggested until they've typed something. No explanatory subtext on the sheet; it prints in the Undertime column beside the times.
+
+### 3.4b Themed pickers (no native date/time popups)
+- **Time picker**: big `08 : 20` display + AM/PM slider. Tap the **hour** (1–12), it jumps to **minutes** (00–55 in 5s); fine-tune with **−5 −1 +1 +5**; **Now** uses the phone's clock; **preset chips** per slot (e.g. AM IN: 7:30 · 7:45 · 8:00 · 8:15). Editing an existing time shows **Clear**.
+- **Date picker**: month calendar with ‹ ›, today ringed. **Range mode**: tap the first day, then the last (live "Oct 20 → Oct 22 · 3 days"). Quick chips: *Yesterday · Today · Tomorrow* (single) or *Today · Tomorrow · This week · Next week* (range).
+- Used everywhere: tile edit, My DTR day edit (4 time fields), Others date, Leave range, admin Hours. Number fields are − / + steppers. Admin's schedule and remark type are sliding choosers, not dropdowns.
 
 ### 3.5 My DTR
 Tap **My DTR** on the keypad → type the code:
@@ -135,7 +154,7 @@ Tap the faint **✦** (top right of the home screen) → 6-digit PIN (lock icon 
 |-----|----------|
 | **Overview** | Month switcher; big **lates this month** card; one card per person: initial avatar, nickname, full name, a lateness bar, lates badge, days present. Tap a person → their calendar (same as My DTR, with Edit and Print) |
 | **People** | List with schedule badge; **+ Add person** and tap-to-edit sheet: code (3 digits, unique), **nickname**, full name (printed), position, working hours (Default / Custom fixed / Custom flexi); Deactivate/Reactivate |
-| **Hours** | Fixed-time / Flexi-time switch (sliding). **Fixed**: time in. **Flexi (clock in & out only)**: earliest clock in, latest clock in, hours to work → shows the **clock-out window** (e.g. 4:00–6:00 PM). **Lunch is the same for both** (own card: from / to). Late rules: grace minutes, "count late return from lunch". A live sentence explains the rule |
+| **Hours** | Fixed-time / Flexi-time switch (sliding). **Fixed**: time in. **Flexi (clock in & out only)**: earliest and latest clock in (time pickers) and hours to work (− / + stepper), with the clock-out window shown (e.g. 4:00–6:00 PM). **Lunch is 12:00–1:00 PM for everyone: not editable.** **No grace period.** One switch: "count a late return from lunch" (PM IN after 1:00 PM). A live sentence explains the rule |
 | **Print** | Month switcher; **pick one, several or All people** (name chips); A4 preview with a pager (‹ Juan · 1 of 3 ›), tap the paper to zoom; **Print 3 DTRs (3 pages)** / Save as PDF: one A4 page per person |
 | **Settings** | Signatory (name, title, label), change PIN, "times come from the phone's clock" note, **Lock admin** |
 
@@ -143,9 +162,9 @@ Tap the faint **✦** (top right of the home screen) → 6-digit PIN (lock icon 
 
 ## 5. Lateness rules
 
-- **Late** = AM IN later than the limit **+ grace**. Limit = *time in* (fixed) or *latest time in* (flexi).
-- Late minutes are counted from the limit (in at 8:20 with an 8:00 limit = 20 min, even with a 5-min grace).
-- Optional: PM IN later than lunch end + grace also counts. A day with both counts as **one** late day; the minutes add up.
+- **Late** = AM IN later than the limit. Limit = *time in* (fixed) or *latest clock in* (flexi). **No grace period**: 1 minute over is late.
+- Late minutes are counted from the limit (in at 8:20 with an 8:00 limit = 20 min).
+- Optional (switch): PM IN later than 1:00 PM also counts. A day with both counts as **one** late day; the minutes add up.
 - **Late count** for a month = number of days with late > 0. Shown in the notification, My DTR and the dashboard.
 - Lateness uses the **final** time, so a time corrected to match the biometric updates the count. Edited days carry an *edited* badge.
 - Flexi expected time out = max(arrival, earliest in) + required hours + lunch length.

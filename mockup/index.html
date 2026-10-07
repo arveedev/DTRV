@@ -33,7 +33,7 @@ input,select{font:inherit}
   --acc:#5eead4; --acc-ink:#062a26; --rlate:#fb923c; --rlate-bg:#3d2312; --rok:#5eead4; --rok-bg:#123b37;
   --rrem:#c4b5fd; --rrem-bg:#2a1f4a; --rhol:#fb7185; --rhol-bg:#4a1d2b; --rwarn:#facc15; --rwarn-bg:#3b3410;
   width:390px;max-width:100%;height:844px;background:var(--rbg);color:var(--rink);border-radius:46px;border:10px solid #000;
-  box-shadow:0 18px 44px rgba(16,21,31,.35);overflow:hidden;position:relative;font-family:Poppins,system-ui,sans-serif;
+  box-shadow:0 18px 44px rgba(16,21,31,.35);overflow:hidden;overflow:clip;position:relative;font-family:Poppins,system-ui,sans-serif;
 }
 .sbar{position:absolute;top:0;left:0;right:0;height:var(--sat);display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font:600 14px "Space Grotesk",sans-serif;z-index:30;pointer-events:none;color:#fff}
 .sbar .isl{width:118px;height:32px;background:#000;border-radius:20px}
@@ -92,6 +92,7 @@ input,select{font:inherit}
 @keyframes chipin{0%{transform:scale(.2) rotate(-12deg);opacity:0}100%{transform:none;opacity:1}}
 .tg.done{opacity:.82}
 .tg.lock{opacity:.16;filter:grayscale(.7)}
+.rail.away .tg{opacity:.14;filter:grayscale(.9)}
 .tg:active{transform:scale(.93)}
 .tg.on{opacity:1;animation:pick .55s cubic-bezier(.3,1.5,.5,1),breath 2.6s ease-in-out .55s infinite;transform:translateY(-3px)}
 @keyframes pick{0%{transform:translateY(8px) scale(.9)}60%{transform:translateY(-6px) scale(1.06)}100%{transform:translateY(-3px) scale(1)}}
@@ -104,6 +105,7 @@ input,select{font:inherit}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
 .chip{border:1.5px dashed var(--rline);background:transparent;border-radius:99px;padding:7px 0;font:600 11px Poppins,sans-serif;color:var(--rmuted);cursor:pointer;white-space:nowrap;transition:all .25s cubic-bezier(.3,1.4,.5,1)}
 .chip:active{transform:scale(.92)}
+.chip.off{opacity:.28;border-style:dotted}
 .chip.on{border-style:solid;border-color:var(--rrem);background:var(--rrem-bg);color:var(--rrem);transform:scale(1.05);animation:popchip .4s cubic-bezier(.3,1.7,.5,1)}
 .chip[data-r=HOLIDAY].on{border-color:var(--rhol);background:var(--rhol-bg);color:var(--rhol)}
 @keyframes popchip{from{transform:scale(.85)}}
@@ -121,13 +123,21 @@ input,select{font:inherit}
 .keys button{width:100%;height:100%;border-radius:26px;border:0;background:var(--rsurf);color:var(--rink);font:500 40px "Space Grotesk",sans-serif;font-size:clamp(28px,min(9.5cqh,15cqw),54px);cursor:pointer;transition:transform .14s cubic-bezier(.3,1.6,.5,1),background .14s}
 .keys button:active{transform:scale(.92);background:var(--rsurf2)}
 .keys .m{background:none;font:600 13px Poppins,sans-serif;color:var(--rmuted);white-space:nowrap;transition:color .2s,transform .14s}
-.keys .m.on{color:var(--acc)}
+/* tapping My DTR re-asks for the PIN: the whole pad turns teal */
+.keys.pin button:not(.m){background:rgba(94,234,212,.13);color:var(--acc);box-shadow:inset 0 0 0 1.5px rgba(94,234,212,.38);animation:pinwave .6s cubic-bezier(.3,1.4,.5,1) calc(var(--i)*22ms) backwards}
+.keys.pin button:not(.m):active{background:rgba(94,234,212,.3)}
+.keys .m.on{color:var(--acc);font-weight:700}
+@keyframes pinwave{from{transform:scale(.8);opacity:.4}}
+.dots.pin div{border-color:var(--acc);animation:pinpulse 1.4s ease-in-out infinite}
+@keyframes pinpulse{50%{box-shadow:0 0 12px rgba(94,234,212,.55)}}
 
 /* ----- toast ----- */
 .toast{position:absolute;left:14px;right:14px;top:calc(var(--sat) + 6px);background:var(--rsurf2);border:1px solid var(--rline);color:var(--rink);border-radius:16px;padding:12px 16px;transform:translateY(calc(-100% - var(--sat) - 24px)) scale(.96);opacity:0;transition:transform .45s cubic-bezier(.2,.9,.25,1.12),opacity .3s;z-index:25;font-size:13.5px;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .toast.show{transform:none;opacity:1}
 .toast b{color:var(--acc)}
 .toast.err{border-color:var(--rhol)}
+.toast.joy{border-color:var(--rrem);line-height:1.45}
+.toast.joy b{color:var(--rrem)}
 .toast.err.show .ti{display:block;animation:shakeX .45s .2s}
 .toast.err b{color:var(--rhol)}
 
@@ -155,10 +165,10 @@ input,select{font:inherit}
 .sugg button{border:1.5px solid var(--rline);background:transparent;color:var(--rmuted);border-radius:99px;padding:6px 11px;font:600 11px Poppins,sans-serif;cursor:pointer;transition:all .2s cubic-bezier(.3,1.5,.5,1)}
 .sugg button:active{transform:scale(.9);border-color:var(--rrem);color:var(--rrem)}
 .hintline{font-size:11.5px;color:var(--rmuted);margin:0 2px 8px}
-.chooser{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:var(--rbg);border-radius:14px;padding:4px;margin-bottom:12px;position:relative}
-.chooser button{position:relative;z-index:1;border:0;background:none;padding:8px 0;border-radius:11px;font:600 11px Poppins,sans-serif;color:var(--rmuted);cursor:pointer;transition:color .25s}
+.chooser{--n:4;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:5px;background:var(--rbg);border-radius:14px;padding:4px;margin-bottom:12px;position:relative}
+.chooser button{position:relative;z-index:1;border:0;background:none;padding:9px 0;border-radius:11px;font:600 11px Poppins,sans-serif;color:var(--rmuted);cursor:pointer;transition:color .25s}
 .chooser button.on{color:var(--rink)}
-.chooser .th{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 23px)/4);border-radius:11px;background:var(--rsurf2);transform:translateX(calc(var(--p)*100% + var(--p)*5px));transition:transform .4s cubic-bezier(.3,1.4,.5,1)}
+.chooser .th{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px - (var(--n) - 1)*5px)/var(--n));border-radius:11px;background:var(--rsurf2);transform:translateX(calc(var(--p)*100% + var(--p)*5px));transition:transform .4s cubic-bezier(.3,1.4,.5,1)}
 .check{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--rink);margin:2px 0 6px}
 .check input{width:auto;accent-color:#5eead4}
 
@@ -244,6 +254,7 @@ input,select{font:inherit}
 
 /* ----- admin gate ----- */
 .gate{align-items:center;text-align:center}
+.gate .keys{align-self:stretch;width:100%}   /* the keypad must not shrink-wrap in the centred column */
 .gate .lock{width:76px;height:76px;border-radius:24px;background:var(--rsurf);display:grid;place-items:center;color:var(--acc);margin-top:22px;animation:float 3.2s ease-in-out infinite}
 @keyframes float{50%{transform:translateY(-8px)}}
 .gate .lock.open{animation:unlock .7s cubic-bezier(.3,1.5,.5,1) forwards;background:var(--acc);color:var(--acc-ink)}
@@ -306,6 +317,54 @@ input,select{font:inherit}
 .zoom .paper{cursor:zoom-out}
 @keyframes paperin{from{opacity:0;transform:translateY(30px) rotate(-2deg) scale(.92)}}
 .paper .a4{position:absolute;left:0;top:0;margin:0;transform-origin:0 0}
+.fill{display:flex;flex-direction:column;overflow:hidden!important;-webkit-mask-image:none!important;mask-image:none!important}
+.fill .prev{flex:1;min-height:0;align-items:center}
+.fill .bigbtn{flex:none;height:52px;padding:0}
+.fill .tap,.fill .pager,.fill .pctl,.fill .pick{flex:none}
+.pf{width:100%;text-align:left;border:1.5px solid var(--rline);border-radius:12px;padding:11px 12px;background:var(--rbg);color:var(--rink);font:600 15px Poppins,sans-serif;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s,transform .15s cubic-bezier(.3,1.6,.5,1)}
+.pf::after{content:"▾";font-size:11px;color:var(--rmuted)}
+.pf:active{transform:scale(.97);border-color:var(--acc)}
+.pf.empty{color:var(--rmuted);font-weight:500}
+.step{display:flex;align-items:center;gap:8px;background:var(--rbg);border:1.5px solid var(--rline);border-radius:12px;padding:4px}
+.step button{width:46px;height:40px;border-radius:9px;border:0;background:var(--rsurf2);color:var(--rink);font:600 20px "Space Grotesk";cursor:pointer;transition:transform .15s cubic-bezier(.3,1.6,.5,1)}
+.step button:active{transform:scale(.85)}
+.step b{flex:1;text-align:center;font:600 20px "Space Grotesk"}
+.step b small{font:500 12px Poppins;color:var(--rmuted);margin-left:4px}
+#pkScrim{z-index:40}.sheet.pkr{z-index:41}
+.pk-title{margin:0 0 6px;font-size:18px}
+.tp-top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.tp-disp{display:flex;align-items:center;gap:2px;font:600 52px/1 "Space Grotesk",sans-serif}
+.tp-disp button{background:var(--rbg);border:2px solid transparent;border-radius:16px;padding:6px 12px;font:inherit;color:var(--rmuted);cursor:pointer;transition:all .25s cubic-bezier(.3,1.4,.5,1);min-width:84px}
+.tp-disp button.on{color:var(--rink);border-color:var(--acc);box-shadow:0 0 20px rgba(94,234,212,.25);transform:scale(1.04)}
+.tp-disp button.bump{animation:bump .4s cubic-bezier(.2,.9,.3,1.3)}
+.tp-disp i{font-style:normal;color:var(--rmuted)}
+.tp-ap{position:relative;display:grid;grid-template-rows:1fr 1fr;background:var(--rbg);border-radius:14px;padding:4px;width:66px;height:84px}
+.tp-ap .th{position:absolute;left:4px;right:4px;top:4px;height:calc(50% - 4px);border-radius:11px;background:var(--acc);transform:translateY(calc(var(--p)*100%));transition:transform .4s cubic-bezier(.3,1.4,.5,1)}
+.tp-ap button{position:relative;z-index:1;border:0;background:none;font:700 14px Poppins;color:var(--rmuted);cursor:pointer;transition:color .3s}
+.tp-ap button.on{color:var(--acc-ink)}
+.tp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tp-grid button{height:52px;border-radius:16px;border:0;background:var(--rsurf2);color:var(--rink);font:600 20px "Space Grotesk",sans-serif;cursor:pointer;animation:cellin .45s cubic-bezier(.3,1.5,.5,1) calc(var(--i)*20ms) backwards;transition:transform .15s cubic-bezier(.3,1.6,.5,1),background .2s}
+.tp-grid button:active{transform:scale(.88)}
+.tp-grid button.on{background:var(--acc);color:var(--acc-ink)}
+.tp-tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 4px}
+.tp-tools button{border:0;border-radius:12px;padding:10px 0;background:var(--rbg);color:var(--rink);font:600 13px "Space Grotesk",sans-serif;cursor:pointer;transition:transform .15s cubic-bezier(.3,1.6,.5,1)}
+.tp-tools button:active{transform:scale(.88)}
+.tp-tools button.now{background:var(--rrem-bg);color:var(--rrem)}
+.dp-head{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;font:600 16px "Space Grotesk",sans-serif}
+.dp-head button{width:38px;height:38px;border-radius:50%;border:0;background:var(--rsurf2);color:var(--rink);cursor:pointer;transition:transform .15s cubic-bezier(.3,1.6,.5,1)}
+.dp-head button:active{transform:scale(.8)}
+.dp-dow,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dp-dow span{text-align:center;font:500 9px "Space Grotesk",sans-serif;letter-spacing:.1em;color:var(--rmuted);padding-bottom:3px}
+.dp-grid{animation:rise .4s cubic-bezier(.2,.9,.3,1.15) backwards}
+.dp-grid button{aspect-ratio:1.05;border:0;border-radius:12px;background:transparent;color:var(--rink);font:600 14px "Space Grotesk",sans-serif;cursor:pointer;transition:transform .15s cubic-bezier(.3,1.6,.5,1),background .2s}
+.dp-grid button:active{transform:scale(.85)}
+.dp-grid button.pad{visibility:hidden}
+.dp-grid button.we{color:var(--rmuted)}
+.dp-grid button.td{box-shadow:inset 0 0 0 1.5px var(--acc)}
+.dp-grid button.in{background:var(--rok-bg);color:var(--rok);border-radius:4px}
+.dp-grid button.st1,.dp-grid button.en{background:var(--acc);color:var(--acc-ink);border-radius:12px;animation:popchip .35s cubic-bezier(.3,1.7,.5,1)}
+.dp-sum{text-align:center;font-size:12.5px;color:var(--rmuted);margin:8px 0 2px;min-height:18px}
+.dp-sum b{color:var(--acc)}
 .pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .pk{border:1.5px solid var(--rline);background:transparent;color:var(--rmuted);border-radius:99px;padding:7px 14px;font:600 12px Poppins,sans-serif;cursor:pointer;transition:all .25s cubic-bezier(.3,1.5,.5,1)}
 .pk:active{transform:scale(.9)}
@@ -389,6 +448,8 @@ input,select{font:inherit}
     <div class="toast" id="toast"></div>
     <div class="scrim" id="scrim"></div>
     <div class="sheet" id="sheet"></div>
+    <div class="scrim" id="pkScrim"></div>
+    <div class="sheet pkr" id="picker"></div>
 
     <!-- 1 · Record -->
     <div class="scr" id="p-record">
@@ -425,7 +486,7 @@ input,select{font:inherit}
     <!-- 3 · Print (employee) -->
     <div class="scr hide" id="p-print">
       <div class="mtop"><a id="printBack">‹ Back</a><span style="font:600 13px 'Space Grotesk'">Print DTR</span></div>
-      <div id="printBody" style="flex:1;overflow:auto;margin:10px -16px 0;padding:0 16px;scrollbar-width:none"></div>
+      <div id="printBody" class="fill" style="flex:1;min-height:0;margin-top:10px"></div>
     </div>
 
     <!-- 4 · Admin gate -->
@@ -450,11 +511,11 @@ input,select{font:inherit}
   <div class="explain">
     <h3>What changed</h3>
     <ol>
-      <li><b>Bigger keypad</b> that fills the screen, with larger digits.</li>
-      <li><b>Tap a tile</b> to edit that time (recorded tiles show ✎). Empty tiles you can record are selected instead.</li>
-      <li><b>Others</b> remembers what <i>you</i> typed and suggests it; it has a date.</li>
-      <li><b>Flexi</b> sets clock in &amp; out only; lunch is the same for both.</li>
-      <li><b>Admin</b> is behind the faint ✦ at the top right of the home screen (PIN 123456). Print tab can print <b>several people</b> at once.</li>
+      <li><b>My DTR</b> turns the keypad teal (and the key becomes <b>Cancel</b>): type your PIN again.</li>
+      <li><b>Clocked in?</b> Leave, Day-off and Holiday switch off; only <b>Others</b> works. <b>On leave / day-off / holiday?</b> all four tiles lock and the app just says <i>Enjoy…</i>.</li>
+      <li><b>Pickers</b> match the theme: tap the hour then the minute (±1/±5, Now, presets); one calendar for dates, tap first and last day for a range, quick chips.</li>
+      <li><b>Flexi</b>: only the clock-in window and hours to work. Lunch (12–1 PM) is fixed for everyone; no grace period.</li>
+      <li>Admin PIN pad fixed; Print tab fits the screen and shows the Print button.</li>
     </ol>
     <p>Open this file on your phone for the full-screen version.</p>
   </div>
@@ -465,11 +526,11 @@ input,select{font:inherit}
 <script>
 /* =================== data =================== */
 const S = {
-  sched: { mode:'fixed', amIn:'08:00', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', grace:0, pmLate:false },
+  sched: { mode:'fixed', amIn:'08:00', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', pmLate:false },
   sign: { name:'AL MARTIN A. MENES', title:'Acting Branch Manager', label:'In Charge' },
   emps: [
     { no:'024', name:'JUAN A. DELA CRUZ', nick:'Juan',  pos:'Clerk II', sched:null, active:true },
-    { no:'205', name:'MARIA L. SANTOS',   nick:'Maria', pos:'Cashier',  sched:{ mode:'flexi', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', grace:0, pmLate:false }, active:true },
+    { no:'205', name:'MARIA L. SANTOS',   nick:'Maria', pos:'Cashier',  sched:{ mode:'flexi', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', pmLate:false }, active:true },
     { no:'331', name:'PEDRO R. REYES',    nick:'Pedro', pos:'Driver',   sched:null, active:true },
   ],
   e: {}   // "code|YYYY-MM-DD" -> {am_in,am_out,pm_in,pm_out, remark:{code,text}|null, edited}
@@ -518,8 +579,8 @@ function now(){
 const lateLimit = sc => sc.mode === 'flexi' ? sc.flexEnd : sc.amIn;
 function lateMinutes(entry, sc){
   if(!entry) return 0; let late = 0;
-  if(entry.am_in){ const o = m(entry.am_in) - m(lateLimit(sc)); if(o > sc.grace) late += o; }
-  if(sc.pmLate && entry.pm_in){ const o = m(entry.pm_in) - m(sc.lunchE); if(o > sc.grace) late += o; }
+  if(entry.am_in){ const o = m(entry.am_in) - m(lateLimit(sc)); if(o > 0) late += o; }
+  if(sc.pmLate && entry.pm_in){ const o = m(entry.pm_in) - m(sc.lunchE); if(o > 0) late += o; }
   return late;
 }
 function expectedOut(entry, sc){
@@ -616,6 +677,93 @@ const TABICONS = [
 ];
 $('#aTabs').insertAdjacentHTML('beforeend', TABICONS.map(([n,p],i)=>`<button data-t="${i}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>${n}</button>`).join(''));
 
+/* =================== themed pickers =================== */
+const fmtDate = d => d ? new Date(d+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'}) : 'Pick a date';
+const fmtRange = (a,b) => a===b ? fmtDate(a) : `${fmtDate(a)} → ${fmtDate(b)}`;
+const spanDays = (a,b) => Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5)+1;
+const addDays = (d,n) => { const x = new Date(d+'T00:00'); x.setDate(x.getDate()+n); return ymd(x); };
+const mondayOf = d => { const x = new Date(d+'T00:00'); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return ymd(x); };
+function openPicker(html){ const el = $('#picker'); el.innerHTML = '<div class="grab"></div>'+html; el.scrollTop = 0; requestAnimationFrame(()=>el.classList.add('show')); $('#pkScrim').classList.add('show'); }
+function closePicker(){ $('#picker').classList.remove('show'); $('#pkScrim').classList.remove('show'); }
+$('#pkScrim').onclick = closePicker;
+
+/* time: tap the hour, then the minute (5-min steps), fine-tune with ±1 / ±5, or jump with Now and presets */
+function pickTime({title='Time', value=null, presets=[], clearable=false}, done){
+  const [H0,M0] = (value || now().time).split(':').map(Number);
+  let h12 = H0%12||12, min = M0, ap = H0>=12?'PM':'AM', field = 'h';
+  const h24 = () => (h12%12) + (ap==='PM'?12:0);
+  const setT = t => { t = ((t%1440)+1440)%1440; const H = Math.floor(t/60); ap = H>=12?'PM':'AM'; h12 = H%12||12; min = t%60; };
+  openPicker(`<h3 class="pk-title">${title}</h3>
+    <div class="tp-top"><div class="tp-disp"><button id="tpH"></button><i>:</i><button id="tpM"></button></div>
+      <div class="tp-ap" id="tpAp" style="--p:0"><i class="th"></i><button data-a="AM">AM</button><button data-a="PM">PM</button></div></div>
+    <div class="tp-grid" id="tpGrid"></div>
+    <div class="tp-tools"><button data-d="-5">−5</button><button data-d="-1">−1</button><button class="now" id="tpNow">Now</button><button data-d="1">+1</button><button data-d="5">+5</button></div>
+    ${presets.length ? `<div class="sugg" id="tpPre">${presets.map(x=>`<button data-t="${x}">${t12(x)}</button>`).join('')}</div>` : ''}
+    <div class="btns">${clearable?'<button class="btn danger" id="tpClr">Clear</button>':'<button class="btn" id="tpCan">Cancel</button>'}<button class="btn primary" id="tpOk">Set</button></div>`);
+  let prevDisp = '';
+  const paint = (animateGrid) => {
+    const dh = pad(h12), dm = pad(min);
+    $('#tpH').textContent = dh; $('#tpM').textContent = dm;
+    $('#tpH').classList.toggle('on', field==='h'); $('#tpM').classList.toggle('on', field==='m');
+    if(prevDisp !== dh+dm){ const el = prevDisp.slice(0,2)!==dh ? $('#tpH') : $('#tpM'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); prevDisp = dh+dm; }
+    $('#tpAp').style.setProperty('--p', ap==='PM'?1:0); $$('#tpAp button').forEach(b=>b.classList.toggle('on', b.dataset.a===ap));
+    if(animateGrid){
+      const vals = field==='h' ? [1,2,3,4,5,6,7,8,9,10,11,12] : [0,5,10,15,20,25,30,35,40,45,50,55];
+      $('#tpGrid').innerHTML = vals.map((v,i)=>`<button style="--i:${i}" data-v="${v}" class="${(field==='h'?v===h12:v===min)?'on':''}">${field==='h'?v:pad(v)}</button>`).join('');
+    } else $$('#tpGrid button').forEach(b => b.classList.toggle('on', +b.dataset.v === (field==='h'?h12:min)));
+  };
+  paint(true);
+  $('#tpGrid').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    if(field==='h'){ h12 = +b.dataset.v; field = 'm'; paint(true); } else { min = +b.dataset.v; paint(false); } };
+  $('#tpH').onclick = () => { field = 'h'; paint(true); };
+  $('#tpM').onclick = () => { field = 'm'; paint(true); };
+  $$('#tpAp button').forEach(b => b.onclick = () => { ap = b.dataset.a; paint(false); });
+  $$('.tp-tools [data-d]').forEach(b => b.onclick = () => { setT(h24()*60 + min + +b.dataset.d); paint(false); });
+  $('#tpNow').onclick = () => { const [h,mi] = now().time.split(':').map(Number); setT(h*60+mi); field = 'm'; paint(true); };
+  $$('#tpPre button').forEach(b => b.onclick = () => { const [h,mi] = b.dataset.t.split(':').map(Number); setT(h*60+mi); field = 'm'; paint(true); });
+  $('#tpOk').onclick = () => { closePicker(); done(pad(h24())+':'+pad(min)); };
+  if(clearable) $('#tpClr').onclick = () => { closePicker(); done(null); }; else $('#tpCan').onclick = closePicker;
+}
+
+/* date / range: one calendar; in range mode tap the first day, then the last */
+function pickDate({title='Date', mode='single', from=null, to=null}, done){
+  let a = from || now().date, b = mode==='range' ? (to||a) : a, step = 0, view = a.slice(0,7);
+  const today = now().date;
+  const quick = mode==='range'
+    ? [['Today',()=>[today,today]],['Tomorrow',()=>[addDays(today,1),addDays(today,1)]],['This week',()=>{const m_=mondayOf(today);return [m_,addDays(m_,4)]}],['Next week',()=>{const m_=addDays(mondayOf(today),7);return [m_,addDays(m_,4)]}]]
+    : [['Yesterday',()=>[addDays(today,-1)]],['Today',()=>[today]],['Tomorrow',()=>[addDays(today,1)]]];
+  openPicker(`<h3 class="pk-title">${title}</h3>
+    <div class="dp-head"><button id="dpPrev">‹</button><span id="dpLbl"></span><button id="dpNext">›</button></div>
+    <div class="dp-dow">${['SU','MO','TU','WE','TH','FR','SA'].map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="dp-grid" id="dpGrid"></div>
+    <div class="sugg" style="margin-top:8px" id="dpQuick">${quick.map(([l],i)=>`<button data-i="${i}">${l}</button>`).join('')}</div>
+    <div class="dp-sum" id="dpSum"></div>
+    <div class="btns"><button class="btn" id="dpCan">Cancel</button><button class="btn primary" id="dpOk">Set</button></div>`);
+  const paint = (anim=true) => {
+    const [Y,M] = view.split('-').map(Number), n = new Date(Y,M,0).getDate(); $('#dpLbl').textContent = MONTHS[M-1]+' '+Y;
+    let h = '<button class="pad"></button>'.repeat(new Date(Y,M-1,1).getDay());
+    for(let d=1; d<=n; d++){ const ds = `${view}-${pad(d)}`, wd = new Date(Y,M-1,d).getDay();
+      h += `<button data-d="${ds}" class="${wd%6===0?'we':''} ${ds===today?'td':''} ${mode==='range'&&ds>a&&ds<b?'in':''} ${ds===a?'st1':''} ${ds===b&&b!==a?'en':''}">${d}</button>`; }
+    const g = $('#dpGrid'); g.innerHTML = h; if(anim){ g.style.animation='none'; void g.offsetWidth; g.style.animation=''; }
+    $('#dpSum').innerHTML = mode==='range' ? `<b>${fmtRange(a,b)}</b> · ${spanDays(a,b)} day${spanDays(a,b)===1?'':'s'}${step===1?' · now tap the last day':''}` : `<b>${fmtDate(a)}</b>`;
+  };
+  paint();
+  $('#dpGrid').onclick = e => { const x = e.target.closest('button[data-d]'); if(!x) return; const d = x.dataset.d;
+    if(mode==='single'){ a = b = d; } else if(step===0){ a = b = d; step = 1; } else { if(d >= a) b = d; else { b = a; a = d; } step = 0; }
+    paint(false); };
+  $('#dpPrev').onclick = () => { view = shiftYM(view,-1); paint(); }; $('#dpNext').onclick = () => { view = shiftYM(view,1); paint(); };
+  $$('#dpQuick button').forEach(x => x.onclick = () => { const r = quick[+x.dataset.i][1](); a = r[0]; b = r[1]||r[0]; step = 0; view = a.slice(0,7); paint(); });
+  $('#dpOk').onclick = () => { closePicker(); done(mode==='range' ? [a,b] : a); };
+  $('#dpCan').onclick = closePicker;
+}
+
+/* tappable field buttons that open the pickers */
+const pfTime = (id, label, v) => `<div class="field"><label>${label}</label><button type="button" class="pf ${v?'':'empty'}" id="${id}" data-v="${v||''}">${v?t12(v):'Set time'}</button></div>`;
+const pfDate = (id, label, v) => `<div class="field"><label>${label}</label><button type="button" class="pf" id="${id}" data-v="${v}">${fmtDate(v)}</button></div>`;
+function bindTime(id, opts, after){ const el = $('#'+id); el.onclick = () => pickTime({...opts, value:el.dataset.v||null, clearable:!!opts.clearable}, v => { el.dataset.v = v||''; el.textContent = v ? t12(v) : 'Set time'; el.classList.toggle('empty', !v); after && after(v); }); }
+function bindDate(id, opts, after){ const el = $('#'+id); el.onclick = () => pickDate({...opts, from:el.dataset.v}, v => { el.dataset.v = v; el.textContent = fmtDate(v); after && after(v); }); }
+const SLOT_PRESETS = { am_in:['07:30','07:45','08:00','08:15'], am_out:['11:55','12:00','12:05'], pm_in:['12:55','13:00','13:05'], pm_out:['16:55','17:00','17:30'] };
+
 /* =================== keypad =================== */
 function buildKeys(el, leftLabel, leftFn, digitFn, delFn){
   el.innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button data-st data-d="${n}">${n}</button>`).join('')
@@ -640,18 +788,24 @@ let selSlot = 'am_in', selRemark = null, typed = '', pendingMy = false, lastCode
 if(lastCode && !emp(lastCode)) lastCode = null;
 const entryOf = no => no ? get(no, now().date) : null;
 
-function autoToggle(){ selSlot = suggest(entryOf(lastCode)); selRemark = null; pendingMy = false; paintToggles(); }
+const AWAY = ['LEAVE','DAYOFF','HOLIDAY'];
+const AWAY_MSG = { LEAVE:['🌴','Enjoy your leave'], DAYOFF:['🏠','Enjoy your day-off'], HOLIDAY:['🎌','Enjoy the holiday'] };
+function dayState(no){ const e = entryOf(no); return { e, hasTimes: !!e && SLOTS.some(s=>e[s]), away: e?.remark && AWAY.includes(e.remark.code) ? e.remark.code : null }; }
+function enjoy(p, code){ toast(`${AWAY_MSG[code][0]} <b>${AWAY_MSG[code][1]}, ${nickOf(p)}!</b><br>No clock-in needed today.`, 'joy'); }
+function autoToggle(){ const st = dayState(lastCode); selSlot = st.away ? null : suggest(st.e); selRemark = null; pendingMy = false; paintToggles(); }
 function paintToggles(){
-  const e = entryOf(lastCode);
+  const {e, hasTimes, away} = dayState(lastCode);
+  $('#toggles').classList.toggle('away', !!away);
   $$('.tg').forEach(b => {
     const k = b.dataset.s, t = e?.[k], chk = canRecord(e,k), st = b.querySelector('.st');
-    b.classList.toggle('on', !selRemark && !pendingMy && k===selSlot && !t);
-    b.classList.toggle('done', !!t); b.classList.toggle('lock', !t && !chk.ok);
-    const want = t ? tPrint(t) : ({am_in:'Arrive',am_out:'Lunch',pm_in:'Back',pm_out:'Home'})[k];
-    if(st.textContent !== want){ st.textContent = want; st.className = 'st' + (t?' tm chipin':''); }
+    b.classList.toggle('on', !away && !selRemark && !pendingMy && k===selSlot && !t);
+    b.classList.toggle('done', !!t && !away); b.classList.toggle('lock', !!away || (!t && !chk.ok));
+    const want = away ? '—' : t ? tPrint(t) : ({am_in:'Arrive',am_out:'Lunch',pm_in:'Back',pm_out:'Home'})[k];
+    if(st.textContent !== want){ st.textContent = want; st.className = 'st' + (t && !away ? ' tm chipin' : ''); }
   });
-  $$('.chip').forEach(b => b.classList.toggle('on', b.dataset.r===selRemark));
-  $('#keys [data-k="L"]').classList.toggle('on', pendingMy);
+  $$('.chip').forEach(b => { b.classList.toggle('on', b.dataset.r===selRemark); b.classList.toggle('off', AWAY.includes(b.dataset.r) && hasTimes); });
+  $('#keys').classList.toggle('pin', pendingMy); $('#empno').classList.toggle('pin', pendingMy);
+  const L = $('#keys [data-k="L"]'); L.textContent = pendingMy ? 'Cancel' : 'My DTR'; L.classList.toggle('on', pendingMy);
 }
 function paintDots(n=typed.length){ $$('#empno div').forEach((d,i) => d.classList.toggle('f', i < n)); }
 function dotsFlash(box, kind, n){
@@ -660,19 +814,24 @@ function dotsFlash(box, kind, n){
 }
 
 $$('.tg').forEach(b => b.onclick = () => {
-  const k = b.dataset.s, e = entryOf(lastCode), chk = canRecord(e,k);
-  if(lastCode && (e?.[k] || !chk.ok)){ openTimeSheet(lastCode, now().date, k, 'tile'); return; }   // recorded, or blocked: edit the time
+  const k = b.dataset.s, st = dayState(lastCode), p = lastCode && emp(lastCode);
+  if(st.away){ enjoy(p, st.away); shake(b); return; }
+  const chk = canRecord(st.e, k);
+  if(lastCode && (st.e?.[k] || !chk.ok)){ openTimeSheet(lastCode, now().date, k, 'tile'); return; }   // recorded, or blocked: edit the time
   selSlot = k; selRemark = null; pendingMy = false; paintToggles();
 });
-$$('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; pendingMy = false; paintToggles(); });
-
+$$('.chip').forEach(b => b.onclick = () => {
+  const r = b.dataset.r;
+  if(AWAY.includes(r) && dayState(lastCode).hasTimes){ toast(`You've already clocked in today, so <b>${REMARK_LABEL[r]}</b> isn't available. Use <b>Others</b> for a reason.`,'err'); shake(b); return; }
+  selRemark = selRemark===r ? null : r; pendingMy = false; paintToggles();
+});
 function pressDigit(d){
   if(typed.length >= 3) return; typed += d; paintDots();
   if(typed.length === 3) setTimeout(submit, 240);
 }
-buildKeys($('#keys'), 'My DTR', () => { pendingMy = !pendingMy; selRemark = null; paintToggles(); }, pressDigit, () => { typed = typed.slice(0,-1); paintDots(); });
+buildKeys($('#keys'), 'My DTR', () => { pendingMy = !pendingMy; selRemark = null; typed = ''; paintDots(); paintToggles(); }, pressDigit, () => { typed = typed.slice(0,-1); paintDots(); });
 document.addEventListener('keydown', ev => {
-  if(ev.key==='Escape') closeSheet();
+  if(ev.key==='Escape'){ $('#picker').classList.contains('show') ? closePicker() : closeSheet(); }
   if(!isOn('p-record') || $('#sheet').classList.contains('show')) return;
   if(/^\d$/.test(ev.key)) pressDigit(ev.key);
   if(ev.key==='Backspace'){ typed = typed.slice(0,-1); paintDots(); }
@@ -681,13 +840,20 @@ document.addEventListener('keydown', ev => {
 function submit(){
   const p = emp(typed); typed = ''; const box = $('#empno'); paintDots(3);
   if(!p || p.active===false){ dotsFlash(box,'err'); toast('Code not found','err'); return; }
-  lastCode = p.no; store.set('dtrv.lastCode', p.no);
+  const switched = p.no !== lastCode; lastCode = p.no; store.set('dtrv.lastCode', p.no);
   dotsFlash(box,'ok');
+  const st = dayState(p.no);
+  if(switched || !selSlot) selSlot = st.away ? null : suggest(st.e);      // a different person: pick *their* next slot
   if(pendingMy){ pendingMy = false; paintToggles(); setTimeout(()=>openMy(p.no,'rec'), 420); return; }
-  if(selRemark){ const c = selRemark; setTimeout(()=>openRemarkSheet(p.no, c, now().date), 420); return; }
-  const {date,time} = now(), cur = get(p.no,date);
+  if(selRemark){
+    const c = selRemark;
+    if(AWAY.includes(c) && st.hasTimes){ toast(`You've already clocked in today, so <b>${REMARK_LABEL[c]}</b> isn't available. Use <b>Others</b> for a reason.`,'err'); selRemark = null; paintToggles(); return; }
+    setTimeout(()=>openRemarkSheet(p.no, c, now().date), 420); return;
+  }
+  if(st.away){ enjoy(p, st.away); autoToggle(); return; }
+  const {date,time} = now();
   if(!selSlot){ toast('All 4 times are already recorded today','err'); autoToggle(); return; }
-  const chk = canRecord(cur, selSlot);
+  const chk = canRecord(st.e, selSlot);
   if(!chk.ok){ toast(chk.why,'err'); autoToggle(); return; }
   ensure(p.no,date)[selSlot] = time;
   const slot = selSlot; autoToggle(); afterChange();
@@ -699,7 +865,7 @@ let toastTimer;
 function toast(html, kind=''){ const T=$('#toast'); T.className='toast '+kind; T.innerHTML=`<span class="ti">${html}</span>`; void T.offsetWidth; T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'), kind==='err'?3400:2600); }
 $('#toast').onclick = () => $('#toast').classList.remove('show');
 function openSheet(html, cls=''){ const sh=$('#sheet'); sh.className='sheet '+cls; sh.innerHTML='<div class="grab"></div>'+html; sh.scrollTop=0; requestAnimationFrame(()=>{ sh.classList.add('show'); stagger(sh,55); }); $('#scrim').classList.add('show'); }
-function closeSheet(){ $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); if(selRemark){ selRemark = null; paintToggles(); } }   // dismissing a remark sheet also un-arms the pill
+function closeSheet(){ closePicker(); $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); if(selRemark){ selRemark = null; paintToggles(); } }   // dismissing a remark sheet also un-arms the pill
 $('#scrim').onclick = closeSheet;
 
 /* result sheet — no auto-close */
@@ -729,17 +895,13 @@ function orderError(e, slot, time){
 }
 function openTimeSheet(no, date, slot, from='result'){
   const e = get(no,date) || {};
-  openSheet(`<h3 data-st>${e[slot]?'Edit':'Add'} ${SLOT_LABEL[slot]}</h3>
-    <div class="sub" data-st>${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}</div>
-    <div class="field" data-st><input type="time" class="big" id="shT" value="${e[slot]||''}"></div>
-    <div class="btns" data-st><button class="btn danger" id="shClr">Clear</button><button class="btn primary" id="shOk">Save</button></div>`);
-  $('#shOk').onclick = () => {
-    const v = $('#shT').value; if(!v){ shake($('#shT')); return; }
-    const err = orderError(e, slot, v); if(err){ toast(err,'err'); shake($('#shT')); return; }
-    const t = ensure(no,date); t[slot] = v; t.edited = true; afterChange();
+  pickTime({ title:`${e[slot]?'Edit':'Add'} ${SLOT_LABEL[slot]} · ${fmtDate(date)}`, value:e[slot]||null, presets:SLOT_PRESETS[slot], clearable:!!e[slot] }, v => {
+    const t = ensure(no,date);
+    if(v === null){ t[slot]=null; t.edited=true; if(!SLOTS.some(x=>t[x]) && !t.remark) delete S.e[key(no,date)]; closeSheet(); autoToggle(); afterChange(); toast(`<b>${SLOT_LABEL[slot]}</b> cleared`); return; }
+    const err = orderError(t, slot, v); if(err){ toast(err,'err'); return; }
+    t[slot] = v; t.edited = true; afterChange();
     if(from==='result') showResult(no,date,slot,{}); else { closeSheet(); autoToggle(); toast(`<b>${SLOT_LABEL[slot]}</b> set to ${t12(v)}`); }
-  };
-  $('#shClr').onclick = () => { const t = ensure(no,date); t[slot]=null; t.edited=true; if(!SLOTS.some(x=>t[x]) && !t.remark) delete S.e[key(no,date)]; closeSheet(); autoToggle(); afterChange(); toast(`<b>${SLOT_LABEL[slot]}</b> cleared`); };
+  });
 }
 
 /* =================== remarks =================== */
@@ -753,29 +915,40 @@ function remarkBody(code, date, no){
   if(code==='OTHER'){ const h = remarkHistory(no); return `
     <div class="field" data-st><label>Where did you go, or what's the reason?</label><input id="oTxt" maxlength="40" placeholder="e.g. FIELD WORK – CITY HALL" autocomplete="off"></div>
     ${h.length ? `<div class="sugg" data-st>${h.map(x=>`<button data-t="${x.replace(/"/g,'&quot;')}">${x}</button>`).join('')}</div>` : ''}
-    <div class="field" data-st><label>Date</label><input type="date" id="oDate" value="${date}"></div>`; }
-  return `<div class="row2" data-st><div class="field"><label>From</label><input type="date" id="rFrom" value="${date}"></div><div class="field"><label>To</label><input type="date" id="rTo" value="${date}"></div></div>
-    <label class="check" data-st><input type="checkbox" id="rSkip" checked> Skip Sundays in the range</label>`;
+    <div data-st>${pfDate('oDate','Date',date)}</div>`; }
+  return `<div data-st><div class="field"><label>Dates</label><button type="button" class="pf" id="rRange" data-from="${date}" data-to="${date}">${fmtDate(date)}</button></div></div>
+    <label class="check" data-st><input type="checkbox" id="rSkip" checked> Skip Sundays</label>`;
+}
+function bindRemarkBody(){
+  $$('#rBody .sugg button').forEach(b => b.onclick = () => { $('#oTxt').value = b.dataset.t; $('#oTxt').focus(); });
+  if($('#oDate')) bindDate('oDate', {title:'Date'});
+  const r = $('#rRange'); if(r) r.onclick = () => pickDate({title:'Dates', mode:'range', from:r.dataset.from, to:r.dataset.to}, ([a,b]) => {
+    r.dataset.from = a; r.dataset.to = b; r.textContent = `${fmtRange(a,b)} · ${spanDays(a,b)} day${spanDays(a,b)===1?'':'s'}`; });
+}
+function awayConflict(no, a, b, skipSun){
+  for(let d=a, n=0; d<=b && n<62; d=addDays(d,1), n++){ if(skipSun && new Date(d+'T00:00').getDay()===0) continue;
+    const e = get(no,d); if(e && SLOTS.some(s=>e[s])) return d; }
+  return null;
 }
 function openRemarkSheet(no, code='LEAVE', date=now().date){
-  const p = emp(no), codes = Object.keys(REMARK_LABEL); let cur = code;
+  const codes = Object.keys(REMARK_LABEL); let cur = code;
   openSheet(`<h3 data-st style="margin-bottom:12px">Remark</h3>
-    <div class="chooser" data-st style="--p:${codes.indexOf(cur)}"><i class="th"></i>${codes.map(c=>`<button data-c="${c}" class="${c===cur?'on':''}">${REMARK_LABEL[c]}</button>`).join('')}</div>
+    <div class="chooser" data-st style="--n:4;--p:${codes.indexOf(cur)}"><i class="th"></i>${codes.map(c=>`<button data-c="${c}" class="${c===cur?'on':''}">${REMARK_LABEL[c]}</button>`).join('')}</div>
     <div id="rBody">${remarkBody(cur,date,no)}</div>
     <div class="btns" data-st><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
-  const bind = () => $$('#rBody .sugg button').forEach(b => b.onclick = () => { $('#oTxt').value = b.dataset.t; $('#oTxt').focus(); });
-  bind();
+  bindRemarkBody();
   $$('.chooser button').forEach(b => b.onclick = () => { cur = b.dataset.c; $('.chooser').style.setProperty('--p', codes.indexOf(cur));
-    $$('.chooser button').forEach(x=>x.classList.toggle('on', x===b)); $('#rBody').innerHTML = remarkBody(cur,date,no); stagger($('#rBody'),55); bind(); });
-  $('#rCancel').onclick = () => { closeSheet(); selRemark=null; paintToggles(); };
+    $$('.chooser button').forEach(x=>x.classList.toggle('on', x===b)); $('#rBody').innerHTML = remarkBody(cur,date,no); stagger($('#rBody'),55); bindRemarkBody(); });
+  $('#rCancel').onclick = () => { closeSheet(); };
   $('#rOk').onclick = () => {
     if(cur==='OTHER'){
       const txt = $('#oTxt').value.trim().toUpperCase(); if(!txt){ shake($('#oTxt')); $('#oTxt').focus(); return; }
-      ensure(no,$('#oDate').value||date).remark = {code:'OTHER', text:txt}; closeSheet(); selRemark=null; paintToggles(); afterChange(); toast(`Saved · <b>${txt}</b>`); return;
+      ensure(no,$('#oDate').dataset.v||date).remark = {code:'OTHER', text:txt}; closeSheet(); afterChange(); toast(`Saved · <b>${txt}</b>`); return;
     }
-    let d = new Date($('#rFrom').value+'T00:00'), end = new Date(($('#rTo').value||$('#rFrom').value)+'T00:00'), n=0;
-    while(d <= end && n < 62){ if(!($('#rSkip').checked && d.getDay()===0)){ ensure(no, ymd(d)).remark = {code:cur, text:''}; n++; } d.setDate(d.getDate()+1); }
-    closeSheet(); selRemark=null; paintToggles(); afterChange(); toast(`Saved · <b>${REMARKS[cur]}</b> · ${n} day${n===1?'':'s'}`);
+    const a = $('#rRange').dataset.from, b = $('#rRange').dataset.to, skip = $('#rSkip').checked, bad = awayConflict(no, a, b, skip);
+    if(bad){ toast(`You clocked in on <b>${fmtDate(bad)}</b>, so it can't be ${REMARK_LABEL[cur]}. Use <b>Others</b> for a reason.`,'err'); return; }
+    let n = 0; for(let d=a; d<=b && n<62; d=addDays(d,1)){ if(skip && new Date(d+'T00:00').getDay()===0) continue; ensure(no,d).remark = {code:cur, text:''}; n++; }
+    closeSheet(); autoToggle(); afterChange(); toast(`Saved · <b>${REMARKS[cur]}</b> · ${n} day${n===1?'':'s'}`);
   };
 }
 
@@ -785,7 +958,7 @@ function openMy(no, from='rec'){ myNo=no; myFrom=from; myYM=now().date.slice(0,7
 $('#myBack').onclick = () => { if(myFrom==='admin'){ go('p-admin','l'); renderAdmin(); } else { go('p-record','l'); autoToggle(); } };
 $('#mPrev').onclick = () => { myYM = shiftYM(myYM,-1); paintMy({dir:'L'}); };
 $('#mNext').onclick = () => { myYM = shiftYM(myYM, 1); paintMy({dir:'R'}); };
-$('#myRemark').onclick = () => openRemarkSheet(myNo, 'LEAVE', mySel || now().date);
+$('#myRemark').onclick = () => openRemarkSheet(myNo, 'OTHER', mySel || now().date);
 $('#myPrint').onclick = () => { go('p-print','r'); setTimeout(()=>printUI($('#printBody'), {nos:[myNo], ym:myYM, locked:true}), 60); };
 $('#printBack').onclick = () => go('p-my','l');
 
@@ -820,20 +993,25 @@ function paintMy(o={}){
 }
 function openDaySheet(no, ds){
   const e = get(no, ds) || { am_in:null, am_out:null, pm_in:null, pm_out:null, remark:null };
-  openSheet(`<h3 data-st>${new Date(ds+'T00:00').toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'})}</h3><div class="sub" data-st>${emp(no).name}</div>
-    <div class="row2" data-st>${SLOTS.map(s=>`<div class="field"><label>${SLOT_LABEL[s]}</label><input type="time" data-s="${s}" value="${e[s]||''}"></div>`).join('')}</div>
-    <div class="field" data-st><label>Remark</label><select id="dCode"><option value="">None</option>${Object.keys(REMARK_LABEL).map(k=>`<option value="${k}">${REMARK_LABEL[k]}</option>`).join('')}</select></div>
+  const opts = [['','None'],...Object.entries(REMARK_LABEL)]; let rc = e.remark?.code || '';
+  openSheet(`<h3 data-st>${new Date(ds+'T00:00').toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'})}</h3>
+    <div class="row2" data-st style="margin-top:10px">${SLOTS.slice(0,2).map(s=>pfTime('dt_'+s, SLOT_LABEL[s], e[s])).join('')}</div>
+    <div class="row2" data-st>${SLOTS.slice(2).map(s=>pfTime('dt_'+s, SLOT_LABEL[s], e[s])).join('')}</div>
+    <div class="chooser" data-st style="--n:5;--p:${opts.findIndex(o=>o[0]===rc)}"><i class="th"></i>${opts.map(([c,l])=>`<button data-c="${c}" class="${c===rc?'on':''}">${l}</button>`).join('')}</div>
     <div class="field" id="dTxtF" data-st><label>Reason / where (max 40)</label><input id="dTxt" maxlength="40" value="${e.remark?.text||''}"></div>
     <div class="btns" data-st><button class="btn danger" id="dDel">Delete day</button><button class="btn primary" id="dOk">Save</button></div>`);
-  $('#dCode').value = e.remark?.code || '';
-  const sync = () => $('#dTxtF').style.display = $('#dCode').value==='OTHER' ? '' : 'none'; sync(); $('#dCode').onchange = sync;
+  SLOTS.forEach(s => bindTime('dt_'+s, {title:`${SLOT_LABEL[s]} · ${fmtDate(ds)}`, presets:SLOT_PRESETS[s], clearable:true}));
+  const sync = () => $('#dTxtF').style.display = rc==='OTHER' ? '' : 'none'; sync();
+  $$('.chooser button').forEach(b => b.onclick = () => { rc = b.dataset.c; $('.chooser').style.setProperty('--p', opts.findIndex(o=>o[0]===rc)); $$('.chooser button').forEach(x=>x.classList.toggle('on',x===b)); sync(); });
   $('#dOk').onclick = () => {
-    const vals = {}; $$('#sheet input[data-s]').forEach(i => vals[i.dataset.s] = i.value||null);
+    const vals = {}; SLOTS.forEach(s => vals[s] = $('#dt_'+s).dataset.v || null);
     let last = null; for(const k of SLOTS){ if(!vals[k]) continue; if(last && m(vals[k])<m(vals[last])){ toast(`<b>${SLOT_LABEL[k]}</b> can't be earlier than <b>${SLOT_LABEL[last]}</b> (${t12(vals[last])})`,'err'); return; } last = k; }
+    if(AWAY.includes(rc) && SLOTS.some(k=>vals[k])){ toast(`With times recorded this day can't be <b>${REMARK_LABEL[rc]}</b>. Clear the times, or use <b>Others</b>.`,'err'); return; }
+    if(rc==='OTHER' && !$('#dTxt').value.trim()){ shake($('#dTxt')); return; }
     const t = ensure(no, ds);
-    $$('#sheet input[data-s]').forEach(i => { const v=i.value||null; if(v!==t[i.dataset.s]){ t[i.dataset.s]=v; t.edited=true; } });
-    const c=$('#dCode').value; t.remark = c ? {code:c, text:c==='OTHER'?$('#dTxt').value.trim().toUpperCase():''} : null;
-    if(!SLOTS.some(s=>t[s]) && !t.remark) delete S.e[key(no,ds)];
+    SLOTS.forEach(k => { if(vals[k]!==t[k]){ t[k]=vals[k]; t.edited=true; } });
+    t.remark = rc ? {code:rc, text:rc==='OTHER'?$('#dTxt').value.trim().toUpperCase():''} : null;
+    if(!SLOTS.some(k=>t[k]) && !t.remark) delete S.e[key(no,ds)];
     closeSheet(); autoToggle(); afterChange(); toast('Saved');
   };
   $('#dDel').onclick = () => { delete S.e[key(no,ds)]; closeSheet(); autoToggle(); afterChange(); toast('Day deleted'); };
@@ -881,8 +1059,9 @@ function paintPreview(st){
   $('#printRoot').innerHTML = st.nos.map(no => { const c = dtrCopy(no, st.ym); return `<div class="a4">${c}${c}</div>`; }).join('');   // real size, used by window.print()
   const box = $('#prevBox'); if(!box) return;
   if(!st.nos.length){ box.classList.remove('zoom'); box.innerHTML = '<div class="emptyprev">Pick at least one person</div>'; return; }
-  st.page = Math.min(st.page||0, st.nos.length-1);
-  const w = (box.clientWidth || 340) - 20, sc = zoomPrev ? 1.1 : w/793.7, c = dtrCopy(st.nos[st.page], st.ym);
+  st.page = Math.max(0, Math.min(st.page||0, st.nos.length-1));
+  const w = (box.clientWidth || 340) - 20, h = (box.clientHeight || 0) - 20;
+  const sc = zoomPrev ? 1.1 : Math.min(w/793.7, h>60 ? h/1122.5 : 9), c = dtrCopy(st.nos[st.page], st.ym);
   box.classList.toggle('zoom', zoomPrev);
   box.innerHTML = `<div class="paper" style="width:${793.7*sc}px;height:${1122.5*sc}px"><div class="a4" style="transform:scale(${sc})">${c}${c}</div></div>`;
   $('.paper').onclick = () => { zoomPrev = !zoomPrev; paintPreview(st); };
@@ -891,19 +1070,23 @@ function printUI(host, st){
   st.page = st.page || 0;
   const label = () => MONTHS[+st.ym.slice(5)-1]+' '+st.ym.slice(0,4);
   const people = S.emps.filter(p=>p.active!==false);
-  host.innerHTML = `<div class="pctl" data-st>${st.locked ? `<div class="pname">${emp(st.nos[0]).name}</div>` : `<span style="font-weight:700">Who to print</span>`}
+  st.nos = st.nos.filter(no => people.some(p=>p.no===no));
+  host.innerHTML = `<div class="pctl" data-st>${st.locked ? `<div class="pname">${emp(st.nos[0]||myNo).name}</div>` : `<span style="font-weight:700">Who to print</span>`}
     <div class="mnav"><button id="pPrev">‹</button><span id="pLbl">${label()}</span><button id="pNext">›</button></div></div>
     ${st.locked ? '' : `<div class="pick" data-st><button class="pk all" data-no="*">All</button>${people.map(p=>`<button class="pk" data-no="${p.no}">${nickOf(p)}</button>`).join('')}</div>`}
     <div class="pager" id="pager"><button id="pgPrev">‹</button><span id="pgLbl"></span><button id="pgNext">›</button></div>
     <div class="prev" id="prevBox"></div><div class="tap">Tap the paper to zoom</div>
     <button class="bigbtn" id="doPrint"></button>`;
   const refresh = () => {
-    $('#pLbl').textContent = label();
-    $$('.pk').forEach(b => b.classList.toggle('on', b.dataset.no==='*' ? st.nos.length===people.length : st.nos.includes(b.dataset.no)));
-    const n = st.nos.length; $('#pager').style.display = n>1 ? 'flex' : 'none';
-    if(n>1) $('#pgLbl').textContent = `${nickOf(emp(st.nos[st.page]))} · ${st.page+1} of ${n}`;
-    const bt = $('#doPrint'); bt.disabled = !n; bt.textContent = st.locked||n<=1 ? 'Print / Save as PDF' : `Print ${n} DTRs (${n} pages)`; bt.style.opacity = n ? 1 : .4;
-    paintPreview(st);
+    try{
+      st.page = Math.max(0, Math.min(st.page||0, st.nos.length-1));
+      $('#pLbl').textContent = label();
+      $$('.pk').forEach(b => b.classList.toggle('on', b.dataset.no==='*' ? st.nos.length===people.length : st.nos.includes(b.dataset.no)));
+      const n = st.nos.length; $('#pager').style.display = n>1 ? 'flex' : 'none';
+      if(n>1) $('#pgLbl').textContent = `${nickOf(emp(st.nos[st.page]))} · ${st.page+1} of ${n}`;
+      const bt = $('#doPrint'); bt.disabled = !n; bt.textContent = st.locked||n<=1 ? 'Print / Save as PDF' : `Print ${n} DTRs (${n} pages)`; bt.style.opacity = n ? 1 : .4;
+      paintPreview(st);
+    }catch(err){ const bx = $('#prevBox'); if(bx) bx.innerHTML = `<div class="emptyprev">Couldn't build the preview<br><small>${err.message}</small></div>`; $('#doPrint').textContent = 'Print / Save as PDF'; }
   };
   $$('.pk').forEach(b => b.onclick = () => {
     if(b.dataset.no==='*') st.nos = st.nos.length===people.length ? [] : people.map(p=>p.no);
@@ -938,7 +1121,9 @@ $$('#aTabs button').forEach(b => b.onclick = () => { aTab = +b.dataset.t; render
 function renderAdmin(){
   $$('#aTabs button').forEach((b,i)=>b.classList.toggle('on', i===aTab)); $('#aTabs').style.setProperty('--tab', aTab);
   $('#aTitle').textContent = TITLES[aTab]; const body = $('#aBody'); body.scrollTop = 0;
+  body.classList.toggle('fill', aTab===3);
   [aOver, aPeople, aHours, aPrint, aSet][aTab](body); stagger(body, 50);
+  if(aTab===3) requestAnimationFrame(()=>aPrintSt && paintPreview(aPrintSt));
 }
 const initial = p => (nickOf(p)[0]||'?').toUpperCase();
 
@@ -964,20 +1149,21 @@ function aPeople(b){
 }
 function openPersonSheet(p){
   const isNew = !p; p = p || { no:'', name:'', nick:'', pos:'', sched:null, active:true };
+  const modes = [['','Default'],['fixed','Fixed'],['flexi','Flexi']]; let md = p.sched ? p.sched.mode : '';
   openSheet(`<h3 data-st>${isNew?'Add person':'Edit person'}</h3><div class="sub" data-st>${isNew?'3-digit code, e.g. 047 for employee no. 47. The nickname is used in greetings.':'Code '+p.no+' · the nickname is used in greetings'}</div>
     <div class="row2" data-st><div class="field"><label>Code (3 digits)</label><input id="fNo" maxlength="3" inputmode="numeric" value="${p.no}" ${isNew?'':'disabled'}></div>
     <div class="field"><label>Nickname</label><input id="fNick" value="${p.nick||''}" placeholder="Juan"></div></div>
     <div class="field" data-st><label>Full name (printed on the DTR)</label><input id="fName" value="${p.name}" placeholder="ANA B. GARCIA"></div>
-    <div class="row2" data-st><div class="field"><label>Position</label><input id="fPos" value="${p.pos||''}"></div>
-    <div class="field"><label>Working hours</label><select id="fSched"><option value="">Default</option><option value="fixed">Custom: fixed</option><option value="flexi">Custom: flexi</option></select></div></div>
+    <div class="field" data-st><label>Position</label><input id="fPos" value="${p.pos||''}"></div>
+    <div class="field" data-st><label>Working hours</label><div class="chooser" style="--n:3;--p:${modes.findIndex(x=>x[0]===md)};margin-bottom:0"><i class="th"></i>${modes.map(([v,l])=>`<button data-m="${v}" class="${v===md?'on':''}">${l}</button>`).join('')}</div></div>
     <div class="btns" data-st>${isNew?'<button class="btn" id="fCancel">Cancel</button>':`<button class="btn danger" id="fOff">${p.active===false?'Reactivate':'Deactivate'}</button>`}<button class="btn primary" id="fSave">Save</button></div>`);
-  $('#fSched').value = p.sched ? p.sched.mode : '';
+  $$('.chooser button').forEach(b => b.onclick = () => { md = b.dataset.m; $('.chooser').style.setProperty('--p', modes.findIndex(x=>x[0]===md)); $$('.chooser button').forEach(x=>x.classList.toggle('on',x===b)); });
   if(isNew) $('#fCancel').onclick = closeSheet; else $('#fOff').onclick = () => { p.active = p.active===false; closeSheet(); afterChange(); toast(p.active?'Reactivated':'Deactivated'); };
   $('#fSave').onclick = () => {
     const no = $('#fNo').value.trim(), name = $('#fName').value.trim().toUpperCase();
     if(isNew && (!/^\d{3}$/.test(no) || emp(no))){ shake($('#fNo')); toast('Code must be 3 digits and unique','err'); return; }
     if(!name){ shake($('#fName')); return; }
-    const md = $('#fSched').value, sched = md ? { ...(p.sched||S.sched), mode:md } : null;
+    const sched = md ? { ...(p.sched||S.sched), mode:md } : null;
     Object.assign(p, { name, nick:$('#fNick').value.trim(), pos:$('#fPos').value.trim(), sched });
     if(isNew){ p.no = no; S.emps.push(p); }
     closeSheet(); afterChange(); toast(`Saved · <b>${nickOf(p)}</b>`);
@@ -986,17 +1172,17 @@ function openPersonSheet(p){
 function aHours(b){
   const sc = S.sched;
   b.innerHTML = `<div class="seg" id="hSeg" data-st style="--p:${sc.mode==='flexi'?1:0}"><i class="th"></i><button data-m="fixed" class="${sc.mode==='fixed'?'on':''}">Fixed time</button><button data-m="flexi" class="${sc.mode==='flexi'?'on':''}">Flexi-time</button></div>
-    <div class="card" id="fixedF" data-st ${sc.mode==='fixed'?'':'hidden'}><h4>Clock in</h4><div class="field"><label>Time in (late after this)</label><input type="time" id="hAmIn" value="${sc.amIn}"></div></div>
+    <div class="card" id="fixedF" data-st ${sc.mode==='fixed'?'':'hidden'}><h4>Clock in</h4>${pfTime('hAmIn','Time in (late after this)',sc.amIn)}</div>
     <div class="card" id="flexiF" data-st ${sc.mode==='flexi'?'':'hidden'}><h4>Flexi · clock in &amp; out</h4>
-      <div class="row2"><div class="field"><label>Earliest clock in</label><input type="time" id="hFs" value="${sc.flexStart}"></div><div class="field"><label>Latest clock in</label><input type="time" id="hFe" value="${sc.flexEnd}"></div></div>
-      <div class="field"><label>Hours to work (not counting lunch)</label><input type="number" id="hReq" min="1" max="12" value="${sc.req}"></div>
+      <div class="row2">${pfTime('hFs','Earliest clock in',sc.flexStart)}${pfTime('hFe','Latest clock in',sc.flexEnd)}</div>
+      <div class="field"><label>Hours to work</label><div class="step"><button data-d="-1">−</button><b id="hReq">${sc.req}<small>hours</small></b><button data-d="1">+</button></div></div>
       <div class="rangeline" id="hRange"></div></div>
-    <div class="card" data-st><h4>Lunch · same for fixed &amp; flexi</h4><div class="row2"><div class="field"><label>From</label><input type="time" id="hLs" value="${sc.lunchS}"></div><div class="field"><label>To</label><input type="time" id="hLe" value="${sc.lunchE}"></div></div></div>
-    <div class="card" data-st><h4>Late rules</h4><div class="field"><label>Grace period (minutes)</label><input type="number" id="hGr" min="0" max="60" value="${sc.grace}"></div>
-      <div class="swrow"><span>Also count late return from lunch</span><button class="swt ${sc.pmLate?'on':''}" id="hPm"><i></i></button></div></div>
+    <div class="card" data-st><div class="swrow"><span>Count a late return from lunch<br><small style="color:var(--rmuted)">PM IN after 1:00 PM</small></span><button class="swt ${sc.pmLate?'on':''}" id="hPm"><i></i></button></div></div>
     <div class="preview" id="hPrev" data-st></div>`;
-  const bind = (id,k,num) => $('#'+id).addEventListener('input', e => { if(!e.target.value) return; sc[k] = num ? +e.target.value : e.target.value; hoursPreview(); });
-  bind('hAmIn','amIn'); bind('hFs','flexStart'); bind('hFe','flexEnd'); bind('hReq','req',1); bind('hLs','lunchS'); bind('hLe','lunchE'); bind('hGr','grace',1);
+  bindTime('hAmIn', {title:'Time in', presets:['07:30','08:00','08:30','09:00']}, v => { if(v){ sc.amIn = v; hoursPreview(); } });
+  bindTime('hFs', {title:'Earliest clock in', presets:['06:00','06:30','07:00','07:30']}, v => { if(v){ sc.flexStart = v; hoursPreview(); } });
+  bindTime('hFe', {title:'Latest clock in', presets:['08:30','09:00','09:30','10:00']}, v => { if(v){ sc.flexEnd = v; hoursPreview(); } });
+  $$('.step button').forEach(x => x.onclick = () => { sc.req = Math.max(1, Math.min(12, sc.req + +x.dataset.d)); const el = $('#hReq'); el.firstChild.nodeValue = sc.req; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); hoursPreview(); });
   $('#hPm').onclick = e => { sc.pmLate = !sc.pmLate; e.currentTarget.classList.toggle('on', sc.pmLate); hoursPreview(); };
   $$('#hSeg button').forEach(x => x.onclick = () => { sc.mode = x.dataset.m; $('#hSeg').style.setProperty('--p', sc.mode==='flexi'?1:0);
     $$('#hSeg button').forEach(y=>y.classList.toggle('on', y===x)); $('#fixedF').hidden = sc.mode!=='fixed'; $('#flexiF').hidden = sc.mode!=='flexi';
@@ -1008,8 +1194,8 @@ function hoursPreview(){
   const lunchLen = m(s.lunchE) - m(s.lunchS), outA = hm(m(s.flexStart)+s.req*60+lunchLen), outB = hm(m(s.flexEnd)+s.req*60+lunchLen);
   if($('#hRange')) $('#hRange').innerHTML = `Clock out between <b>${t12(outA)}</b> and <b>${t12(outB)}</b>`;
   el.innerHTML = s.mode==='flexi'
-    ? `Clock in any time from <b>${t12(s.flexStart)}</b> to <b>${t12(s.flexEnd)}</b>; late after <b>${t12(hm(m(s.flexEnd)+ +s.grace))}</b>. Clock out after <b>${s.req} h</b> of work (in at 8:30 AM → out at <b>${t12(hm(m('08:30')+s.req*60+lunchLen))}</b>). Lunch stays <b>${t12(s.lunchS)}–${t12(s.lunchE)}</b>.`
-    : `Late if AM IN is after <b>${t12(hm(m(s.amIn)+ +s.grace))}</b>${s.pmLate?` or PM IN after <b>${t12(hm(m(s.lunchE)+ +s.grace))}</b>`:''}. Lunch <b>${t12(s.lunchS)}–${t12(s.lunchE)}</b>.`;
+    ? `Clock in from <b>${t12(s.flexStart)}</b> to <b>${t12(s.flexEnd)}</b>; late after <b>${t12(s.flexEnd)}</b>. Clock out after <b>${s.req} h</b> of work (in at 8:30 AM → out at <b>${t12(hm(m('08:30')+s.req*60+lunchLen))}</b>). Lunch is <b>12:00–1:00 PM</b> for everyone.`
+    : `Late if AM IN is after <b>${t12(s.amIn)}</b>${s.pmLate?' or PM IN after <b>1:00 PM</b>':''}. Lunch is <b>12:00–1:00 PM</b> for everyone.`;
 }
 let aPrintSt = null;
 function aPrint(b){ const first = S.emps.find(p=>p.active!==false); aPrintSt ||= { nos:[first.no], ym:aYM, locked:false, page:0 }; aPrintSt.nos = aPrintSt.nos.filter(no=>emp(no)&&emp(no).active!==false); printUI(b, aPrintSt); }

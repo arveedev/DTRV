@@ -112,8 +112,8 @@ Dexie Cloud has no server code to enforce `UNIQUE`. So uniqueness comes from the
 ```ts
 Employee { id:'emp:024', code:'024', fullName:'JUAN A. DELA CRUZ', nickname:'Juan', position?, scheduleId?:string|null,
            isActive:true }
-Schedule { id, mode:'fixed'|'flexi', amIn?, flexStart?, flexEnd?, requiredHours?, lunchStart:'12:00',
-           lunchEnd:'13:00', graceMin:0, countPmLate:false }
+Schedule { id, mode:'fixed'|'flexi', amIn?, flexStart?, flexEnd?, requiredHours?, countPmLate:false }
+           // lunch is a constant 12:00–13:00 for everyone and there is no grace period, so neither is stored
 Day      { id:'day:024:2026-10-07', employeeId:'emp:024', date:'2026-10-07',
            amIn?:'08:20', amOut?, pmIn?, pmOut?,                  // 'HH:MM' 24h, final values
            remark?: { code:'LEAVE'|'DAYOFF'|'HOLIDAY'|'OTHER', text?:string, batch?:string },
@@ -178,7 +178,11 @@ const m = t => { const [h, mi] = t.split(':'); return +h * 60 + +mi; };
 
 const lateLimit = sc => sc.mode === 'flexi' ? sc.flexEnd : sc.amIn;
 
+const LUNCH_START = '12:00', LUNCH_END = '13:00';      // fixed for everyone (fixed and flexi)
 const SLOTS = ['amIn','amOut','pmIn','pmOut'];
+export const AWAY = ['LEAVE','DAYOFF','HOLIDAY'];
+export const dayState = day => ({ hasTimes: SLOTS.some(s => day?.[s]), away: AWAY.includes(day?.remark?.code) ? day.remark.code : null });
+// Leave/Day-off/Holiday are refused if any time exists that day; clock-ins are refused on an away day. 'OTHER' is always allowed.
 export function canRecord(day, slot) {          // one time per slot, in order
   const i = SLOTS.indexOf(slot);
   if (day?.[slot]) return { ok:false, why:'SLOT_TAKEN', at:day[slot] };
@@ -193,15 +197,15 @@ export function suggest(day, nowTime) {          // next tile to pre-select; nul
 
 export function lateMinutes(day, sc) {          // 0 = on time; minutes counted from the limit
   let late = 0;
-  if (day.amIn) { const o = m(day.amIn) - m(lateLimit(sc)); if (o > sc.graceMin) late += o; }
-  if (sc.countPmLate && day.pmIn) { const o = m(day.pmIn) - m(sc.lunchEnd); if (o > sc.graceMin) late += o; }
+  if (day.amIn) { const o = m(day.amIn) - m(lateLimit(sc)); if (o > 0) late += o; }
+  if (sc.countPmLate && day.pmIn) { const o = m(day.pmIn) - m(LUNCH_END); if (o > 0) late += o; }
   return late;
 }
 
 export function expectedOut(day, sc) {          // flexi only
   if (sc.mode !== 'flexi' || !day.amIn) return null;
   const start = Math.max(m(day.amIn), m(sc.flexStart));
-  return hhmm(start + sc.requiredHours * 60 + m(sc.lunchEnd) - m(sc.lunchStart));
+  return hhmm(start + sc.requiredHours * 60 + m(LUNCH_END) - m(LUNCH_START));
 }
 
 // What this person typed before for "Others", most used first, then most recent.
@@ -213,8 +217,8 @@ export function remarkHistory(days /* this employee's days */, limit = 6) {
 
 // Flexi covers clock in & out only; lunch is the same in fixed and flexi.
 export const clockOutWindow = sc => sc.mode !== 'flexi' ? null :
-  [hhmm(m(sc.flexStart) + sc.requiredHours*60 + m(sc.lunchEnd) - m(sc.lunchStart)),
-   hhmm(m(sc.flexEnd)   + sc.requiredHours*60 + m(sc.lunchEnd) - m(sc.lunchStart))];
+  [hhmm(m(sc.flexStart) + sc.requiredHours*60 + m(LUNCH_END) - m(LUNCH_START)),
+   hhmm(m(sc.flexEnd)   + sc.requiredHours*60 + m(LUNCH_END) - m(LUNCH_START))];
 
 export function monthStats(days, sc) {
   let present = 0, lates = 0, lateMin = 0, remarks = 0;
@@ -276,7 +280,7 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 - **Palette**: background `#0a0f1c`, surface `#141b2d`, surface-2 `#1d2640`, lines `#26304a`, text `#eef2fa`, muted `#7c8aa8`, accent teal `#5eead4` on `#062a26`. Status: on time `#5eead4`/`#123b37`, late `#fb923c`/`#3d2312`, remark `#c4b5fd`/`#2a1f4a`, holiday `#fb7185`/`#4a1d2b`, incomplete `#facc15`/`#3b3410`.
 - **Tiles** (row of 4): orange `#ff9a3c→#ff6a3d`, yellow `#f6c445→#f39c12`, teal `#2ec4b6→#1a9c8f`, indigo `#6d6df0→#3d3db8`. States: selected (100% + ✓ + breathing glow) · recorded (82%, time chip) · locked-empty (16%, greyscale) · other (36%).
 - **Remembered user**: `localStorage['dtrv.lastCode']`, never displayed. A "Reset device" action (admin Settings) clears it.
-- **Home**: no text above the keypad, only 3 dots. The keypad is `display:grid` (3×4, `flex:1`) with `container-type:size` and `font-size: clamp(28px, min(9.5cqh, 15cqw), 54px)`: keys fill all remaining height, digits scale with them. Admin entry is a 46 px transparent button with a ✦ at 16% opacity (`aria-label="·"`); no settings icon.
+- **Home**: no text above the keypad, only 3 dots. **My DTR** puts the keypad in PIN mode (`.keys.pin`: teal digits/outline, pulsing dots, key relabelled *Cancel*). Pills Leave/Day-off/Holiday get `.off` when `dayState().hasTimes`; tiles get `.lock` when `dayState().away`. The keypad is `display:grid` (3×4, `flex:1`) with `container-type:size` and `font-size: clamp(28px, min(9.5cqh, 15cqw), 54px)`: keys fill all remaining height, digits scale with them. Admin entry is a 46 px transparent button with a ✦ at 16% opacity (`aria-label="·"`); no settings icon.
 - **Tiles**: tap a recorded or blocked tile → `openTimeSheet(code, date, slot)` (time picker, Save/Clear, order check); tap an open tile → select it for recording. Recorded tiles show `7:58 ✎`.
 - **Sheets**: result sheet has no auto-close and no sub-line; the greeting uses `employee.nickname`.
 - **Remark sheet**: 4-way sliding switch, title only (no name/sub-line). Leave/Day-off/Holiday: From/To + skip Sundays. **Others**: text (max 40) + **suggestions from `remarkHistory(code)`** + a single **Date** field (default today or the selected day). Dismissing the sheet un-arms the pill.
@@ -311,7 +315,7 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 
 | Level | Cases |
 |-------|-------|
-| Unit (`rules.js`) | fixed/flexi late, grace boundary, minutes from limit, PM late on/off, expectedOut clamp, monthStats, suggestSlot boundaries |
+| Unit (`rules.js`) | fixed/flexi late (no grace: 1 min over = late), minutes from limit, away rules (`dayState`), PM late on/off, expectedOut clamp, monthStats, suggestSlot boundaries |
 | Repo (`fake-indexeddb`) | code `'024'` keeps leading 0; `record` twice → `already`; undo window 60 s; undo after change → rejected; remark range skips Sundays; same day recorded on two "devices" → one `days` row |
 | Slot rules | `canRecord`: free slot ok; filled slot → SLOT_TAKEN; AM IN after PM OUT → OUT_OF_ORDER; AM OUT after PM IN blocked; `suggest` never returns a slot earlier than the last recorded one; day full → null |
 | Token function | wrong setup code → 401; rate limit; client secret never in the response |
@@ -329,3 +333,14 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 3. **P3** — PWA install, batch print, backups, Vercel production deploy.
 
 Estimate: P1 3 days · P2 3–4 days · P3 1–2 days.
+
+
+---
+
+## 13. Pickers (implementation notes)
+- A second bottom-sheet layer (`#picker`, z 41, scrim z 40) opens over the first sheet, so the form underneath keeps its state. **Don't reuse class names**: the picker is `.sheet.pkr` (an earlier `.pk` clashed with the print chips and made it transparent).
+- `pickTime({title, value, presets, clearable}, cb)`: state `{h12, min, ap}`; hour grid → minute grid (5-min), `±1/±5` carry across hours, **Now** = device clock, `cb(null)` = Clear.
+- `pickDate({mode:'single'|'range', from, to}, cb)`: month grid, range = two taps, quick chips from the device date.
+- Field buttons (`.pf`) hold the value in `data-v` and re-render their label; forms read `dataset.v` on Save.
+- `.phone` uses `overflow: clip` (not `hidden`) so focus/`scrollIntoView` can never scroll the app under the status bar.
+- Print screens use a flex column (`.fill`): controls (fixed) → preview (`flex:1`, scaled to fit **both** width and height) → Print button (fixed, 52 px), so the button is always visible above the tab bar.
