@@ -3,7 +3,8 @@
    the single admin user, guarded by a shared sync key that the admin types once per phone (Settings). */
 import { store } from '../lib/util.js';
 
-const rawUrl = String(import.meta.env?.VITE_DEXIE_CLOUD_DB_URL || '').trim().replace(/^["']|["']$/g, '');
+const rawUrl0 = String(import.meta.env?.VITE_DEXIE_CLOUD_DB_URL || '').trim().replace(/^["']|["']$/g, '');
+const rawUrl = rawUrl0 && !/^https?:\/\//i.test(rawUrl0) ? 'https://' + rawUrl0 : rawUrl0;   // forgiving: "z123.dexie.cloud" works
 const validUrl = u => { try { return new URL(u).protocol === 'https:'; } catch { return false; } };
 /** '' when sync is off, or when the configured address is not a valid https URL (the app then stays local-only). */
 export const cloudUrl = validUrl(rawUrl) ? rawUrl.replace(/\/$/, '') : '';
