@@ -105,7 +105,7 @@ db.cloud.configure({
 ### Why deterministic IDs
 Dexie Cloud has no server code to enforce `UNIQUE`. So uniqueness comes from the **primary key**:
 - `employees.id = 'emp:' + code` → two employees can't share `024`. Creating one checks `db.employees.get('emp:024')` first; if two admins race, the second write updates the same object instead of creating a duplicate.
-- `days.id = 'day:' + code + ':' + date` → exactly one row per employee per day, even when two devices record the same day offline. Updates are written with `db.days.update(id, { amIn })` (property-level), which Dexie Cloud merges per property **[verify]**, so AM IN from one device and PM OUT from another both survive.
+- `days.id = 'day:' + code + ':' + date` → exactly one row per employee per day, even when two devices record the same day offline. Updates are written with `db.days.put(row)  // one whole row per person per day (see §15 for the sync caveat)` (property-level), which Dexie Cloud merges per property **[verify]**, so AM IN from one device and PM OUT from another both survive.
 
 ### Objects
 
@@ -115,10 +115,10 @@ Employee { id:'emp:024', code:'024', fullName:'JUAN A. DELA CRUZ', nickname:'Jua
 Schedule { id, mode:'fixed'|'flexi', amIn?, flexStart?, flexEnd?, requiredHours?, countPmLate:false }
            // lunch is a constant 12:00–13:00 for everyone and there is no grace period, so neither is stored
 Day      { id:'day:024:2026-10-07', employeeId:'emp:024', date:'2026-10-07',
-           amIn?:'08:20', amOut?, pmIn?, pmOut?,                  // 'HH:MM' 24h, final values
+           am_in?:'08:20', am_out?, pm_in?, pm_out?,                  // 'HH:MM' 24h, final values
            remark?: { code:'LEAVE'|'DAYOFF'|'HOLIDAY'|'OTHER', text?:string, batch?:string },
            edited:boolean }
-Punch    { id, employeeId, date, slot:'amIn'|'amOut'|'pmIn'|'pmOut', time:'08:20', at:ISO,
+Punch    { id, employeeId, date, slot:'am_in'|'am_out'|'pm_in'|'pm_out', time:'08:20', at:ISO,
            undone:false, deviceId }
 Settings { id:'set:signatory', name, title, label }
 Audit    { id, at, actor:'emp:024'|'admin', action, employeeId?, date?, before?, after? }
@@ -179,7 +179,7 @@ const m = t => { const [h, mi] = t.split(':'); return +h * 60 + +mi; };
 const lateLimit = sc => sc.mode === 'flexi' ? sc.flexEnd : sc.amIn;
 
 const LUNCH_START = '12:00', LUNCH_END = '13:00';      // fixed for everyone (fixed and flexi)
-const SLOTS = ['amIn','amOut','pmIn','pmOut'];
+const SLOTS = ['am_in','am_out','pm_in','pm_out'];
 export const AWAY = ['LEAVE','DAYOFF','HOLIDAY'];
 export const dayState = day => ({ hasTimes: SLOTS.some(s => day?.[s]), away: AWAY.includes(day?.remark?.code) ? day.remark.code : null });
 // Leave/Day-off/Holiday are refused if any time exists that day; clock-ins are refused on an away day. 'OTHER' is always allowed.
@@ -197,14 +197,14 @@ export function suggest(day, nowTime) {          // next tile to pre-select; nul
 
 export function lateMinutes(day, sc) {          // 0 = on time; minutes counted from the limit
   let late = 0;
-  if (day.amIn) { const o = m(day.amIn) - m(lateLimit(sc)); if (o > 0) late += o; }
+  if (day.am_in) { const o = m(day.am_in) - m(lateLimit(sc)); if (o > 0) late += o; }
   if (sc.countPmLate && day.pmIn) { const o = m(day.pmIn) - m(LUNCH_END); if (o > 0) late += o; }
   return late;
 }
 
 export function expectedOut(day, sc) {          // flexi only
-  if (sc.mode !== 'flexi' || !day.amIn) return null;
-  const start = Math.max(m(day.amIn), m(sc.flexStart));
+  if (sc.mode !== 'flexi' || !day.am_in) return null;
+  const start = Math.max(m(day.am_in), m(sc.flexStart));
   return hhmm(start + sc.requiredHours * 60 + m(LUNCH_END) - m(LUNCH_START));
 }
 
@@ -223,7 +223,7 @@ export const clockOutWindow = sc => sc.mode !== 'flexi' ? null :
 export function monthStats(days, sc) {
   let present = 0, lates = 0, lateMin = 0, remarks = 0;
   for (const d of days) {
-    if (d.amIn || d.amOut || d.pmIn || d.pmOut) present++;
+    if (d.am_in || d.am_out || d.pm_in || d.pm_out) present++;
     if (d.remark) remarks++;
     const l = lateMinutes(d, sc); if (l) { lates++; lateMin += l; }
   }
@@ -357,3 +357,13 @@ removeHoliday(date):      remove HOLIDAY remarks for that date (never touches da
 - `dayState(day).away` (LEAVE/DAYOFF/HOLIDAY) locks the 4 tiles and drives the *Enjoy…* sheet (`enjoy(person, code, note)`), shown after saving an away remark that covers today and whenever a locked tile/code is used.
 - Armed pill or My DTR → `.keys.pin` (PIN mode). The left key becomes *Cancel* and clears both.
 - Lists: `matches(person, q)` searches name + nickname + code + position; Overview sorts by lates then minutes or A–Z; only the first 12 rows get entrance delays.
+
+## 15. As built (what differs from the sections above)
+
+- **Layout:** `src/lib` (util, clock, rules: pure), `src/data` (db.js schema/open, repo.js), `src/ui` (core, home, remarks, my, print, admin, cloud, app), `src/print/dtr.js` (the form), `src/demo.js` (`?demo=1` seed), `api/token.js` (Vercel function), `e2e/run.mjs`.
+- **Day fields are snake_case** (`am_in`, `am_out`, `pm_in`, `pm_out`). Lunch is the constant `LUNCH_START/LUNCH_END`; there is no grace period.
+- **Repo:** an in-memory cache `S` for synchronous UI reads, written through to Dexie. Writes are counted (`pending`); live-query echoes that arrive while writes are in flight are ignored and the app reloads once they settle. Months are loaded on demand with `await ensureMonth(ym)` (a live query per month), so every screen that can show another month awaits it first.
+- **Sync caveat:** a day is one row, so two phones editing the *same person's same day* offline resolve last-writer-wins on that row. In practice each person records on their own phone, so the real risk is small. Dexie Cloud wiring (`openDatabase`, `api/token.js`) is written against the installed type definitions but **has not been run against a live Dexie Cloud database**.
+- **Admin PIN** is an app lock (PBKDF2, salted), not security: anyone who can open the browser's storage can read the data. First run asks the admin to create the PIN.
+- **Backup/restore** (Settings) exports/imports all tables as JSON.
+- **Tests:** `npm test` (36 unit tests, fake-indexeddb) and `npm run build && npm run e2e` (Chromium, fake clock).
