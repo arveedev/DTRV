@@ -3,7 +3,7 @@ import { $, $$, fmtDate, fmtRange, spanDays, addDays, esc } from '../lib/util.js
 import { now } from '../lib/clock.js';
 import { SLOTS, SLOT_LABEL, REMARKS, REMARK_LABEL, AWAY, awayConflicts } from '../lib/rules.js';
 import { get, emp, setRemarks, remarkSuggestions, saveDay, deleteDay, ensureMonth } from '../data/repo.js';
-import { stagger, shake, openSheet, closeSheet, toast, pickDate, pfDate, pfTime, bindDate, bindTime, SLOT_PRESETS } from './core.js';
+import { stagger, fast, shake, openSheet, closeSheet, toast, pickDate, pfDate, pfTime, bindDate, bindTime, SLOT_PRESETS } from './core.js';
 import { enjoy, autoToggle } from './home.js';
 import { afterChange } from './app.js';
 
@@ -51,14 +51,14 @@ export async function openRemarkSheet(no, code = 'LEAVE', date = now().date, opt
       if (cur === 'OTHER') {
         const txt = $('#oTxt').value.trim().toUpperCase(); if (!txt) { shake($('#oTxt')); $('#oTxt').focus(); return; }
         const d = $('#oDate').dataset.v || date; await ensureMonth(d.slice(0, 7));
-        await setRemarks(no, [d], { code: 'OTHER', text: txt }); closeSheet(); afterChange(); toast(`Saved · <b>${esc(txt)}</b>`); return;
+        await fast(setRemarks(no, [d], { code: 'OTHER', text: txt })); closeSheet(); afterChange(); toast(`Saved · <b>${esc(txt)}</b>`); return;
       }
       const a = $('#rRange').dataset.from, b = $('#rRange').dataset.to, skip = $('#rSkip').checked, dates = datesIn(a, b, skip);
       for (const ym of new Set(dates.map(d => d.slice(0, 7)))) await ensureMonth(ym);
       const bad = AWAY.includes(cur) && dates.find(d => awayConflicts(get(no, d)));
       if (bad) { toast(`You clocked in on <b>${fmtDate(bad)}</b>, so it can't be ${REMARK_LABEL[cur]}. Use <b>Others</b> for a reason.`, 'err'); return; }
       if (!dates.length) { toast('Pick at least one day (Sundays are skipped)', 'err'); return; }
-      await setRemarks(no, dates, { code: cur, text: '' });
+      await fast(setRemarks(no, dates, { code: cur, text: '' }));
       const today = now().date, covers = dates.includes(today), n = dates.length;
       closeSheet(); autoToggle(); afterChange();
       if (covers && AWAY.includes(cur)) setTimeout(() => enjoy(emp(no), cur, `${REMARKS[cur]} saved · ${n} day${n === 1 ? '' : 's'}`), 380);
@@ -87,9 +87,9 @@ export async function openDaySheet(no, ds) {
     const vals = {}; SLOTS.forEach(s => { vals[s] = $('#dt_' + s).dataset.v || null; });
     if (rc === 'OTHER' && !$('#dTxt').value.trim()) { shake($('#dTxt')); return; }
     try {
-      await saveDay(no, ds, { ...vals, remark: rc ? { code: rc, text: rc === 'OTHER' ? $('#dTxt').value.trim().toUpperCase() : '' } : null });
+      await fast(saveDay(no, ds, { ...vals, remark: rc ? { code: rc, text: rc === 'OTHER' ? $('#dTxt').value.trim().toUpperCase() : '' } : null }));
     } catch (err) { toast(err.html || esc(err.message), 'err'); return; }
     closeSheet(); autoToggle(); afterChange(); toast('Saved');
   };
-  $('#dDel').onclick = async () => { await deleteDay(no, ds); closeSheet(); autoToggle(); afterChange(); toast('Day deleted'); };
+  $('#dDel').onclick = async () => { await fast(deleteDay(no, ds)); closeSheet(); autoToggle(); afterChange(); toast('Day deleted'); };
 }

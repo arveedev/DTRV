@@ -86,10 +86,20 @@ try {
   await pF.click('#rsBioYes'); await wait(pF, 800);
   ok(!(await pF.isVisible('#rsBioYes')) && await pF.evaluate(() => !!localStorage.getItem('dtrv.bio')), 'face / fingerprint turned on for this phone');
   await pF.click('#rsDone'); await wait(pF, 600);
-  ok(await pF.isVisible('#bioBtn'), 'the face / fingerprint button shows for the remembered user');
-  await pF.click('#bioBtn'); await wait(pF, 1500);
+  ok(await pF.$eval('#keys [data-k="D"]', k => k.classList.contains('bio')), 'the backspace key becomes the face / fingerprint key for the remembered user');
+  await pF.click('#keys [data-d="1"]'); await wait(pF, 300);
+  ok(await pF.$eval('#keys [data-k="D"]', k => !k.classList.contains('bio')), 'it turns back into backspace as soon as digits are typed');
+  await pF.click('#keys [data-k="D"]'); await wait(pF, 300);
+  ok(await pF.$eval('#keys [data-k="D"]', k => k.classList.contains('bio')), 'and back to face / fingerprint once the digits are cleared');
+  await pF.click('#keys [data-k="D"]'); await wait(pF, 2200);
   ok((await pF.textContent('#sheet')).includes('Enjoy your lunch, Maria'), 'the button clocks in the next time with no code typed');
   ok(pF.errs.length === 0, 'no console errors (face / fingerprint) ' + pF.errs.join('|'));
+  /* the keypad must not replay its entrance when it flips between normal and PIN mode */
+  const pK = await fresh('2026-10-07T09:00:00', '?demo=1'); await wait(pK, 2500);
+  await pK.evaluate(() => { window.__anims = []; document.addEventListener('animationstart', e => window.__anims.push(e.animationName), true); });
+  await pK.click('#remarkBtn'); await wait(pK, 1500); await pK.click('#remarkBtn'); await wait(pK, 1500);
+  const names = await pK.evaluate(() => window.__anims);
+  ok(!names.includes('rise'), 'no entrance animation replays after the keypad flips (' + [...new Set(names)].join(',') + ')');
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

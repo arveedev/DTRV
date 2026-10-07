@@ -137,10 +137,10 @@ const auditRow = (action, no, date, before, after) => ({ id: uid(), at: new Date
 const snap = (no, d) => { const x = get(no, d); return x ? { am_in: x.am_in, am_out: x.am_out, pm_in: x.pm_in, pm_out: x.pm_out, remark: x.remark } : null; };
 async function saveDayRow(no, d, audit) {
   const x = get(no, d);
-  await write(async () => {
+  await write(() => db.transaction('rw', db.days, db.audit, async () => {
     if (x) await db.days.put(fromDay(no, d, x)); else await db.days.delete(dayId(no, d));
     if (audit) await db.audit.add(audit);
-  });
+  }));
 }
 
 /* ---------- recording (employee) ---------- */
@@ -151,10 +151,10 @@ export async function recordTime(no, slot, time, date = now().date) {
   const chk = canRecord(cur, slot);
   if (!chk.ok) throw new RepoError(chk.reason, chk.why);
   const d = ensureDay(no, date); d[slot] = time;
-  await write(async () => {
+  await write(() => db.transaction('rw', db.days, db.punches, async () => {
     await db.days.put(fromDay(no, date, d));
     await db.punches.add({ id: uid(), employeeId: no, date, slot, time, at: new Date().toISOString(), kind: 'record' });
-  });
+  }));
   return d;
 }
 
@@ -162,10 +162,10 @@ export async function recordTime(no, slot, time, date = now().date) {
 export async function undoRecord(no, date, slot) {
   const d = get(no, date); if (!d || !d[slot]) return;
   const time = d[slot]; d[slot] = null; dropIfEmpty(no, date);
-  await write(async () => {
+  await write(() => db.transaction('rw', db.days, db.punches, async () => {
     const x = get(no, date); if (x) await db.days.put(fromDay(no, date, x)); else await db.days.delete(dayId(no, date));
     await db.punches.add({ id: uid(), employeeId: no, date, slot, time, at: new Date().toISOString(), kind: 'undo' });
-  });
+  }));
 }
 
 /** Edit one time (or clear it with null). Marks the day as edited. */
@@ -190,7 +190,7 @@ export async function saveDay(no, date, { am_in = null, am_out = null, pm_in = n
 
 export async function deleteDay(no, date) {
   const before = snap(no, date); delete S.e[key(no, date)];
-  await write(async () => { await db.days.delete(dayId(no, date)); await db.audit.add(auditRow('day.delete', no, date, before, null)); });
+  await write(() => db.transaction('rw', db.days, db.audit, async () => { await db.days.delete(dayId(no, date)); await db.audit.add(auditRow('day.delete', no, date, before, null)); }));
 }
 
 /** Put the same remark on several dates (Leave range, Others). Refuses leave/day-off/holiday over days with times. */

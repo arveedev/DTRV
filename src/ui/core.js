@@ -1,6 +1,6 @@
 /* Shared UI building blocks: animation helpers, toast, bottom sheets, and the themed time/date pickers.
    Nothing here knows about people or days. */
-import { $, $$, pad, t12, ymd, addDays, mondayOf, shiftYM, spanDays, fmtDate, fmtRange, MONTHS } from '../lib/util.js';
+import { $, $$, pad, t12, ymd, addDays, mondayOf, shiftYM, spanDays, fmtDate, fmtRange, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 
 /* =================== animation helpers =================== */
@@ -9,6 +9,7 @@ export function stagger(root, step){
   root.querySelectorAll('[data-st]').forEach(el => {
     el.style.setProperty('--i', Math.min(i++, 12)); if(step) el.style.setProperty('--s', step+'ms');
     el.classList.remove('st'); void el.offsetWidth; el.classList.add('st');
+    el.addEventListener('animationend', function done(ev){ if(ev.target !== el) return; el.removeEventListener('animationend', done); el.classList.remove('st'); });
   });
 }
 export function go(id, dir='r'){
@@ -39,7 +40,7 @@ export const ICONS = {
 };
 
 /* =================== themed pickers =================== */
-export function openPicker(html){ const el = $('#picker'); el.innerHTML = '<div class="grab"></div>'+html; el.scrollTop = 0; requestAnimationFrame(()=>el.classList.add('show')); $('#pkScrim').classList.add('show'); }
+export function openPicker(html){ const el = $('#picker'); el.innerHTML = '<div class="grab"></div>'+html; el.scrollTop = 0; const show = () => el.classList.add('show'); requestAnimationFrame(show); setTimeout(show, 90); $('#pkScrim').classList.add('show'); }
 export function closePicker(){ $('#picker').classList.remove('show'); $('#pkScrim').classList.remove('show'); }
 $('#pkScrim').onclick = closePicker;
 
@@ -145,7 +146,17 @@ export const closeHooks = [];
 export const onSheetClose = fn => closeHooks.push(fn);
 export function toast(html, kind=''){ const T=$('#toast'); T.className='toast '+kind; T.innerHTML=`<span class="ti">${html}</span>`; void T.offsetWidth; T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'), kind==='err'?3400:2600); }
 $('#toast').onclick = () => $('#toast').classList.remove('show');
-export function openSheet(html, cls=''){ const sh=$('#sheet'); sh.className='sheet '+cls; sh.innerHTML='<div class="grab"></div>'+html; sh.scrollTop=0; requestAnimationFrame(()=>{ sh.classList.add('show'); stagger(sh,55); }); $('#scrim').classList.add('show'); }
+export function openSheet(html, cls=''){ const sh=$('#sheet'); sh.className='sheet '+cls; sh.innerHTML='<div class="grab"></div>'+html; sh.scrollTop=0; const show = () => { if(!sh.classList.contains('show')){ sh.classList.add('show'); stagger(sh,55); } }; requestAnimationFrame(show); setTimeout(show, 90); $('#scrim').classList.add('show'); }
 export function closeSheet(){ closePicker(); $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); closeHooks.forEach(f => f()); }
 $('#scrim').onclick = closeSheet;
 
+
+
+/** Wait for a database write only for a moment. Mistakes in the input come back at once; a slow write (the database can be
+ *  busy while syncing) carries on in the background, and the screen does not wait for it. A late failure shows as a message. */
+export async function fast(pr, what = 'Saving') {
+  let early = null; pr.catch(e => { early = e; });
+  await Promise.race([pr.then(() => {}, () => {}), new Promise(r => setTimeout(r, 30))]);
+  if (early) throw early;
+  pr.catch(e => toast(`${what} failed: ${esc(e.message || String(e))}`, 'err'));
+}

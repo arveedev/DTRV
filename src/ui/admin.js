@@ -4,7 +4,7 @@ import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
 import { S, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
   hasAdminPin, setAdminPin, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
-import { go, stagger, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
+import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
 import { openPreview, printWith, setPrintSel } from './print.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
@@ -175,7 +175,7 @@ function openPersonSheet(p) {
   if (isNew) $('#fCancel').onclick = closeSheet;
   else $('#fOff').onclick = async () => {
     const active = p.active === false;
-    try { await saveEmployee({ ...p, active }, false); } catch (e) { fail(e); return; }
+    try { await fast(saveEmployee({ ...p, active }, false)); } catch (e) { fail(e); return; }
     closeSheet(); afterChange(); toast(active ? 'Reactivated' : 'Deactivated');
   };
   $('#fSave').onclick = async () => {
@@ -183,7 +183,7 @@ function openPersonSheet(p) {
     if (isNew && (!/^\d{3}$/.test(no) || emp(no))) { shake($('#fNo')); toast('Code must be 3 digits and unique', 'err'); return; }
     if (!name) { shake($('#fName')); return; }
     const sched = md ? { ...(p.sched || S.sched), mode: md } : null;
-    try { await saveEmployee({ ...p, no: isNew ? no : p.no, name, nick: $('#fNick').value.trim(), pos: $('#fPos').value.trim(), sched }, isNew); } catch (e) { fail(e); return; }
+    try { await fast(saveEmployee({ ...p, no: isNew ? no : p.no, name, nick: $('#fNick').value.trim(), pos: $('#fPos').value.trim(), sched }, isNew)); } catch (e) { fail(e); return; }
     closeSheet(); afterChange(); autoToggle(); toast(`Saved · <b>${esc(nickOf(emp(isNew ? no : p.no)))}</b>`);
     if (adminOpen()) renderAdmin();
   };

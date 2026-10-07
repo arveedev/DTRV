@@ -4,7 +4,7 @@ import { $, $$, isOn, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc 
 import { now } from '../lib/clock.js';
 import { SLOT_LABEL, REMARK_LABEL, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
 import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
-import { ICONS, stagger, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
+import { ICONS, stagger, fast, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
@@ -99,7 +99,7 @@ export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
   if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
-  { const b = bioFor(); $('#bioBtn').hidden = !(bioAvailable() && b && lastCode && b.code === lastCode && emp(b.code)); }
+  paintKeyD();
   { const p = lastCode && emp(lastCode), ym = now().date.slice(0, 7), n = p ? monthStats(lastCode, ym).lates : 0, chip = $('#lateChip');
     const txt = n ? `⚠ ${n} late${n === 1 ? '' : 's'} in ${MONTHS[+ym.slice(5) - 1]}` : '';
     if (chip.textContent !== txt) { chip.textContent = txt; chip.hidden = !n; if (n) { chip.style.animation = 'none'; void chip.offsetWidth; chip.style.animation = ''; } } }
@@ -122,7 +122,7 @@ export function paintToggles() {
     keysWerePin = pin;
   }
 }
-function paintDots(n = typed.length) { $$('#empno div').forEach((d, i) => d.classList.toggle('f', i < n)); }
+function paintDots(n = typed.length) { $$('#empno div').forEach((d, i) => d.classList.toggle('f', i < n)); paintKeyD(); }
 function dotsFlash(box, kind) {
   box.classList.remove('ok', 'err', 'shake'); void box.offsetWidth; box.classList.add(kind); if (kind === 'err') box.classList.add('shake');
   setTimeout(() => { box.classList.remove('ok', 'err', 'shake'); paintDots(); }, 520);
@@ -155,13 +155,13 @@ export function showResult(no, date, slot, opt = {}) {
   if ($('#rsBioYes')) {
     $('#rsBioNo').onclick = () => { bioSkip(no); $('.bioask').remove(); };
     $('#rsBioYes').onclick = async () => {
-      try { await bioEnroll(no, p.name); $('.bioask').remove(); paintToggles(); toast('Face / fingerprint is on for this phone'); }
+      try { await bioEnroll(no, p.name); $('.bioask').remove(); paintToggles(); toast('Face / fingerprint is on. Use the fingerprint key at the bottom right'); }
       catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') toast(esc(e?.message || 'Could not turn it on'), 'err'); }
     };
   }
   $('#rsChange').onclick = () => openTimeSheet(no, date, slot, 'result');
   if (opt.fresh) $('#rsUndo').onclick = async () => {
-    await undoRecord(no, date, slot); closeSheet(); autoToggle(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed`);
+    await fast(undoRecord(no, date, slot)); closeSheet(); autoToggle(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed`);
   };
 }
 
@@ -169,11 +169,48 @@ export function showResult(no, date, slot, opt = {}) {
 export function openTimeSheet(no, date, slot, from = 'result') {
   const e = get(no, date) || {};
   pickTime({ title: `${e[slot] ? 'Edit' : 'Add'} ${SLOT_LABEL[slot]} · ${fmtDate(date)}`, value: e[slot] || null, presets: SLOT_PRESETS[slot], clearable: !!e[slot] }, async v => {
-    try { await setTime(no, date, slot, v); } catch (err) { toast(err.html || err.message, 'err'); return; }
+    try { await fast(setTime(no, date, slot, v)); } catch (err) { toast(err.html || err.message, 'err'); return; }
     if (v === null) { closeSheet(); autoToggle(); afterChange(); toast(`<b>${SLOT_LABEL[slot]}</b> cleared`); return; }
     afterChange();
     if (from === 'result') showResult(no, date, slot, {}); else { closeSheet(); autoToggle(); toast(`<b>${SLOT_LABEL[slot]}</b> set to ${t12(v)}`); }
   });
+}
+
+
+/* ---------- the bottom-right key: backspace, or face / fingerprint while nothing is typed ---------- */
+const KEY_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M13 9.5l5 5M18 9.5l-5 5"/></svg>';
+const KEY_BIO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3.5a6 6 0 0 1-1.3 3.7"/><path d="M8 11a4 4 0 0 1 8 0v1.5c0 2.4-.6 4.6-1.8 6.4"/><path d="M5 11a7 7 0 0 1 14 0v1c0 2-.3 3.9-.9 5.6"/><path d="M5 14.5c0 1.6-.2 3-.6 4.2"/><path d="M12 3a8 8 0 0 1 8 8"/></svg>';
+const KEY_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+let bioState = '', dMode = '';           // bioState: '' | 'wait' | 'ok' | 'fail'
+const bioReady = () => { const b = bioFor(); return !!(bioAvailable() && b && lastCode && b.code === lastCode && emp(b.code)); };
+function paintKeyD() {
+  const d = $('#keys [data-k="D"]'); if (!d) return;
+  const mode = bioState === 'ok' ? 'ok' : bioState === 'wait' ? 'wait' : (bioReady() && typed.length === 0) ? 'bio' : 'del';
+  d.classList.toggle('bio', mode === 'bio' || mode === 'wait'); d.classList.toggle('wait', mode === 'wait'); d.classList.toggle('ok', mode === 'ok');
+  if (mode === dMode) return;
+  const first = !dMode; dMode = mode;
+  d.innerHTML = mode === 'ok' ? KEY_OK : mode === 'del' ? KEY_DEL : KEY_BIO;
+  d.setAttribute('aria-label', mode === 'del' ? 'Delete' : 'Use face or fingerprint');
+  if (!first) d.firstElementChild.animate([{ transform: 'scale(.4) rotate(-40deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+}
+/** After the passkey prompt closes, wait until the page is really back (some phones pause drawing and timers until then). */
+const pageBack = () => new Promise(res => { const t0 = performance.now(); (function chk() { if ((document.visibilityState === 'visible' && document.hasFocus()) || performance.now() - t0 > 1500) res(); else setTimeout(chk, 40); })(); });
+async function bioGo() {
+  if (bioState) return;
+  bioState = 'wait'; paintKeyD();
+  let code;
+  try { code = await bioVerify(); }
+  catch (e) {
+    bioState = 'fail'; paintKeyD(); const d = $('#keys [data-k="D"]'); d.classList.add('fail');
+    if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') toast(esc(e?.message || 'Could not check face / fingerprint'), 'err');
+    setTimeout(() => { d.classList.remove('fail'); bioState = ''; paintKeyD(); }, 460); return;
+  }
+  bioState = 'ok'; paintKeyD(); navigator.vibrate?.(25);
+  $$('#empno div').forEach(x => x.classList.add('f')); dotsFlash($('#empno'), 'ok');
+  await pageBack(); await new Promise(r => setTimeout(r, 380));                 // show the tick for a moment
+  bioState = ''; paintKeyD();
+  const p = emp(code); if (!p || p.active === false) { toast('This person is no longer on the list', 'err'); paintDots(0); return; }
+  await proceed(p);
 }
 
 /* ---------- keypad ---------- */
@@ -201,7 +238,7 @@ async function proceed(p) {
   const { date, time } = now();
   if (!selSlot) { toast('All 4 times are already recorded today', 'err'); autoToggle(); return; }
   const slot = selSlot;
-  try { await recordTime(p.no, slot, time, date); } catch (err) { toast(err.html || err.message, 'err'); autoToggle(); return; }
+  try { await fast(recordTime(p.no, slot, time, date), 'Recording'); } catch (err) { toast(err.html || err.message, 'err'); autoToggle(); return; }
   autoToggle(); afterChange();
   setTimeout(() => showResult(p.no, date, slot, { fresh: true }), 420);
 }
@@ -219,13 +256,13 @@ export function initHome() {
   });
   $('#remarkBtn').onclick = () => { selRemark = selRemark ? null : 'ASK'; pendingMy = false; typed = ''; paintDots(); paintToggles(); };
   buildKeys($('#keys'), KEY_CAL, () => { if (pendingMy || selRemark) { pendingMy = false; selRemark = null; } else pendingMy = true; typed = ''; paintDots(); paintToggles(); },
-    pressDigit, () => { typed = typed.slice(0, -1); paintDots(); });
+    pressDigit, () => { if (dMode === 'bio') bioGo(); else if (dMode === 'del') { typed = typed.slice(0, -1); paintDots(); } });
   document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') { $('#picker').classList.contains('show') ? $('#pkScrim').click() : closeSheet(); }
     if (ev.target.closest?.('input,textarea')) return;                 // typing in a field is not the keypad
     if (!isOn('p-record') || $('#sheet').classList.contains('show')) return;
     if (/^\d$/.test(ev.key)) pressDigit(ev.key);
-    if (ev.key === 'Backspace') { typed = typed.slice(0, -1); paintDots(); }
+    if (ev.key === 'Backspace' && dMode !== 'wait') { typed = typed.slice(0, -1); paintDots(); }
   });
   onSheetClose(() => { if (selRemark) { selRemark = null; paintToggles(); } });   // dismissing a remark sheet also un-arms the pill
   $('#toAdmin').onclick = () => openGate();
@@ -238,15 +275,6 @@ export function initHome() {
       return;
     }
     openGate();
-  };
-  $('#bioBtn').onclick = async () => {
-    const btn = $('#bioBtn'); btn.classList.add('busy');
-    try {
-      const code = await bioVerify(), p = emp(code);
-      if (!p || p.active === false) { toast('This person is no longer on the list', 'err'); return; }
-      await proceed(p);
-    } catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') toast(esc(e?.message || 'Could not check face / fingerprint'), 'err'); }
-    finally { btn.classList.remove('busy'); }
   };
   bioInit().then(paintToggles);
   $('#wAlt').onclick = () => { setSyncKey(null); location.reload(); };
