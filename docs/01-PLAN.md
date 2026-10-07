@@ -5,7 +5,7 @@ Purpose: **personal records only.** It does **not** replace the office biometric
 
 Scale: **one Dexie Cloud user (the admin)**. Employees are **records** in the database, not accounts.
 
-Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, style **Rail · dark** (variation 3 of the B + C set), runs in the browser with demo data. On a phone it opens full screen.
+Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (employee **and** admin), style **Rail · dark**, runs in the browser with demo data. On a phone it opens full screen.
 
 ### v3 decisions (2026-10-07)
 | Topic | Decision |
@@ -15,6 +15,13 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, s
 | Holiday | **Quick button** on the main screen next to Leave / Day-off / Others |
 | Users | **1 Dexie Cloud user** (admin). No per-employee or per-office accounts |
 | Hosting | Vercel (personal use, so the free Hobby plan is fine) + Dexie Cloud |
+| Time source | **The phone's own clock** (device time). No server time |
+| One time per slot | Each of AM IN / AM OUT / PM IN / PM OUT can be recorded **once a day**, and **in order** (a slot can't be recorded after a later one). Mistakes are fixed with *Change time* / My DTR, not by recording again |
+| Nicknames | Admin sets a **nickname** per person; greetings use it ("Good morning, Juan!") |
+| Quiet home screen | No sync indicator, no user name, no "not you". The phone silently remembers its user so the tiles show *their* times |
+| Others | A **reason for today** (e.g. field work, where you went). No dates |
+| Admin | A **phone screen set** (PIN → Overview · People · Hours · Print · Settings), not a desktop page |
+| Motion | Lively animations throughout (see 3.6) |
 
 ---
 
@@ -25,7 +32,7 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, s
 | Employee login | 2-digit PIN | **3-digit employee code** typed on a keypad (2-digit employee numbers start with 0: 47 → `047`). Records automatically on the 3rd digit. No separate PIN. |
 | Recording | Log in → pick slot → confirm | Pick one of **4 toggles** (AM IN, AM OUT, PM IN, PM OUT) → type 3-digit code → **recorded instantly**; notification has **Undo** for a mistyped code |
 | Correcting time | Admin only | **Employee taps the notification** (or a day in My DTR) to change the time, e.g. to match the biometric. Changes are marked "edited". |
-| Remarks | Separate screen | **On the main screen**: *On leave · Day-off · Others…* chips, plus in My DTR |
+| Remarks | Separate screen | **On the main screen**: *Leave · Day-off · Holiday · Others* pills, plus in My DTR |
 | Undertime column | Computed hours/minutes | **Remarks only.** No numbers. Total row blank. |
 | "Regular days" / "Saturdays" on print | Office hours text | **Blank** lines |
 | Weekends on print | "SATURDAY"/"SUNDAY" label | Label **only if no time recorded**; if the employee worked, the actual times print |
@@ -39,81 +46,93 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, s
 
 | Role | Identifies with | Can do |
 |------|-----------------|--------|
-| **Employee** | 3-digit code `000`–`999`, unique, stored as text so the leading 0 is kept | Record the 4 daily times; change their own times; add/remove remarks (single day or date range); view their month with late count; print own DTR |
-| **Admin** | 6-digit PIN | Dashboard of lates per employee; add/edit/deactivate employees; set office working hours (fixed / flexi) and per-employee overrides; set signatory; edit any record; print any or all DTRs |
+| **Employee** | 3-digit code `000`–`999` (stored as text so the leading 0 stays) | Record the 4 daily times (once each, in order); change a time; add remarks; see their month, lates and calendar; print their own DTR |
+| **Admin** | 6-digit PIN (from the ⚙ button on the home screen) | Overview of lates; add/edit/deactivate people (code, nickname, full name, position, schedule); working hours (fixed / flexi); signatory; edit any person's days; print any DTR |
 
 ---
 
 ## 3. Employee app (style Rail · dark, phone-first)
 
-### 3.1 Record screen
+### 3.1 Home (record) screen
 ```
 ┌──────────────────────────────┐
-│ ░░ status bar / notch ░░     │  ← safe area top (never used for content)
-│ ● SYNCED                 ⚙   │  ← ⚙ = admin (PIN)
+│ ░░ status bar / notch ░░     │  ← safe area top
+│                          ⚙   │  ← admin
 │      WED · OCT 7 · 2026      │
-│          8:20 AM             │  ← centred, large
-│ Today · JUAN A. DELA CRUZ  not you?
+│          8:20 AM             │  ← centred, large, device time
 │ ┌────┐┌────┐┌────┐┌────┐     │
-│ │ ☀  ││ 🍴 ││ ☕ ││ ⌂  │     │  ← 4 tiles in a row: orange / yellow / teal / indigo
+│ │ ☀  ││ 🍴 ││ ☕ ││ ⌂  │     │  ← 4 tiles: orange / yellow / teal / indigo
 │ │AM  ││AM  ││PM  ││PM  │     │
 │ │IN  ││OUT ││IN  ││OUT │     │
-│ │7:58││Lunch│Back││Home│     │  ← recorded time replaces the subtitle
+│ │7:58││Lunch│Back││Home│     │  ← a recorded tile shows its time
 │ └────┘└────┘└────┘└────┘     │
 │ (Leave)(Day-off)(Holiday)(Others)
-│          ●  ●  ○             │  ← 3 glowing dots
-│   CODE TO RECORD AM OUT      │
-│                              │
-│      (1)   (2)   (3)         │  ← round dialer, pinned to the bottom
+│          ●  ●  ○             │  ← 3 dots, nothing else above the keypad
+│      (1)   (2)   (3)         │  ← large round keypad, bottom
 │      (4)   (5)   (6)         │
 │      (7)   (8)   (9)         │
 │    My DTR  (0)    ⌫          │
 │ ░░ home / gesture bar ░░     │  ← safe area bottom
 └──────────────────────────────┘
 ```
-- **Rail shows today's times** of the **last code used on this phone** (remembered on the device; on a personal phone that's you). "not you?" clears it. Typing any other code switches to that person.
-- One tile is **pre-selected by time of day** (before 11:00 AM IN · to 12:29 AM OUT · to 1:59 PM IN · after PM OUT). Tap another to change it.
-- Type the **3-digit code**: the dots fill and it records **on the 3rd digit**. Unknown code → dots shake red, "Code not found".
-- Already recorded → the sheet says "Already done" with the existing time; nothing is overwritten.
+- **No text above the keypad.** Only the 3 dots; the selected tile and highlighted pill show what the code will do.
+- **The phone remembers its user** (the last code typed), silently, so the tiles show *that person's* times for today. Nothing says whose they are. "Reset device" clears it. Typing a different code switches to that person.
+- The tile for the **next slot is pre-selected** (by the time of day, and never earlier than what's already recorded).
+- Type the **3-digit code**: the dots fill with a pop and a wave, and it records on the 3rd digit. Unknown code → red dots shake, "Code not found".
 
-### 3.2 Confirmation sheet (slides up from the bottom, dark)
-- Coloured slot icon + greeting: *Good morning, Juan!* / *Enjoy your lunch* / *Welcome back* / *Ingat pauwi*
-- The time in large digits (56 px)
-- AM IN late → **⚠ Late by 20 min · 3rd late this October** with a lateness bar; on time → **✓ On time · 2 lates this month**
-- Flexi → **Your time out today: 5:20 PM**
-- **Today's progress**: 4 segments (AM IN 8:20 · AM OUT — · PM IN — · PM OUT —)
-- Buttons: **Undo** (only right after recording) · **Change time** (to match the biometric) · **Done**
-- Closes by itself after **5 s** so the next person can type; touching the sheet keeps it open.
+### 3.2 One time per slot, in order
+| Rule | What the user sees |
+|------|--------------------|
+| A slot already recorded is **locked** | Tile dimmed with its time; tapping it shows *"AM IN is already recorded (8:17 AM)"* with a shake; typing a code with it selected does the same and records nothing |
+| A slot **can't be recorded after a later one** | e.g. AM IN after PM OUT → *"Can't record AM IN after PM OUT (8:15 AM)"* |
+| Earlier empty slots stay open only if no later slot exists | A forgotten AM OUT can still be recorded before PM IN; once PM IN exists it's locked |
+| All four recorded | *"All 4 times are already recorded today"* |
+| Fixing a mistake | **Change time** on the sheet, or My DTR → day → Edit (always allowed) |
+Time = **the phone's clock**. If it's wrong, use Change time.
 
-### 3.3 Quick buttons: Leave · Day-off · Holiday · Others
-Tap one → type the code → sheet with type (pre-filled), From/To (default today), "Skip Sundays", and for **Others** the text to print (max 24 chars). Save → top message "Saved · HOLIDAY · 1 day".
-Printed text: Leave → `ON LEAVE`, Day-off → `DAY-OFF`, **Holiday → `HOLIDAY`**, Others → the typed text.
+### 3.3 Confirmation sheet (slides up from the bottom, dark)
+- Coloured slot icon + greeting with the **nickname**: *Good morning, Juan!* / *Enjoy your lunch, Juan!* / *Welcome back, Juan!* / *Ingat pauwi, Juan!*. **No sub-line** under it.
+- The time in large digits (60 px), rolling in digit by digit.
+- AM IN late → **⚠ Late by 20 min · 3rd late this October** with the lateness bar filling; on time → ✓ draws itself + **On time · 2 lates this month** + a small confetti burst.
+- Flexi → **Your time out today: 5:20 PM**.
+- Buttons: **Undo** (only right after recording) · **Change time** · **Done**.
+- **Does not auto-close.** Close with Done, the dim area or Esc.
+- (Removed: the 4-slot progress strip. The home tiles already show it.)
 
-### 3.4 My DTR
-Tap **My DTR** → type the code:
-- Month switcher, name, code and schedule.
-- **Big late number** card (orange when there are lates): "2 lates in October · 16 min total · 6 days present · 1 remark".
-- **Calendar**: green on time, orange late (with a dot), purple remark, red holiday, yellow incomplete, faded weekends; today outlined.
-- Tap a day → detail under the calendar: the 4 times as coloured chips, remark/late badge, ✎ if edited, **Edit** (times + remark, or delete the day).
-- **Print DTR** → print preview for the month. **No admin PIN needed** for your own DTR.
+### 3.4 Quick buttons: Leave · Day-off · Holiday · Others
+Tap one → type the code → a sheet with a 4-way switch (Leave · Day-off · Holiday · Others).
+- **Leave / Day-off / Holiday**: From / To dates (default today), "Skip Sundays". Prints `ON LEAVE` / `DAY-OFF` / `HOLIDAY` in the Undertime column for each day.
+- **Others** = a **reason for today only**, no dates. Example: clocked in AM, then out in the field. Type where you went or why (max 40 chars) or tap a suggestion (*Field work · Official business · Meeting · Training · No time-out · No lunch punch*). It prints in the Undertime column **next to your times**.
 
-### 3.5 Mobile spacing rules
+### 3.5 My DTR
+Tap **My DTR** on the keypad → type the code:
+- Month switcher, name, code, schedule.
+- **Big late number** card (orange when there are lates; a light sweep animates across it).
+- **Calendar**: green on time · orange late (dot) · purple remark · red holiday · yellow incomplete · faded weekends; today outlined; months slide in.
+- Tap a day → detail card: the 4 times as coloured chips, remark text, ✎ if edited, **Edit** (times, remark, or delete the day).
+- **+ Remark** (for the selected day) and **Print DTR** (own DTR, no admin PIN).
+
+### 3.6 Motion (all of it respects "reduce motion")
+Screen changes slide + fade (direction follows navigation) · tiles, pills, dots and keys rise in with a stagger · aurora glows drift behind the clock · clock digits roll when the minute changes, the colon blinks · selected tile springs up and breathes · recorded time chip pops in · keys squish on press · dots pop, then ripple on success or shake red on error · toast drops in with a spring (error shakes) · sheet slides up; icon bounces, time rolls in, late bar fills, numbers count up · calendar cells pop in one by one · admin tab bar has a sliding indicator, bars grow, switches spring, the segmented control slides, print paper lands with a tilt · lock icon floats and "unlocks" on the right PIN.
+
+### 3.7 Mobile spacing rules
 - `viewport-fit=cover`; top padding = `safe-area-inset-top + 10px`, bottom = `safe-area-inset-bottom + 14px` (min 16px each when the phone reports 0). Sheets add the bottom safe area too.
-- Height steps for the round dialer: > 800 px keys 66 px · ≤ 800 px keys 58 px · ≤ 720 px keys 50 px (tile subtitles hidden) · ≤ 620 px keys 44 px.
-- Tested at 568, 640, 664, 701, 740, 780, 844 and 932 px heights: the keypad always ends 30 px above the bottom edge (16 px safe area + 14 px padding).
+- Keypad key size steps with the screen height: 76 px (tall) → 68 (≤ 800) → 62 (≤ 720, tile subtitles hidden) → 54 (≤ 640) → 46 px (≤ 600).
+- Tested at 568, 640, 667, 700, 740, 780, 844 and 932 px heights: the keypad always ends ≥ 30 px above the bottom edge and never touches the dots.
 
 ---
 
-## 4. Admin (desktop)
+## 4. Admin (phone)
 
-| Page | Contents |
-|------|----------|
-| **Dashboard** | Month picker; tiles: employees, days present, **lates this month**, **most lates**; table per employee: schedule, present, **lates**, late minutes, remarks, Print |
-| **Employees** | List; add/edit: 3-digit code (unique; app suggests `0`+number for 2-digit employee numbers), full name as printed, position, working hours = *Office default / Custom fixed / Custom flexi*; deactivate (never delete — old DTRs stay printable) |
-| **Working hours** | **Fixed**: time in (late after). **Flexi**: earliest in, latest in (late after), required hours/day. Both: lunch break, grace minutes, "also count late after lunch" (PM IN after lunch end). Live preview sentence of the rule. |
-| **Signatory** | Name (AL MARTIN A. MENES), title (Acting Branch Manager), label (In Charge); change admin PIN |
-| **Print DTR** | Employee or **All employees**, month (defaults to current), Print / Save PDF |
-| **Records** (via employee row) | Same day editor as My DTR, for any employee |
+Tap **⚙** → 6-digit PIN (lock icon floats; right PIN → it "unlocks") → the admin app, with a floating tab bar:
+
+| Tab | Contents |
+|-----|----------|
+| **Overview** | Month switcher; big **lates this month** card; one card per person: initial avatar, nickname, full name, a lateness bar, lates badge, days present. Tap a person → their calendar (same as My DTR, with Edit and Print) |
+| **People** | List with schedule badge; **+ Add person** and tap-to-edit sheet: code (3 digits, unique), **nickname**, full name (printed), position, working hours (Default / Custom fixed / Custom flexi); Deactivate/Reactivate |
+| **Hours** | Fixed-time / Flexi-time switch (sliding); fixed: time in; flexi: earliest in, latest in, required hours; lunch from/to, grace minutes, "count late return from lunch" switch; a live sentence explaining the rule |
+| **Print** | Person picker, month switcher, A4 preview (tap to zoom), **Print / Save as PDF** |
+| **Settings** | Signatory (name, title, label), change PIN, "times come from the phone's clock" note, **Lock admin** |
 
 ---
 
