@@ -1,39 +1,49 @@
-# DTRV — Technical Specification (v2)
+# DTRV — Technical Specification (v3: Vercel + Dexie Cloud)
 
-Companion to [`01-PLAN.md`](01-PLAN.md). Behaviour reference: [`../mockup/index.html`](../mockup/index.html). The prototype runs the real lateness, remark and print logic on in-memory demo data. Port those functions to the server as-is.
+Companion to [`01-PLAN.md`](01-PLAN.md).
+Behaviour reference: [`../mockup/index.html`](../mockup/index.html) (working prototype).
+Visual direction: [`../mockup/ui-bc-variations.html`](../mockup/ui-bc-variations.html) (B + C combined; variation still to be picked).
+
+> Owner decision (2026-10-07): **Vercel** hosts the app, **Dexie Cloud** is the database.
+> Items marked **[verify]** depend on Dexie Cloud or Vercel plan details to confirm before building.
 
 ---
 
 ## 1. Architecture
 
 ```
- Employees' phones / shared PC         Admin PC
-        (Chrome, Safari, Edge)          (Chrome/Edge)
-                 │  HTTPS, JSON            │
-                 ▼                         ▼
-        ┌────────────────────────────────────────┐
-        │ Node.js 22 + Express 5 (one process)   │
-        │  /api/*   JSON API                     │
-        │  /print   server-rendered A4 HTML      │
-        │  /        static PWA (vanilla JS)      │
-        └───────────────┬────────────────────────┘
-                        ▼
-          SQLite (better-sqlite3, WAL)  data/dtr.db
-          backups/dtr-YYYYMMDD.db  (nightly, keep 30)
+  Employee phone / shared PC / admin PC (browser, installable PWA)
+  ┌──────────────────────────────────────────────────────────────┐
+  │ UI (vanilla JS)  ──►  Dexie.js (IndexedDB, local copy)      │
+  │                         │   dexie-cloud-addon: sync          │
+  │ rules.js (late, stats)  │                                    │
+  │ print.js (CS Form 48)   │                                    │
+  └──────────┬──────────────┼────────────────────────────────────┘
+             │ HTTPS        │ HTTPS / WebSocket
+             ▼              ▼
+  ┌────────────────────┐   ┌────────────────────────────┐
+  │ Vercel             │   │ Dexie Cloud                │
+  │  static files      │   │  stores + syncs all tables │
+  │  /api/time         │   │  realms / roles = access   │
+  │  /api/token  ──────┼──►│  /token (client secret)    │
+  └────────────────────┘   └────────────────────────────┘
 ```
 
-Employees record from their **own phones**, so the server must be reachable from the internet over HTTPS. **Recommended host: Cloudflare Pages + Workers + D1** (see §9). The diagram shows the Node/Express variant; on Cloudflare, Express → Hono and SQLite file → D1, with the same SQL and rules.
+What changes compared with a normal server app:
 
-| Layer | Choice | Reason |
-|-------|--------|--------|
-| Runtime | Node.js 22 LTS | One install; same language front and back |
-| Server | Express 5 + `zod` validation + `helmet` | ~20 endpoints; small and well known |
-| DB | SQLite via `better-sqlite3`, WAL | Single file; ≤ 1,000 employees × 4 writes/day is trivial |
-| Front-end | Vanilla HTML/CSS/JS, **PWA** (manifest + service worker for the app shell) | "Add to Home Screen" on phones; no build step |
-| Print | HTML + CSS `@page`, browser Print / Save as PDF | Exact mm layout, verified to fit one A4 page |
-| Sessions | `express-session` + SQLite store (admin only) | Employees don't keep sessions — each request carries the code |
-| HTTPS | Caddy (auto TLS) in front of Node | Needed for PWA install and for phones over the internet |
-| Tests | `node:test`, `supertest`, Playwright | Unit, API, print |
+| Concern | Where it lives now |
+|---------|--------------------|
+| Data | Dexie Cloud, plus a full local copy in each device's IndexedDB (synced) |
+| Business rules (late, stats, print) | **In the browser** (`rules.js`, `print.js`) |
+| Server time | Vercel function `/api/time`; the client keeps an offset |
+| Who can sync | Vercel function `/api/token` exchanges a setup code / admin PIN for a Dexie Cloud token |
+| Offline | Works: records save locally and sync when back online |
+
+### Trade-offs of this choice (accepted)
+1. **The time is written by the browser.** The app uses server time (via the offset) when it has it, but a determined user could change it. The app already lets employees edit their times, so this adds no new weakness. Each record stores `timeSource: 'server'|'device'`.
+2. **Every logged-in device holds a copy of all employees' records.** That's how a shared office realm works. Fine for this use (codes aren't secret anyway); not fine if records ever become confidential.
+3. **No server-side validation.** Uniqueness and correctness rely on deterministic IDs and Dexie Cloud role permissions, not server code.
+4. **Vercel Hobby plan is for non-commercial use.** An office staff tool may need Pro. **[verify]**
 
 ---
 
@@ -41,274 +51,257 @@ Employees record from their **own phones**, so the server must be reachable from
 
 ```
 dtrv/
-├─ package.json
-├─ .env.example            # PORT, SESSION_SECRET, TZ=Asia/Manila, FIRST_ADMIN_PIN
+├─ package.json            # dexie, dexie-cloud-addon, vite (build only)
+├─ vercel.json
+├─ dexie-cloud.json        # created by `npx dexie-cloud create` (DB URL) — not secret
+├─ .env.example            # DEXIE_CLOUD_DB_URL, DEXIE_CLIENT_ID, DEXIE_CLIENT_SECRET,
+│                          # OFFICE_SETUP_CODE, ADMIN_PIN_HASH (scrypt)
+├─ api/
+│  ├─ time.js              # GET  → { iso } (server UTC)
+│  └─ token.js             # POST → Dexie Cloud tokens for 'office' or 'admin'
 ├─ src/
-│  ├─ server.js
-│  ├─ db.js                # open, pragmas, migrations
-│  ├─ migrations/001_init.sql
-│  ├─ time.js              # nowManila() → {date:'YYYY-MM-DD', time:'HH:MM', iso}
-│  ├─ rules.js             # PURE: lateMinutes, expectedOut, suggestSlot, monthStats, buildMonth
-│  ├─ audit.js
-│  ├─ routes/
-│  │  ├─ kiosk.routes.js   # record, change, undo, remark, my-month (code-based)
-│  │  ├─ admin.routes.js   # login, employees, schedule, signatory, records, dashboard
-│  │  └─ print.routes.js
-│  ├─ views/dtr.js         # CS Form 48 template (port of dtrCopy() in the prototype)
-│  └─ jobs/backup.js
-├─ public/                 # index.html, app.js, app.css, print.css, manifest.webmanifest, sw.js, icons/
-└─ test/
-   ├─ rules.test.js
-   ├─ api.test.js
-   └─ print.spec.js
+│  ├─ db.js                # Dexie schema + cloud.configure
+│  ├─ clock.js             # server offset, nowManila()
+│  ├─ rules.js             # PURE: lateMinutes, expectedOut, suggestSlot, monthStats
+│  ├─ repo.js              # record(), changeTime(), undo(), setRemark(), month()
+│  ├─ print.js             # CS Form 48 HTML (port of prototype dtrCopy)
+│  ├─ ui/record.js  ui/sheet.js  ui/my.js  ui/admin/*.js
+│  └─ main.js
+├─ public/                 # index.html, css, fonts, manifest.webmanifest, icons
+└─ test/                   # vitest (rules, repo with fake-indexeddb), playwright (print, flows)
 ```
 
+Vite is used only to bundle `dexie` + the addon. The output is static files, which Vercel serves as-is.
+
 ---
 
-## 3. Data model
+## 3. Data model (Dexie)
 
-```sql
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
+```js
+// src/db.js
+import Dexie from 'dexie';
+import dexieCloud from 'dexie-cloud-addon';
 
-CREATE TABLE schedules (
-  id           INTEGER PRIMARY KEY,
-  mode         TEXT NOT NULL CHECK (mode IN ('fixed','flexi')),
-  am_in        TEXT,               -- fixed: late after this   'HH:MM'
-  flex_start   TEXT,               -- flexi: earliest time in
-  flex_end     TEXT,               -- flexi: latest time in (late after this)
-  required_hours REAL,             -- flexi: hours per day, excl. lunch
-  lunch_start  TEXT NOT NULL DEFAULT '12:00',
-  lunch_end    TEXT NOT NULL DEFAULT '13:00',
-  grace_min    INTEGER NOT NULL DEFAULT 0,
-  count_pm_late INTEGER NOT NULL DEFAULT 0,
-  is_office_default INTEGER NOT NULL DEFAULT 0
-);
-CREATE UNIQUE INDEX one_default ON schedules(is_office_default) WHERE is_office_default = 1;
+export const db = new Dexie('dtrv', { addons: [dexieCloud] });
 
-CREATE TABLE employees (
-  id           INTEGER PRIMARY KEY,
-  code         TEXT NOT NULL UNIQUE CHECK (code GLOB '[0-9][0-9][0-9]'),  -- '047'; TEXT keeps the leading 0
-  full_name    TEXT NOT NULL,      -- printed on DTR, ≤ 40 chars
-  position     TEXT,
-  schedule_id  INTEGER REFERENCES schedules(id),  -- NULL = office default
-  is_active    INTEGER NOT NULL DEFAULT 1,
-  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
-);
+db.version(1).stores({
+  employees: 'id, code, isActive',               // id = 'emp:024'
+  schedules: 'id',                                // id = 'sch:office' | 'sch:<uuid>'
+  days:      'id, [employeeId+date], date',       // id = 'day:024:2026-10-07'
+  punches:   '@id, [employeeId+date], at',        // append-only log; auto id
+  settings:  'id',                                // id = 'set:signatory'
+  audit:     '@id, at, employeeId',
+});
 
-CREATE TABLE dtr_days (
-  id            INTEGER PRIMARY KEY,
-  employee_id   INTEGER NOT NULL REFERENCES employees(id),
-  work_date     TEXT NOT NULL,     -- 'YYYY-MM-DD' Asia/Manila
-  am_in TEXT, am_out TEXT, pm_in TEXT, pm_out TEXT,   -- 'HH:MM' 24h, final values
-  remark_code   TEXT CHECK (remark_code IN ('LEAVE','DAYOFF','OTHER')),
-  remark_text   TEXT,              -- printed for OTHER, ≤ 24 chars, uppercase
-  remark_batch  TEXT,              -- uuid shared by a date-range remark
-  edited        INTEGER NOT NULL DEFAULT 0,   -- any time changed after recording
-  updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE (employee_id, work_date)
-);
-
--- Append-only: every press of Record, with the server time. Never updated.
-CREATE TABLE punches (
-  id           INTEGER PRIMARY KEY,
-  employee_id  INTEGER NOT NULL REFERENCES employees(id),
-  work_date    TEXT NOT NULL,
-  slot         TEXT NOT NULL CHECK (slot IN ('am_in','am_out','pm_in','pm_out')),
-  server_time  TEXT NOT NULL,      -- 'HH:MM'
-  at_utc       TEXT NOT NULL,
-  undone       INTEGER NOT NULL DEFAULT 0,
-  ip TEXT, user_agent TEXT
-);
-
-CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- JSON values
--- signatory_name, signatory_title, signatory_label, admin_pin_hash
-
-CREATE TABLE audit_log (
-  id INTEGER PRIMARY KEY,
-  at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  actor TEXT NOT NULL,             -- 'emp:047' | 'admin'
-  action TEXT NOT NULL,            -- 'time.change','time.undo','remark.set','day.delete','employee.create',...
-  employee_id INTEGER, work_date TEXT,
-  before_json TEXT, after_json TEXT, ip TEXT
-);
-
-CREATE TABLE login_attempts (ip TEXT PRIMARY KEY, failures INTEGER NOT NULL DEFAULT 0, locked_until_utc TEXT);
+db.cloud.configure({
+  databaseUrl: import.meta.env.VITE_DEXIE_CLOUD_DB_URL,
+  requireAuth: true,
+  fetchTokens: (req) => fetch('/api/token', {           // custom auth via our Vercel function
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...req, grant: sessionGrant() })   // setup code or admin PIN
+  }).then(r => r.json()),
+});
 ```
 
-Seed: one office-default schedule `fixed 08:00, lunch 12:00–13:00, grace 0`; signatory `AL MARTIN A. MENES / Acting Branch Manager / In Charge`.
+### Why deterministic IDs
+Dexie Cloud has no server code to enforce `UNIQUE`. So uniqueness comes from the **primary key**:
+- `employees.id = 'emp:' + code` → two employees can't share `024`. Creating one checks `db.employees.get('emp:024')` first; if two admins race, the second write updates the same object instead of creating a duplicate.
+- `days.id = 'day:' + code + ':' + date` → exactly one row per employee per day, even when two devices record the same day offline. Updates are written with `db.days.update(id, { amIn })` (property-level), which Dexie Cloud merges per property **[verify]**, so AM IN from a phone and PM OUT from the office PC both survive.
 
-**Why `punches` and `dtr_days`:** `dtr_days` holds the final times that print and drive late counts. `punches` keeps the original server time of every Record press, so an admin can always compare an *edited* time with what was actually pressed.
+### Objects
+
+```ts
+Employee { id:'emp:024', code:'024', fullName:'JUAN A. DELA CRUZ', position?, scheduleId?:string|null,
+           isActive:true, realmId }
+Schedule { id, mode:'fixed'|'flexi', amIn?, flexStart?, flexEnd?, requiredHours?, lunchStart:'12:00',
+           lunchEnd:'13:00', graceMin:0, countPmLate:false, realmId }
+Day      { id:'day:024:2026-10-07', employeeId:'emp:024', date:'2026-10-07',
+           amIn?:'08:20', amOut?, pmIn?, pmOut?,                  // 'HH:MM' 24h, final values
+           remark?: { code:'LEAVE'|'DAYOFF'|'OTHER', text?:string, batch?:string },
+           edited:boolean, timeSource:'server'|'device', realmId }
+Punch    { id, employeeId, date, slot:'amIn'|'amOut'|'pmIn'|'pmOut', time:'08:20', at:ISO,
+           timeSource, undone:false, deviceId, realmId }
+Settings { id:'set:signatory', name, title, label, realmId }
+Audit    { id, at, actor:'emp:024'|'admin', action, employeeId?, date?, before?, after?, realmId }
+```
+
+Every object carries `realmId = 'rlm-dtrv-office'` (see §4) so all devices in the office see it.
 
 ---
 
-## 4. Identity & security
+## 4. Access control (Dexie Cloud realms + roles)
 
-- **Employee code**: exactly 3 digits, `^\d{3}$`, stored as TEXT (`'047'`). The admin form suggests `'0'+n` when given a 2-digit employee number. Codes are **not secret**; the owner accepted this for a personal-record tool.
-- No employee sessions. Each kiosk request carries `{code}` and the server resolves the employee. This suits a shared device: nobody stays logged in.
-- Rate limit on code lookups: 20 failed codes per IP per 5 min → `429`. This stops someone scripting all 1,000 codes, without bothering real users.
-- **Admin**: 6-digit PIN, `scrypt` hash in `settings.admin_pin_hash`. 5 failures → 5-minute lockout per IP. Session cookie `HttpOnly; Secure; SameSite=Strict`, 15-min rolling expiry. First run takes `FIRST_ADMIN_PIN` from `.env`, then forces a change.
-- All mutations require `Content-Type: application/json` (blocks cross-site form posts). `helmet` with CSP `default-src 'self'`.
-- **Time source = server** (`Asia/Manila` via `Intl`). The client never sends the time for a new record, only for an explicit change.
+**One shared realm** `rlm-dtrv-office`, created once by the admin on first run.
+
+| Identity (token `sub`) | Who | Role in realm | Table permissions |
+|------------------------|-----|---------------|-------------------|
+| `office` | Every employee device and shared PC | `recorder` | add/update: `days`, `punches`, `audit` · read: all |
+| `admin` | Admin PC after entering the 6-digit PIN | owner | everything incl. `employees`, `schedules`, `settings`, delete |
+
+Roles are defined in the realm's `roles` table, e.g. `{ name:'recorder', permissions:{ add:['days','punches','audit'], update:{ days:'*', punches:['undone'] } } }` **[verify exact syntax]**.
+
+Result: an employee device **cannot** add employees, change schedules or change the signatory, even by editing the JavaScript, because Dexie Cloud rejects the sync.
+
+### Token endpoint (`api/token.js`)
+
+```
+POST /api/token
+  body: { public_key, hints, grant: { type:'office', setupCode } | { type:'admin', pin } }
+  1. office: compare setupCode with OFFICE_SETUP_CODE (constant-time)    → sub='office'
+     admin:  scrypt-verify pin against ADMIN_PIN_HASH                     → sub='admin'
+  2. rate-limit: 10 failures / IP / 10 min → 429
+  3. POST {DEXIE_CLOUD_DB_URL}/token with client_id/secret,
+     claims:{ sub, name }, public_key  → returns Dexie Cloud tokens
+  4. respond with those tokens (the client_secret never leaves Vercel)
+```
+
+The rate limit needs shared state across function calls. Use Vercel KV / Upstash (free tier), or accept per-instance memory as best-effort.
+
+**Device setup (once per phone):** the first open shows "Office setup code". The admin shares it with staff (e.g. posted in the office). After that the device stays signed in as `office`, and only the 3-digit code is used day to day. Without the setup code, a stranger who finds the URL can't read or write anything.
+
+**Licensing:** this uses **2 Dexie Cloud users** (`office`, `admin`) regardless of headcount. Check that Dexie Cloud's terms allow one user signed in on many devices, and which plan covers it. **[verify]**
 
 ---
 
-## 5. Rules (`src/rules.js`, pure — ported from the prototype)
+## 5. Time (`src/clock.js`)
+
+```js
+let offsetMs = 0, synced = false;
+export async function syncClock() {
+  const t0 = Date.now();
+  const { iso } = await fetch('/api/time').then(r => r.json());
+  const t1 = Date.now();
+  offsetMs = Date.parse(iso) - (t0 + t1) / 2;   // network delay halved
+  synced = true;
+}
+export const nowManila = () => {
+  const d = new Date(Date.now() + offsetMs);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Manila',
+    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' })
+    .formatToParts(d).map(x => [x.type, x.value]));
+  return { date:`${p.year}-${p.month}-${p.day}`, time:`${p.hour}:${p.minute}`, source: synced ? 'server' : 'device' };
+};
+```
+Called on load, on `visibilitychange` → visible, and every 5 minutes. `api/time.js` returns `{ iso: new Date().toISOString() }` with `Cache-Control: no-store`.
+
+---
+
+## 6. Rules (`src/rules.js`, pure — already running in the prototype)
 
 ```js
 const m = t => { const [h, mi] = t.split(':'); return +h * 60 + +mi; };
 
-// Pre-select toggle by time of day (UI only).
-const suggestSlot = now =>
-  m(now) < m('11:00') ? 'am_in' : m(now) < m('12:30') ? 'am_out' : m(now) < m('14:00') ? 'pm_in' : 'pm_out';
+export const suggestSlot = now =>
+  m(now) < m('11:00') ? 'amIn' : m(now) < m('12:30') ? 'amOut' : m(now) < m('14:00') ? 'pmIn' : 'pmOut';
 
-const lateLimit = sc => sc.mode === 'flexi' ? sc.flex_end : sc.am_in;
+const lateLimit = sc => sc.mode === 'flexi' ? sc.flexEnd : sc.amIn;
 
-// Minutes late for a day (0 = on time). Counted from the limit once past limit + grace.
-function lateMinutes(day, sc) {
+export function lateMinutes(day, sc) {          // 0 = on time; minutes counted from the limit
   let late = 0;
-  if (day.am_in) { const over = m(day.am_in) - m(lateLimit(sc)); if (over > sc.grace_min) late += over; }
-  if (sc.count_pm_late && day.pm_in) { const over = m(day.pm_in) - m(sc.lunch_end); if (over > sc.grace_min) late += over; }
+  if (day.amIn) { const o = m(day.amIn) - m(lateLimit(sc)); if (o > sc.graceMin) late += o; }
+  if (sc.countPmLate && day.pmIn) { const o = m(day.pmIn) - m(sc.lunchEnd); if (o > sc.graceMin) late += o; }
   return late;
 }
 
-// Flexi only: when the employee may leave.
-function expectedOut(day, sc) {
-  if (sc.mode !== 'flexi' || !day.am_in) return null;
-  const start = Math.max(m(day.am_in), m(sc.flex_start));
-  return toHHMM(start + sc.required_hours * 60 + (m(sc.lunch_end) - m(sc.lunch_start)));
+export function expectedOut(day, sc) {          // flexi only
+  if (sc.mode !== 'flexi' || !day.amIn) return null;
+  const start = Math.max(m(day.amIn), m(sc.flexStart));
+  return hhmm(start + sc.requiredHours * 60 + m(sc.lunchEnd) - m(sc.lunchStart));
 }
 
-// Month summary used by notification, My DTR and dashboard.
-function monthStats(days, sc) {   // days: dtr_days rows for the month
+export function monthStats(days, sc) {
   let present = 0, lates = 0, lateMin = 0, remarks = 0;
   for (const d of days) {
-    if (d.am_in || d.am_out || d.pm_in || d.pm_out) present++;
-    if (d.remark_code) remarks++;
+    if (d.amIn || d.amOut || d.pmIn || d.pmOut) present++;
+    if (d.remark) remarks++;
     const l = lateMinutes(d, sc); if (l) { lates++; lateMin += l; }
   }
   return { present, lates, lateMin, remarks };
 }
 ```
-
-The schedule used is the one in force **now** (`employee.schedule_id ?? office default`). Changing a schedule recalculates past lates too. That keeps things simple; schedules can be versioned later if that's ever a problem.
-
----
-
-## 6. API
-
-`K` = kiosk (code in body), `A` = admin session. Errors: `{error, message}`.
-
-| Method | Path | Who | Body / query | Response |
-|--------|------|-----|--------------|----------|
-| GET  | `/api/time` | — | — | `{date, time, iso}`; phone clock syncs to this |
-| POST | `/api/record` | K | `{code, slot}` | `201 {employee:{code,name}, day, slot, time, late:{minutes, countThisMonth}, expectedOut, punchId}` · `200 {already:true, ...}` if slot filled · `404 code_not_found` |
-| POST | `/api/record/:punchId/undo` | K | `{code}` | `204`; only within **60 s** and if that slot still holds the punch's time; marks `punches.undone=1` and clears the slot |
-| PATCH| `/api/day` | K | `{code, date, slot, time|null}` | updated day + late info; sets `edited=1`; audit |
-| PUT  | `/api/day` | K | `{code, date, am_in, am_out, pm_in, pm_out, remark_code, remark_text}` | full-day edit from My DTR |
-| DELETE| `/api/day` | K | `{code, date}` | `204` |
-| POST | `/api/remarks` | K | `{code, from, to, remark_code, remark_text?, skipSundays}` | `{batch, dates[]}`; max 62 days |
-| DELETE| `/api/remarks/:batch` | K | `{code}` | `204` |
-| POST | `/api/my-month` | K | `{code, month:'YYYY-MM'}` | `{employee, schedule, stats, days[]}` (POST so the code isn't in URLs or logs) |
-| POST | `/api/admin/login` | — | `{pin}` | `204` + cookie |
-| POST | `/api/admin/logout` | A | — | `204` |
-| GET  | `/api/admin/dashboard` | A | `?month=` | per-employee stats + totals + most lates |
-| GET/POST/PATCH | `/api/admin/employees[/:id]` | A | `{code, full_name, position, schedule}` | `409 code_taken` |
-| GET/PUT | `/api/admin/schedule` | A | office default schedule | |
-| GET/PUT | `/api/admin/signatory` | A | `{name,title,label}` | |
-| PUT  | `/api/admin/pin` | A | `{current, next}` | `204` |
-| PUT/DELETE | `/api/admin/day` | A | same as kiosk, by `employee_id` | |
-| GET  | `/api/admin/audit` | A | `?employee=&from=&to=` | paged |
-| GET  | `/api/admin/backup` | A | — | SQLite file |
-| POST | `/print` | K or A | form `{code}` or admin session; `month`, `employee=ID|all` | A4 HTML |
-
-Validation: time `^([01]\d|2[0-3]):[0-5]\d$`; date within ±400 days of today; remark text ≤ 24 chars, uppercased; full name ≤ 40 chars.
-
-**Record flow (server, one transaction):**
-1. Resolve `code` → active employee, else 404 (+ rate-limit counter).
-2. `now = nowManila()`; upsert `dtr_days(employee, now.date)`.
-3. If `slot` is already set → return `{already:true}` with the existing time.
-4. Set slot = `now.time`; insert `punches`.
-5. Compute `lateMinutes` (for `am_in`, or `pm_in` when PM lates count), `monthStats` and `expectedOut`; return them for the notification.
+The schedule in force **now** applies to past days too (simple; can be versioned later).
 
 ---
 
-## 7. Front-end behaviour
+## 7. Operations (`src/repo.js`) — these replace a REST API
 
-- **Record screen**: 4 toggles, pre-selected by `suggestSlot(serverNow)`. Chips *On leave / Day-off / Others…* switch the keypad into remark mode. The 3-digit field **auto-submits on the 3rd digit**. Physical keyboard digits, Backspace and Enter work too.
-- **Notification** (top, 9 s): name, slot + time, badges (*Late N min*, *Nth late this Month*, *On time · N lates this month*, *Flexi · out at …*, *edited*), **Tap to change the time**, **Not you? Undo**.
-- **Change time sheet**: native `<input type=time>`, Save / Clear → `PATCH /api/day`.
-- **My DTR**: code → month list, stats cards, day editor sheet, Print.
-- Clock: fetch `/api/time` on load and every 5 min; tick locally in between.
-- PWA: app shell cached; recording needs the network. If offline, show "No connection — not recorded" (no silent queueing, so records never arrive with the wrong time).
-- Accessibility: keys ≥ 48 px, `aria-live` on the notification, visible focus.
+All run locally against Dexie and sync automatically.
+
+| Function | Does | Guards |
+|----------|------|--------|
+| `record(code, slot)` | `nowManila()` → in one `db.transaction('rw', days, punches, audit)`: get/create `day:<code>:<date>`; if slot is empty, set it; add `Punch` | unknown/inactive code → `NOT_FOUND`; slot filled → returns `{already:true, time}` and doesn't overwrite |
+| `undo(punchId)` | clears the slot, `punch.undone = true` | only within 60 s, and only if the slot still holds that punch's time |
+| `changeTime(code, date, slot, time\|null)` | sets the slot, `edited = true`, audit row | time format `^([01]\d|2[0-3]):[0-5]\d$` |
+| `saveDay(code, date, {...})` | full-day edit from My DTR | same |
+| `setRemark(code, from, to, {code,text}, skipSundays)` | one `days` row per date, shared `batch` uuid | ≤ 62 days; OTHER text ≤ 24 chars, uppercased |
+| `clearRemarkBatch(batch)` | removes the remark from those days | — |
+| `month(code, 'YYYY-MM')` | `days.where('[employeeId+date]').between(...)` + `monthStats` | — |
+| `dashboard('YYYY-MM')` *(admin)* | stats per active employee | admin token |
+| `upsertEmployee`, `saveSchedule`, `saveSignatory` *(admin)* | — | enforced by realm role; code `^\d{3}$` |
+
+Late notification data comes straight from `lateMinutes` + `monthStats` on the local copy. It's instant and works offline.
+
+Sync status is shown subtly (a dot in the header: green synced / amber pending / grey offline) via `db.cloud.syncState`.
 
 ---
 
-## 8. Print specification (CS Form 48, A4)
+## 8. Print specification (CS Form 48, A4) — client-side
 
-Verified in the prototype with Chromium `page.pdf()`: **one A4 page**.
+`print.js` renders into a print-only container and calls `window.print()`. Verified in the prototype: **one A4 page** in Chromium.
 
 | Item | Value |
 |------|-------|
-| Page | `@page { size: A4; margin: 0 }`, sheet padding 8 mm × 7 mm |
+| Page | `@page { size: A4; margin: 0 }`, padding 8 mm × 7 mm |
 | Copies | 2 identical, side by side, gap 8 mm |
-| Name | full name, uppercase, bold, on underline |
-| Month / Year | from selected month (default current) |
+| Name / Month / Year | employee full name; selected month (default current) |
 | Regular days / Saturdays | **blank underlines** |
-| Rows (31) | times present → 4 times as `h:mm` (13:05 → `1:05`); else remark only; else Sat/Sun label across time cells; else blank |
-| Undertime | remark text only (`colspan=2`, 5.4 pt, wraps 2 lines); **never numbers** |
-| Total | blank cells |
-| Signatory | name bold uppercase, title, italic label |
-| Batch | `employee=all` → one page per active employee (`page-break-after`) |
+| Rows (31) | times present → 4 times `h:mm`; else remark only; else Sat/Sun label across time cells; else blank |
+| Undertime | remark text only (`colspan=2`); **never numbers** |
+| Total | blank |
+| Signatory | from `set:signatory` |
+| Batch (admin) | all active employees, one page each |
 
 ---
 
-## 9. Hosting
+## 9. UI implementation notes
 
-**GitHub Pages cannot run this app alone.** It only serves static files: no server code and no database. Every employee's records would stay on their own phone, the admin couldn't see anyone, and the time would come from the phone's clock.
+Visual direction is **B + C combined** (pick one of the three variations in `ui-bc-variations.html`). Shared building blocks:
+- Slot tiles: gradients orange `#ff9a3c→#ff6a3d`, yellow `#f6c445→#f39c12`, teal `#2ec4b6→#1a9c8f`, indigo `#6d6df0→#3d3db8`; text labels always shown (colour is never the only cue).
+- Round dialer keys ≥ 58 px; 3 dots fill as digits are typed; auto-submit on the 3rd digit.
+- Bottom sheet after recording: greeting, big time, late box (+ bar), flexi out time, Undo / Change time / Done; auto-closes after 5–9 s.
+- My DTR: colour stat cards, calendar (green on time / orange late / purple remark), tap a day → 4 colour time chips, edit sheet.
+- The record screen never shows personal data (late counts etc.) until a code is entered.
+- Fonts: Poppins (UI) and Space Grotesk (clock and digits), self-hosted in `/public/fonts` so they work offline.
 
-**Vercel can**, but not with SQLite. Vercel functions have a temporary, read-only filesystem, so a SQLite file is lost between requests. Vercel needs an external database.
+---
 
-| Option | App | Database | Cost | Verdict |
-|--------|-----|----------|------|---------|
-| **Cloudflare Pages + Workers + D1** | Static front-end on Pages, API as Pages Functions | **D1 = SQLite** (same schema as §3) | Free tier: 100k requests/day, 5 GB DB | **Recommended.** Free, allows commercial use, keeps SQLite, server time from the Worker |
-| Vercel + Turso (libSQL) or Neon (Postgres) | Static + `/api` serverless functions | Turso (SQLite-compatible) or Neon | Free tiers | Works. **Vercel Hobby is for personal, non-commercial use**, and an office's staff tool likely needs Pro ($20/mo) |
-| GitHub Pages + Supabase | Static front-end | Supabase Postgres; API as Postgres functions (`now()` for time) | Free tier (project pauses after 7 days idle) | Possible, but the logic moves into SQL functions and the public anon key is in the page. More fragile. |
-| Small VPS / office PC | Node + Express (§1) | SQLite file | ₱300–500/mo, or free on an office PC with Cloudflare Tunnel | Most control; you maintain the server |
+## 10. Hosting & deploy (Vercel)
 
-**Recommendation: Cloudflare Pages + D1** (pending owner approval). Effect on the code:
-- Express is replaced by **Hono** (same routing style, runs on Workers). `routes/*.js` keep their shape.
-- `better-sqlite3` is replaced by the D1 binding (`env.DB.prepare(...).bind(...).run()`, async). The SQL in §3 runs on D1 unchanged.
-- Admin sessions: signed cookie (HMAC with a Worker secret) instead of `express-session`.
-- Time: `new Date()` in the Worker is server UTC, converted with `Intl` to `Asia/Manila`. Same as before.
-- Backups: D1 Time Travel (30-day point-in-time restore) plus `wrangler d1 export` for a downloadable `.sql` backup.
-- Deploy: push to GitHub → Cloudflare Pages builds automatically. Free `*.pages.dev` HTTPS URL, or your own domain.
+1. `npx dexie-cloud create` → creates the DB and `dexie-cloud.json`; `npx dexie-cloud whitelist https://<app>.vercel.app` (and `http://localhost:5173`).
+2. Create an API client in Dexie Cloud and copy its client_id/secret into Vercel env vars **[verify CLI steps]**.
+3. Vercel project linked to the GitHub repo: build `vite build`, output `dist`, functions in `/api` (Node runtime).
+4. Env vars: `DEXIE_CLOUD_DB_URL`, `DEXIE_CLIENT_ID`, `DEXIE_CLIENT_SECRET`, `OFFICE_SETUP_CODE`, `ADMIN_PIN_HASH`, `VITE_DEXIE_CLOUD_DB_URL`.
+5. First run: admin opens `/admin`, enters PIN → app creates realm `rlm-dtrv-office`, the `recorder` role, the `office` member, the office schedule and the signatory.
+6. Backups: `npx dexie-cloud export` weekly **[verify command]**; the admin page also offers "Download JSON" from the local copy.
 
-Repository layout under Cloudflare:
-```
-functions/api/[[route]].js   # Hono app (all /api/* routes)
-functions/print.js           # A4 DTR HTML
-src/rules.js                 # pure rules, shared by functions and front-end
-migrations/0001_init.sql     # wrangler d1 migrations apply
-public/                      # index.html, app.js, css, manifest, sw.js
-wrangler.toml                # D1 binding "DB"
-```
+---
 
-## 10. Tests
+## 11. Tests
 
 | Level | Cases |
 |-------|-------|
-| Unit (`rules.js`) | fixed on time / late / exactly at limit / within grace / past grace (minutes from limit); flexi late after `flex_end`; flexi expected out (early arrival clamps to `flex_start`); PM late on/off; one late day with AM+PM counted once; monthStats; suggestSlot boundaries 10:59/11:00/12:29/12:30/13:59/14:00 |
-| API | code `'047'` round-trips with leading 0; `47` and `0470` rejected; record twice → `already`; undo within 60 s ok, after → 409, after a manual change → 409; remark range skips Sundays; admin endpoints 401 without session; admin lockout |
-| Print | 1 page A4; Regular days/Saturdays blank; worked Saturday shows times; leave day shows remark in Undertime and no times; Total blank; 40-char name fits one line |
+| Unit (`rules.js`) | fixed/flexi late, grace boundary, minutes from limit, PM late on/off, expectedOut clamp, monthStats, suggestSlot boundaries |
+| Repo (`fake-indexeddb`) | code `'024'` keeps leading 0; `record` twice → `already`; undo window 60 s; undo after change → rejected; remark range skips Sundays; same day recorded on two "devices" → one `days` row |
+| Clock | offset maths; `source:'device'` when `/api/time` fails |
+| Token function | wrong setup code → 401; rate limit; admin PIN; client secret never in the response |
+| E2E (Playwright) | record → sheet → change time; My DTR edit; print = 1 A4 page, blank Regular days, remark in Undertime, worked Saturday shows times |
 
 ---
 
-## 11. Build order
+## 12. Build order
 
-1. **P1** — schema, `time.js`, `rules.js` + unit tests, `/api/time`, `/api/record`, undo, change time, Record screen + notification, print single.
-2. **P2** — remarks, My DTR, schedules (fixed/flexi + per-employee), late badges, admin login/employees/schedule/signatory/dashboard.
-3. **P3** — print all, backup, PWA manifest/service worker, deploy guide.
+1. **P1** — Vite + Dexie schema (local only, no cloud yet), `rules.js`, `repo.js`, clock, Record screen + sheet, print. *Usable offline on one device.*
+2. **P2** — Dexie Cloud: `/api/token`, realm + roles, device setup screen, sync indicator; My DTR; admin (employees, schedules, signatory, dashboard).
+3. **P3** — PWA install, batch print, backups, Vercel production deploy.
 
-Estimate for one developer: P1 3 days · P2 3 days · P3 1–2 days.
+Estimate: P1 3 days · P2 3–4 days · P3 1–2 days.
