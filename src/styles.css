@@ -106,6 +106,8 @@ input,select{font:inherit}
 /* tapping My DTR re-asks for the PIN: the whole pad turns teal */
 .keys.pin button:not(.m){background:rgba(94,234,212,.13);color:var(--acc);box-shadow:inset 0 0 0 1.5px rgba(94,234,212,.38);animation:pinwave .6s cubic-bezier(.3,1.4,.5,1) calc(var(--i)*22ms) backwards}
 .keys.pin button:not(.m):active{background:rgba(94,234,212,.3)}
+.keys .m.del svg{width:clamp(30px,9cqw,40px);height:auto;color:#aeb8d0}
+.keys .m.del:active svg{color:var(--acc)}
 .keys .m.on{color:var(--acc);font-weight:700}
 @keyframes pinwave{from{transform:scale(.8);opacity:.4}}
 .dots.pin div{border-color:var(--acc);animation:pinpulse 1.4s ease-in-out infinite}
@@ -435,8 +437,22 @@ input,select{font:inherit}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* ---------- first run ---------- */
-.welcome{margin-top:18px;background:var(--rsurf);border:1.5px dashed var(--rline);border-radius:22px;padding:18px;text-align:center}
-.welcome b{font-size:18px;display:block}
-.welcome p{color:var(--rmuted);font-size:13px;margin:6px 0 12px;line-height:1.5}
+.welcome{margin:auto 0;background:var(--rsurf);border:1px solid var(--rline);border-radius:26px;padding:26px 20px 20px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.35);position:relative;overflow:hidden}
+.welcome.pop{animation:wpop .6s cubic-bezier(.2,.9,.3,1.12) backwards}
+@keyframes wpop{from{opacity:0;transform:translateY(24px) scale(.94)}}
+.welcome b{font-size:20px;display:block;letter-spacing:-.2px}
+.welcome p{color:var(--rmuted);font-size:13.5px;margin:8px 0 18px;line-height:1.55}
 .welcome .bigbtn{margin-top:0}
+.welcome .bigbtn:disabled{opacity:.6}
+.welcome input{display:block;margin-bottom:12px}
+.wic{width:68px;height:68px;margin:0 auto 14px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#6d6df0,#2ec4b6);color:#fff;position:relative;animation:wfloat 3.4s ease-in-out infinite}
+.wic::after{content:'';position:absolute;inset:-6px;border-radius:28px;border:2px solid rgba(94,234,212,.5);animation:wring 2.2s ease-out infinite}
+@keyframes wfloat{50%{transform:translateY(-5px)}}
+@keyframes wring{from{opacity:.9;transform:scale(.92)}to{opacity:0;transform:scale(1.18)}}
+.wspin{width:26px;height:26px;margin:2px auto 0;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:var(--acc);animation:wrot .8s linear infinite}
+@keyframes wrot{to{transform:rotate(360deg)}}
+.wlink{margin-top:12px;background:none;border:0;color:var(--rmuted);font:500 13px Poppins,sans-serif;text-decoration:underline;padding:6px}
+/* while there is nobody to clock in yet, the home screen is just the card */
+#p-record.setup #toggles,#p-record.setup #chips,#p-record.setup #empno,#p-record.setup #keys{display:none}
+#app.fading{opacity:0;transition:opacity .28s ease}
 [hidden]{display:none!important}

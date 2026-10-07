@@ -26,10 +26,12 @@
       <button class="secret" id="toAdmin" aria-label="·">✦</button>
       <div class="rclock" data-st><div class="date" id="hDate"></div><div class="clock" id="hTime"></div></div>
       <div class="welcome" id="welcome" hidden>
-        <b>Welcome to DTRV</b>
-        <p>Create your admin PIN, then add the first person. Everything stays on this phone.</p>
-        <input id="keyIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync key or setup link" hidden>
-        <button class="bigbtn" id="startSetup">Set up</button>
+        <div class="wic" id="wIc" data-st></div>
+        <b data-st></b>
+        <p data-st></p>
+        <input id="keyIn" data-st type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste sync key or link" hidden>
+        <button class="bigbtn" id="startSetup" data-st>Set up</button>
+        <button class="wlink" id="wAlt" data-st hidden></button>
       </div>
       <div class="rail" id="toggles">
         <button class="tg g1" data-st data-s="am_in"><span data-ic="sun"></span><b>AM<br>IN</b><span class="st">Arrive</span></button>

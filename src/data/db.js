@@ -13,6 +13,13 @@ export const SCHEMA = {
 
 export let db = null;
 export let cloudEnabled = false;
+/** Latest Dexie Cloud sync state, for the "syncing…" screen. `phase` is '' when sync is off. */
+export const sync = { phase: '', error: '' };
+export function watchSync(fn) {
+  if (!cloudEnabled || !db?.cloud?.syncState) return () => {};
+  const s = db.cloud.syncState.subscribe(v => { sync.phase = v.phase || ''; sync.error = v.error ? String(v.error.message || v.error) : ''; fn(sync); });
+  return () => s.unsubscribe();
+}
 
 /**
  * @param {{name?:string, cloudUrl?:string, fetchTokens?:Function}} opts

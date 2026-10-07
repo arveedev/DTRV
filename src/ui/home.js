@@ -4,11 +4,12 @@ import { $, $$, isOn, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc 
 import { now } from '../lib/clock.js';
 import { SLOT_LABEL, REMARK_LABEL, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
 import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
-import { ICONS, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
+import { ICONS, stagger, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
-import { cloudInfo, saveKeyFrom } from './cloud.js';
+import { cloudInfo, saveKeyFrom, setSyncKey } from './cloud.js';
+import { sync } from '../data/db.js';
 import { afterChange } from './app.js';
 
 const SLOT_UI = {
@@ -45,6 +46,44 @@ export function tick() {
   lastH = hh; lastM = mi;
 }
 
+
+/* ---------- the card shown while there is nobody to clock in yet ---------- */
+const WICONS = {
+  link: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>',
+  sync: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 0-14-5.3L4 9"/><path d="M4 4v5h5"/><path d="M4 12a8 8 0 0 0 14 5.3L20 15"/><path d="M20 20v-5h-5"/></svg>',
+  user: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>',
+};
+let wState = '', connecting = false;
+function welcomeState() {
+  if (S.emps.length) return '';
+  const ci = cloudInfo();
+  if (connecting) return 'connecting';
+  if (ci.on && !ci.hasKey) return 'connect';
+  if (ci.on && ['error', 'offline'].includes(sync.phase)) return 'trouble';
+  if (ci.on && sync.phase !== 'in-sync') return 'syncing';
+  return hasAdminPin() ? 'empty' : 'setup';
+}
+export function paintWelcome() {
+  const st = welcomeState(), w = $('#welcome'), scr = $('#p-record');
+  scr.classList.toggle('setup', !!st); w.hidden = !st;
+  if (!st) { if (wState) { wState = ''; stagger(scr, 40); } return; }
+  const set = (icon, title, text, btn, opts = {}) => {
+    $('#wIc').innerHTML = icon; $('#welcome b').textContent = title; $('#welcome p').textContent = text;
+    $('#keyIn').hidden = !opts.input; const b = $('#startSetup'); b.hidden = !btn; b.textContent = btn || '';
+    const alt = $('#wAlt'); alt.hidden = !opts.alt; alt.textContent = opts.alt || '';
+    let sp = $('#wSpin');
+    if (opts.busy && !sp) { sp = document.createElement('div'); sp.id = 'wSpin'; sp.className = 'wspin'; w.append(sp); }
+    if (!opts.busy && sp) sp.remove();
+  };
+  if (st === 'connect') set(WICONS.link, 'Connect this phone', 'Paste the sync key or setup link from your admin. This brings your people and PIN to this phone.', 'Connect', { input: true });
+  else if (st === 'connecting') set(WICONS.link, 'Connecting…', 'Saving the key and starting sync.', '', { busy: true });
+  else if (st === 'syncing') set(WICONS.sync, 'Syncing your data…', 'Getting your people and settings. This takes a few seconds.', '', { busy: true });
+  else if (st === 'trouble') set(WICONS.sync, sync.phase === 'offline' ? "You're offline" : "Couldn't sync", sync.phase === 'offline' ? 'Connect to the internet and this continues by itself.' : (cloudInfo().error || sync.error || 'Check the sync key.'), '', { alt: 'Use a different key' });
+  else if (st === 'empty') set(WICONS.user, 'No people yet', 'Open the admin area (✦ at the top right) and add the first person.', 'Open admin');
+  else set(WICONS.user, 'Welcome to DTRV', 'Create your admin PIN, then add the first person.', 'Set up');
+  if (st !== wState) { wState = st; w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); stagger(w, 70); }
+}
+
 /* ---------- tiles, pills, dots ---------- */
 export function autoToggle() {
   const st = stateOf(lastCode);
@@ -53,17 +92,7 @@ export function autoToggle() {
 }
 export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
-  $('#welcome').hidden = S.emps.length > 0;
-  if (!$('#welcome').hidden) {
-    const pin = hasAdminPin(), ci = cloudInfo(), cloud = ci.on, connect = cloud && !ci.hasKey;
-    $('#welcome b').textContent = connect ? 'Connect this phone' : 'Welcome to DTRV';
-    $('#keyIn').hidden = !connect; $('#startSetup').hidden = false;
-    if (connect) { $('#welcome p').textContent = 'Paste the sync key (or the setup link) from your admin. Do this before anything else, so your data comes from sync.'; $('#startSetup').textContent = 'Connect'; return; }
-    $('#welcome p').textContent = pin
-      ? `No people on this phone yet. ${cloud ? 'If you already added people on another device, wait a few seconds for sync, or reload. ' : ''}Otherwise tap the button and enter your PIN to add the first person.`
-      : `Create your admin PIN, then add the first person. ${cloud ? 'Set up on one device only; the others will receive it by sync.' : 'Everything stays on this phone.'}`;
-    $('#startSetup').textContent = pin ? 'Open admin' : 'Set up';
-  } $('#toggles').hidden = $('#chips').hidden = S.emps.length === 0;
+  paintWelcome();
   $('#toggles').classList.toggle('away', !!away);
   $$('.tg').forEach(b => {
     const k = b.dataset.s, t = e?.[k], chk = canRecord(e, k), st = b.querySelector('.st');
@@ -180,9 +209,15 @@ export function initHome() {
   onSheetClose(() => { if (selRemark) { selRemark = null; paintToggles(); } });   // dismissing a remark sheet also un-arms the pill
   $('#toAdmin').onclick = () => openGate();
   $('#startSetup').onclick = () => {
-    if (!$('#keyIn').hidden) { if (!saveKeyFrom($('#keyIn').value)) { shake($('#keyIn')); return; } location.reload(); return; }
+    if (!$('#keyIn').hidden) {
+      if (!saveKeyFrom($('#keyIn').value)) { shake($('#keyIn')); return; }
+      connecting = true; paintWelcome();
+      setTimeout(() => { $('#app').classList.add('fading'); setTimeout(() => location.reload(), 300); }, 900);   // fade out, then restart cleanly with the key
+      return;
+    }
     openGate();
   };
+  $('#wAlt').onclick = () => { setSyncKey(null); location.reload(); };
   tick(); autoToggle(); paintDots();
   setInterval(tick, 1000);
 }

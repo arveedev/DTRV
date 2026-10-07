@@ -1,6 +1,7 @@
 /* Boot, and the one place that refreshes whatever is on screen after data changed. */
 import { $, isOn } from '../lib/util.js';
 import { init, onExternalChange } from '../data/repo.js';
+import { watchSync } from '../data/db.js';
 import { stagger } from './core.js';
 import { initHome, paintToggles, autoToggle, tick } from './home.js';
 import { initMy, refreshMy, myOpen } from './my.js';
@@ -20,6 +21,7 @@ export async function boot() {
   await init({ cloudUrl, fetchTokens });
   initHome(); initMy(); initPrint(); initAdmin();
   onExternalChange(() => { autoToggle(); afterChange(); });     // another tab / phone changed something
+  watchSync(() => paintToggles());
   stagger($('#p-record'));
   document.documentElement.dataset.ready = '1';
   if (new URLSearchParams(location.search).has('demo')) (await import('../demo.js')).seed().then(() => { autoToggle(); afterChange(); });

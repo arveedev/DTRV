@@ -124,7 +124,7 @@ export const SLOT_PRESETS = { am_in:['07:30','07:45','08:00','08:15'], am_out:['
 /* =================== keypad =================== */
 export function buildKeys(el, leftLabel, leftFn, digitFn, delFn){
   el.innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button data-st data-d="${n}">${n}</button>`).join('')
-    + `<button class="m" data-st data-k="L">${leftLabel}</button><button data-st data-d="0">0</button><button class="m" data-st data-k="D" aria-label="Delete">⌫</button>`;
+    + `<button class="m" data-st data-k="L">${leftLabel}</button><button data-st data-d="0">0</button><button class="m del" data-st data-k="D" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M13 9.5l5 5M18 9.5l-5 5"/></svg></button>`;
   const press = b => { if(b.dataset.d !== undefined) digitFn(b.dataset.d); else if(b.dataset.k==='D') delFn(); else leftFn(); };
   el.onclick = ev => { const b = ev.target.closest('button'); if(b) press(b); };
   /* Touch: act on the tap ourselves and cancel the browser's click, so two quick taps are two key presses and never a double-tap zoom. */
