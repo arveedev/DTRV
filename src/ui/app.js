@@ -2,7 +2,7 @@
 import { $, isOn } from '../lib/util.js';
 import { init, onExternalChange } from '../data/repo.js';
 import { watchSync } from '../data/db.js';
-import { stagger } from './core.js';
+import { stagger, toast } from './core.js';
 import { initHome, paintToggles, autoToggle, tick } from './home.js';
 import { initMy, refreshMy, myOpen } from './my.js';
 import { initPrint } from './print.js';
@@ -18,7 +18,17 @@ export function afterChange() {
 
 export async function boot() {
   takeKeyFromLink();
-  await init({ cloudUrl, fetchTokens });
+  /* Sync must never keep the app from opening: on a slow connection its add-on can take a minute to arrive.
+     Wait a few seconds for it, then start on this phone's own data; sync joins on the next start. */
+  let timer; const slow = new Promise((_, no) => { timer = setTimeout(() => no(new Error('slow')), 3500); }); slow.catch(() => {});
+  const first = init({ cloudUrl, fetchTokens }); first.catch(() => {});
+  try { await Promise.race([first, cloudUrl ? slow : new Promise(() => {})]); }
+  catch (e) {
+    if (!cloudUrl) throw e;
+    console.warn('Starting without sync:', e.message);
+    await init({ cloudUrl: '', fetchTokens });
+    setTimeout(() => toast('Slow connection: running without sync for now', 'err'), 800);
+  } finally { clearTimeout(timer); }
   initHome(); initMy(); initPrint(); initAdmin();
   onExternalChange(afterChange);                  // another tab / phone / sync changed something: repaint, but never reset the keypad or a pending PIN
   watchSync(() => paintToggles());

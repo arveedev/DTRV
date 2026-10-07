@@ -14,7 +14,7 @@ export class RepoError extends Error {
 }
 
 /** The in-memory copy. Day key: "<code>|<YYYY-MM-DD>". */
-export const S = { ready: false, emps: [], sched: { ...DEFAULT_SCHEDULE }, sign: { ...DEFAULT_SIGN }, holidays: [], adminPin: null, e: {} };
+export const S = { ready: false, emps: [], sched: { ...DEFAULT_SCHEDULE }, sign: { ...DEFAULT_SIGN }, holidays: [], holidayRules: [], adminPin: null, e: {} };
 
 /* ---------- accessors (sync) ---------- */
 export const key = (no, d) => no + '|' + d;
@@ -67,14 +67,15 @@ async function readStatic() {
   return { emps, settings, hols };
 }
 function applyStatic({ emps, settings, hols }) {
-  const before = sig([S.emps, S.sched, S.sign, S.holidays, S.adminPin]);
+  const before = sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.adminPin]);
   S.emps = emps.map(toEmp).sort((a, b) => a.no.localeCompare(b.no));
   // an edit that is still waiting to be written is newer than what the database holds: keep it
   if (!dirty.has('schedule')) S.sched = { ...DEFAULT_SCHEDULE, ...strip(settings.find(r => r.id === 'schedule')) };
   if (!dirty.has('signatory')) S.sign = { ...DEFAULT_SIGN, ...strip(settings.find(r => r.id === 'signatory')) };
   const a = settings.find(r => r.id === 'admin'); S.adminPin = a ? { salt: a.salt, hash: a.hash } : null;
   S.holidays = hols.map(h => ({ date: h.date, name: h.name || '' })).sort((x, y) => x.date.localeCompare(y.date));
-  return before !== sig([S.emps, S.sched, S.sign, S.holidays, S.adminPin]);
+  S.holidayRules = settings.find(x => x.id === 'holidayrules')?.list || [];
+  return before !== sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.adminPin]);
 }
 
 const months = new Map();   // ym -> { ready, sub }
@@ -126,7 +127,7 @@ export async function init(opts) {
 function staleCleanup() {
   staticSub?.unsubscribe(); staticSub = null;
   months.forEach(v => v.sub.unsubscribe()); months.clear();
-  S.ready = false; S.emps = []; S.holidays = []; S.e = {}; S.adminPin = null;
+  S.ready = false; S.emps = []; S.holidays = []; S.holidayRules = []; S.e = {}; S.adminPin = null;
   S.sched = { ...DEFAULT_SCHEDULE }; S.sign = { ...DEFAULT_SIGN };
   pending = 0; skipped = false;
 }
@@ -247,6 +248,11 @@ export async function applyHoliday(date, name = '') {
   S.holidays = S.holidays.filter(h => h.date !== date).concat({ date, name }).sort((a, b) => a.date.localeCompare(b.date));
   await write(async () => { await db.days.bulkPut(rows); await db.holidays.put({ date, name }); await db.audit.add(auditRow('holiday.add', null, date, null, { name, hit, kept })); });
   return { hit, kept };
+}
+/** Holidays the admin chose to remember every year (a town fiesta, a family day…). */
+export async function saveHolidayRules(list) {
+  S.holidayRules = list;
+  await write(() => db.settings.put({ id: 'holidayrules', list }));
 }
 export async function removeHoliday(date) {
   const gone = [], rows = [];

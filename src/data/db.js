@@ -24,9 +24,10 @@ export function watchSync(fn) {
 /**
  * @param {{name?:string, cloudUrl?:string, fetchTokens?:Function}} opts
  */
+let attempt = 0;
 export async function openDatabase({ name = 'dtrv', cloudUrl = import.meta.env?.VITE_DEXIE_CLOUD_DB_URL, fetchTokens } = {}) {
-  const addons = [];
-  if (cloudUrl) addons.push((await import('dexie-cloud-addon')).default);
+  const mine = ++attempt, addons = [];
+  if (cloudUrl) { const mod = await import('dexie-cloud-addon'); if (mine !== attempt) throw new Error('superseded'); addons.push(mod.default); }
   db = new Dexie(name, { addons });
   db.version(1).stores(SCHEMA);
   if (cloudUrl) {
