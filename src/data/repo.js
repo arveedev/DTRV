@@ -48,6 +48,8 @@ const listeners = new Set();
 export const onExternalChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 const notify = () => listeners.forEach(f => { try { f(); } catch (e) { console.error(e); } });
 
+const timers = {};        // settings id -> debounce timer
+const dirty = new Set();  // settings ids edited but not yet written (their in-memory value is the newest)
 let pending = 0, skipped = false;
 /** Wrap every DB write: while writes are in flight, ignore live-query echoes (they may be stale) and re-sync after. */
 async function write(fn) {
@@ -66,8 +68,9 @@ async function readStatic() {
 function applyStatic({ emps, settings, hols }) {
   const before = sig([S.emps, S.sched, S.sign, S.holidays, S.adminPin]);
   S.emps = emps.map(toEmp).sort((a, b) => a.no.localeCompare(b.no));
-  S.sched = { ...DEFAULT_SCHEDULE, ...strip(settings.find(r => r.id === 'schedule')) };
-  S.sign = { ...DEFAULT_SIGN, ...strip(settings.find(r => r.id === 'signatory')) };
+  // an edit that is still waiting to be written is newer than what the database holds: keep it
+  if (!dirty.has('schedule')) S.sched = { ...DEFAULT_SCHEDULE, ...strip(settings.find(r => r.id === 'schedule')) };
+  if (!dirty.has('signatory')) S.sign = { ...DEFAULT_SIGN, ...strip(settings.find(r => r.id === 'signatory')) };
   const a = settings.find(r => r.id === 'admin'); S.adminPin = a ? { salt: a.salt, hash: a.hash } : null;
   S.holidays = hols.map(h => ({ date: h.date, name: h.name || '' })).sort((x, y) => x.date.localeCompare(y.date));
   return before !== sig([S.emps, S.sched, S.sign, S.holidays, S.adminPin]);
@@ -217,17 +220,19 @@ export async function saveEmployee(data, isNew) {
 }
 
 /* ---------- settings ---------- */
-const timers = {};
 const settingNow = id => ({ schedule: S.sched, signatory: S.sign }[id]);
 /** Debounced: typing in a field writes once it pauses. `settle()` flushes immediately. */
 function persistSetting(id, delay = 350) {
-  clearTimeout(timers[id]);
-  timers[id] = setTimeout(() => { delete timers[id]; write(() => db.settings.put({ id, ...settingNow(id) })).catch(console.error); }, delay);
+  dirty.add(id); clearTimeout(timers[id]);
+  timers[id] = setTimeout(() => { delete timers[id]; flush(id).catch(console.error); }, delay);
 }
+const flush = id => write(() => db.settings.put({ id, ...settingNow(id) })).finally(() => { if (!timers[id]) dirty.delete(id); });
 export const saveSchedule = patch => { Object.assign(S.sched, patch); persistSetting('schedule'); };
 export const saveSignatory = patch => { Object.assign(S.sign, patch); persistSetting('signatory'); };
 export async function settle() {
-  for (const id of Object.keys(timers)) { clearTimeout(timers[id]); delete timers[id]; await write(() => db.settings.put({ id, ...settingNow(id) })); }
+  const ids = Object.keys(timers);
+  for (const id of ids) { clearTimeout(timers[id]); delete timers[id]; }
+  for (const id of ids) await flush(id);
 }
 
 /* ---------- holidays for everyone ---------- */

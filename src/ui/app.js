@@ -6,7 +6,7 @@ import { initHome, paintToggles, autoToggle, tick } from './home.js';
 import { initMy, refreshMy, myOpen } from './my.js';
 import { initPrint } from './print.js';
 import { initAdmin, refreshAdmin } from './admin.js';
-import { cloudUrl, fetchTokens } from './cloud.js';
+import { cloudUrl, fetchTokens, takeKeyFromLink } from './cloud.js';
 
 /** Repaint what is visible. Cheap; call after any write. */
 export function afterChange() {
@@ -16,6 +16,7 @@ export function afterChange() {
 }
 
 export async function boot() {
+  takeKeyFromLink();
   await init({ cloudUrl, fetchTokens });
   initHome(); initMy(); initPrint(); initAdmin();
   onExternalChange(() => { autoToggle(); afterChange(); });     // another tab / phone changed something

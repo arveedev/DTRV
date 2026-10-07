@@ -9,7 +9,7 @@ import { openMy } from './my.js';
 import { openPreview, doPrint, setPrintSel } from './print.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
-import { cloudInfo, setSyncKey } from './cloud.js';
+import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
 
 let adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
 const TABICONS = [
@@ -275,7 +275,9 @@ function aSet(b) {
     <div class="card" data-st><h4>Admin PIN</h4><div class="row2"><div class="field"><label>New PIN</label><input id="pin1" type="password" maxlength="6" inputmode="numeric"></div><div class="field"><label>Confirm</label><input id="pin2" type="password" maxlength="6" inputmode="numeric"></div></div><button class="btn" id="pinSave" style="width:100%">Change PIN</button></div>
     <div class="card" data-st><h4>Backup</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin-bottom:10px">${cloud.on ? 'Your data also syncs through Dexie Cloud.' : 'Your data lives on this phone only. Keep a backup file.'}</div>
       <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden></div>
-    ${cloud.on ? `<div class="card" data-st><h4>Sync key</h4><div class="field"><label>Type it once on each phone</label><input id="syncKey" type="password" autocomplete="off" placeholder="${cloud.hasKey ? 'saved on this phone' : 'sync key'}"></div></div>` : ''}
+    ${cloud.on ? `<div class="card" data-st><h4>Sync key</h4><div class="field"><label>Type it once on each phone</label><input id="syncKey" type="password" autocomplete="off" placeholder="${cloud.hasKey ? 'saved on this phone' : 'sync key'}"></div>
+      <button class="btn" id="setupLink" style="width:100%">Copy setup link for other phones</button>
+      <div style="font-size:12px;color:var(--rmuted);line-height:1.5;margin-top:8px">Send the link once. Opening it sets up sync on that phone, with nothing to type. Anyone with the link can sync, so share it only with your people.</div></div>` : ''}
     <div class="card" data-st><h4>This phone</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">Times come from each person's <b style="color:var(--rink)">own phone clock</b>. If it is wrong, use <b style="color:var(--rink)">Change time</b>.</div>
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
     <button class="bigbtn" id="sLock" data-st style="background:var(--rsurf);color:var(--rink);animation:none">Lock admin</button>`;
@@ -299,6 +301,11 @@ function aSet(b) {
     e.target.value = '';
   };
   if (cloud.on) $('#syncKey').onchange = e => { setSyncKey(e.target.value.trim()); e.target.value = ''; toast('Sync key saved. Reload to sync'); };
+  if (cloud.on) $('#setupLink').onclick = async () => {
+    const link = setupLink(); if (!link) { toast('Type the sync key on this phone first', 'err'); return; }
+    try { if (navigator.share) await navigator.share({ title: 'DTRV setup', url: link }); else { await navigator.clipboard.writeText(link); toast('Setup link copied'); } }
+    catch (e) { if (e.name !== 'AbortError') toast('Could not copy. Long-press to copy: ' + esc(link), 'err'); }
+  };
   $('#forget').onclick = () => { forgetUser(); toast('This phone no longer remembers a user'); };
   $('#sLock').onclick = () => $('#aLock').click();
 }

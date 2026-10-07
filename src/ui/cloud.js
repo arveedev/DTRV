@@ -7,6 +7,14 @@ export const cloudUrl = import.meta.env?.VITE_DEXIE_CLOUD_DB_URL || '';
 export const cloudInfo = () => ({ on: !!cloudUrl, hasKey: !!store.get('dtrv.syncKey') });
 export const setSyncKey = k => store.set('dtrv.syncKey', k || null);
 
+/** A setup link looks like https://app/#key=SECRET. Save the key and remove it from the address bar. Call before opening the database. */
+export function takeKeyFromLink() {
+  const m = /[#&]key=([^&]+)/.exec(location.hash); if (!m) return false;
+  try { setSyncKey(decodeURIComponent(m[1])); } catch { return false; }
+  history.replaceState(null, '', location.pathname + location.search); return true;
+}
+export const setupLink = () => { const k = store.get('dtrv.syncKey'); return k ? `${location.origin}/#key=${encodeURIComponent(k)}` : ''; };
+
 /** Passed to db.cloud.configure({ fetchTokens }). */
 export async function fetchTokens(tokenParams) {
   const res = await fetch('/api/token', {
