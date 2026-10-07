@@ -285,7 +285,7 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 - **Sheets**: result sheet has no auto-close and no sub-line; the greeting uses `employee.nickname`.
 - **Remark sheet**: 4-way sliding switch, title only (no name/sub-line). Leave/Day-off/Holiday: From/To + skip Sundays. **Others**: text (max 40) + **suggestions from `remarkHistory(code)`** + a single **Date** field (default today or the selected day). Dismissing the sheet un-arms the pill.
 - **Admin on the phone**: gate (6 dots) → `p-admin` with 5 tabs and a sliding indicator; list cards, bars, switches and the segmented control are the same components as the employee side.
-- **Print on the phone**: hidden `#printRoot` holds one `.a4` per selected person (2 copies each, `break-after:page` except the last); `window.print()` prints exactly those. The on-screen preview is a scaled copy of the current page with a pager. Admin picks people with name chips (All / individual); employees print only themselves.
+- **Print on the phone**: admin Print tab = searchable checklist (`aPrintSt.sel` Set) → `openPreview(st)` shows a shared preview screen (`#p-print`) with a pager; employees open the same screen for themselves. The real-size pages live in hidden `#printRoot` (one `.a4` per person, `break-after:page`), built **lazily** by `fillPrintRoot()` when previewing/printing (and on `beforeprint`), never on every tap, so 60+ people stay fast.
 - **Safe areas**:
   ```css
   /* <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> */
@@ -344,3 +344,16 @@ Estimate: P1 3 days · P2 3–4 days · P3 1–2 days.
 - Field buttons (`.pf`) hold the value in `data-v` and re-render their label; forms read `dataset.v` on Save.
 - `.phone` uses `overflow: clip` (not `hidden`) so focus/`scrollIntoView` can never scroll the app under the status bar.
 - Print screens use a flex column (`.fill`): controls (fixed) → preview (`flex:1`, scaled to fit **both** width and height) → Print button (fixed, 52 px), so the button is always visible above the tab bar.
+
+- **Never share element ids between screens.** An earlier version rendered the print UI into two places (employee screen and admin tab) with identical ids; `document.querySelector('#doPrint')` returned the *hidden* first copy, so the visible admin preview and button stayed blank. All preview lookups are now scoped to `#printBody` and use classes; the admin list uses its own ids. Test: open employee print first, then admin print, and assert `querySelectorAll('#doPrint').length === 0` + paper visible.
+
+## 14. Holidays & away state
+```ts
+Holiday { date:'YYYY-MM-DD', name?:string }          // Dexie table `holidays` keyed by date: the admin's list
+applyHoliday(date, name): for every active employee without times that day → days[emp,date].remark = {code:'HOLIDAY', text:name}
+removeHoliday(date):      remove HOLIDAY remarks for that date (never touches days with times) and the list row
+```
+- Print text: `remarkText()` → `HOLIDAY` or `HOLIDAY – NAME`.
+- `dayState(day).away` (LEAVE/DAYOFF/HOLIDAY) locks the 4 tiles and drives the *Enjoy…* sheet (`enjoy(person, code, note)`), shown after saving an away remark that covers today and whenever a locked tile/code is used.
+- Armed pill or My DTR → `.keys.pin` (PIN mode). The left key becomes *Cancel* and clears both.
+- Lists: `matches(person, q)` searches name + nickname + code + position; Overview sorts by lates then minutes or A–Z; only the first 12 rows get entrance delays.

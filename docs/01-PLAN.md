@@ -20,9 +20,12 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 | Tap a tile = edit | Tapping one of the 4 tiles edits that slot's time for the phone's user |
 | Secret admin | A faint ✦ replaces the settings icon |
 | Flexi | Affects **clock in & out only**; lunch is identical in fixed and flexi |
-| Print | Admin can print **many people at once** |
+| Print | Admin prints **one, several or everyone**: a searchable checklist (works for 50+ people) → Preview → Print, one A4 page per person |
 | PIN again | Tapping *My DTR* turns the keypad teal and the key becomes *Cancel*: "type your PIN again" |
 | Clocked in → no Leave | Once there's a time today, **Leave / Day-off / Holiday switch off**; only **Others** remains |
+| Armed pill = PIN | Tapping Leave / Day-off / Holiday / Others turns the keypad teal too (key becomes *Cancel*): "type your PIN to continue" |
+| Saved leave → celebrate | Picking Leave / Day-off / Holiday for today ends with a big **"Enjoy your day-off, Juan!"** sheet right away (not only when you try to clock in) |
+| Holiday for everyone | Admin marks a day (or range) as a holiday for **all active people** in one go; list + remove |
 | Leave day → no clock-in | After Leave / Day-off / Holiday for today, **all 4 tiles lock** and the app says *"Enjoy your leave, Juan!"* |
 | Own pickers | Themed **time picker** and **date / range picker** replace the phone's native ones |
 | Flexi | Clock in & out only. Lunch fixed 12–1 PM for everyone. **No grace period** |
@@ -114,7 +117,7 @@ Time = **the phone's clock**. If it's wrong, use Change time.
 |---------------|-------------|
 | No times yet | All four pills work |
 | **Any time recorded** | **Leave, Day-off, Holiday are dimmed (dotted)**; tapping one says *"You've already clocked in today, so Leave isn't available. Use Others for a reason."* **Others** still works |
-| **Leave / Day-off / Holiday set for today** | **All 4 tiles locked** (dim, "—"); tapping a tile or typing the code shows *🌴 Enjoy your leave, Juan! No clock-in needed today.* (🏠 day-off · 🎌 holiday) |
+| **Leave / Day-off / Holiday set for today** | **All 4 tiles locked** (dim, "—"). Right after saving, and again whenever a tile is tapped or the code typed, a sheet says *🌴 Enjoy your leave, Juan! No clock-in needed today.* (🏠 day-off · 🎌 holiday, with the holiday's name if the admin gave one) |
 | Range includes a day with times | Save is refused: *"You clocked in on Tue, Oct 7, so it can't be Leave. Use Others for a reason."* |
 | Undo a mistaken leave | My DTR → the day → Edit → remark *None* |
 
@@ -152,10 +155,10 @@ Tap the faint **✦** (top right of the home screen) → 6-digit PIN (lock icon 
 
 | Tab | Contents |
 |-----|----------|
-| **Overview** | Month switcher; big **lates this month** card; one card per person: initial avatar, nickname, full name, a lateness bar, lates badge, days present. Tap a person → their calendar (same as My DTR, with Edit and Print) |
-| **People** | List with schedule badge; **+ Add person** and tap-to-edit sheet: code (3 digits, unique), **nickname**, full name (printed), position, working hours (Default / Custom fixed / Custom flexi); Deactivate/Reactivate |
+| **Overview** | Month switcher; big **lates this month** card; **🎌 Holidays** button; search box + sort (*Most lates* / *A–Z*); one card per person: initial avatar, nickname, full name, a lateness bar, lates badge, days present. Tap a person → their calendar (same as My DTR, with Edit and Print) |
+| **People** | Search (name, nickname, code, position) + count; list sorted A–Z with schedule badge; **+ Add person** / tap-to-edit sheet: code (3 digits, unique), **nickname**, full name (printed), position, working hours (Default / Fixed / Flexi); Deactivate/Reactivate |
 | **Hours** | Fixed-time / Flexi-time switch (sliding). **Fixed**: time in. **Flexi (clock in & out only)**: earliest and latest clock in (time pickers) and hours to work (− / + stepper), with the clock-out window shown (e.g. 4:00–6:00 PM). **Lunch is 12:00–1:00 PM for everyone: not editable.** **No grace period.** One switch: "count a late return from lunch" (PM IN after 1:00 PM). A live sentence explains the rule |
-| **Print** | Month switcher; **pick one, several or All people** (name chips); A4 preview with a pager (‹ Juan · 1 of 3 ›), tap the paper to zoom; **Print 3 DTRs (3 pages)** / Save as PDF: one A4 page per person |
+| **Print** | Month switcher; **search + checklist** of people (round check, **All** = everyone shown, **None**); "3 selected" count; **Preview** (A4 page by page with a pager, tap to zoom) and **Print N DTRs** (one A4 page per person). Built to stay quick with **hundreds of people**: the list is searchable and the real-size pages are only built when previewing or printing |
 | **Settings** | Signatory (name, title, label), change PIN, "times come from the phone's clock" note, **Lock admin** |
 
 ---
@@ -207,3 +210,20 @@ Tap the faint **✦** (top right of the home screen) → 6-digit PIN (lock icon 
 | Employees edit times to avoid lates | Late count understates | Edited days are visible to admin (badge + original time kept). |
 | Printed form says "made daily at the time of arrival" | Edited times are certified as daily | The employee signs it; that's their responsibility. Out of app scope. |
 | Single SQLite file | Data loss | Nightly backup, admin download. |
+
+
+---
+
+## 9. Scale: 50, 100, 1,000 people
+- **Codes**: 3 digits = **1,000 people max** (000–999). A 4th digit would need a different design; say so if you'll ever exceed that.
+- **Lists** (Overview, People, Print) have search and sorting, and animate only the first ~12 rows, so 63-person rosters feel instant.
+- **Print**: pick with the checklist (or *All*), Preview, Print. 63 people → 63 A4 pages built in well under a second. Browsers handle several hundred pages, but for hundreds prefer printing in groups.
+- **Holidays**: one action marks everyone; a person who already clocked in that day keeps their times.
+- **Data**: ~31 day-rows per person per month; 1,000 people ≈ 31,000 rows/month, comfortably within Dexie Cloud / IndexedDB limits.
+
+## 10. Holidays for everyone (admin)
+Overview → **🎌 Holidays** → **+ Add holiday**: pick one date or a range (themed calendar), optional name (printed as `HOLIDAY – NAME`, max 24 chars), *Skip Sundays*, **Mark for everyone**.
+- Applies a `HOLIDAY` remark to every **active** person who has **no times** that day; people who clocked in keep their times (the toast says how many).
+- Employees then see the locked tiles and *Enjoy the holiday, Juan!* with the name.
+- The list shows every marked holiday with a **✕** to remove it (removes the remark from everyone who didn't work that day).
+- New people added later don't inherit past holidays (they have no records for those days).
