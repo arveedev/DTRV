@@ -24,4 +24,4 @@ The first time the app opens on an empty database it asks for an admin PIN (tap 
 
 Import the repo; defaults work (`vercel.json`). The app is local-first and fully usable with no further setup. To sync between phones with Dexie Cloud, set the variables in `.env.example` (client `VITE_DEXIE_CLOUD_DB_URL`, and server `DEXIE_CLOUD_*`, `SYNC_KEY`, `ADMIN_EMAIL` for `api/token.js`).
 
-Status: the app and its tests run. The Dexie Cloud sync path has not been tested against a live database.
+Status: the app and its tests run, and sync through Dexie Cloud has been confirmed working on a live deployment (Vercel). Setup: create the database with `npx dexie-cloud create`, run `npx dexie-cloud whitelist https://<your-app>.vercel.app`, set the six variables, then open `https://<your-app>.vercel.app/#key=<SYNC_KEY>` once; Settings has a "Copy setup link" button for the other phones.
