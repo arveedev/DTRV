@@ -20,7 +20,7 @@ export async function boot() {
   takeKeyFromLink();
   await init({ cloudUrl, fetchTokens });
   initHome(); initMy(); initPrint(); initAdmin();
-  onExternalChange(() => { autoToggle(); afterChange(); });     // another tab / phone changed something
+  onExternalChange(afterChange);                  // another tab / phone / sync changed something: repaint, but never reset the keypad or a pending PIN
   watchSync(() => paintToggles());
   stagger($('#p-record'));
   document.documentElement.dataset.ready = '1';

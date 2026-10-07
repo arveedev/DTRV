@@ -13,31 +13,25 @@ const pages = st => st.nos.map(no => { const c = copy(no, st.ym); return `<div c
 /** The admin list keeps this up to date so Ctrl+P prints exactly what is selected. */
 export const setPrintSel = st => { curPrintSt = st; };
 
-/* Phones (and installed apps) cannot reliably print the app screen itself, so the pages open as a plain document
-   in their own tab, where the system Print sheet works. Desktops print in place. */
-const needsWindow = () => matchMedia('(pointer: coarse)').matches || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+/* The pages are written into a hidden frame and that frame is printed. That works the same on desktops, phones and installed
+   apps, and the app screen itself (its glow, keypad, sheets) can never end up on the paper. */
 const allCss = () => [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join('\n'); } catch { return ''; } }).join('\n');
-
-function writeWindow(w, html) {
-  w.document.open();
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=794"><title>DTR</title><style>${allCss()}
-@media screen{html,body{height:auto;background:#59647a}body{margin:0;padding:64px 0 24px}#printRoot{display:block!important}
-#printRoot .a4{margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.45)}
-.pbar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:center;padding:10px;background:rgba(10,15,28,.92)}
-.pbar button{font:700 18px system-ui,sans-serif;border:0;border-radius:12px;padding:12px 40px;background:#5eead4;color:#062a26}}
-@media print{.pbar{display:none!important}}</style></head><body><div class="pbar"><button onclick="print()">Print</button></div><div id="printRoot">${html}</div>
-<script>setTimeout(function(){try{print()}catch(e){}},500)<\/script></body></html>`);
-  w.document.close();
-}
+const frameDoc = html => `<!doctype html><html><head><meta charset="utf-8"><title>DTR</title><style>${allCss()}
+@media screen{#printRoot{display:block!important}}</style></head><body><div id="printRoot">${html}</div></body></html>`;
 
 export async function doPrint(st) {
   if (!st.nos.length) return;
-  const w = needsWindow() ? window.open('', '_blank') : null;   // must open inside the tap, before any waiting
-  curPrintSt = st;
-  try { await ensureMonth(st.ym); } catch (e) { w?.close(); throw e; }
+  curPrintSt = st; await ensureMonth(st.ym);
   const html = pages(st);
-  if (w) { writeWindow(w, html); return; }
-  $('#printRoot').innerHTML = html; printReady = true; window.print();
+  document.getElementById('printFrame')?.remove();
+  const f = document.createElement('iframe');
+  f.id = 'printFrame'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+  f.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;opacity:0;pointer-events:none';
+  document.body.append(f);
+  const d = f.contentDocument; d.open(); d.write(frameDoc(html)); d.close();
+  await new Promise(r => setTimeout(r, 250));                       // let the frame lay out before the print dialog asks for it
+  try { f.contentWindow.focus(); f.contentWindow.print(); }
+  catch { $('#printRoot').innerHTML = html; printReady = true; window.print(); }   // last resort: print the page itself
 }
 
 export function initPrint() {

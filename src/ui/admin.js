@@ -282,6 +282,7 @@ function aSet(b) {
       <div style="font-size:12px;color:var(--rmuted);line-height:1.5;margin-top:8px">Send the link once. Opening it sets up sync on that phone, with nothing to type. Anyone with the link can sync, so share it only with your people.</div></div>` : ''}
     <div class="card" data-st><h4>This phone</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">Times come from each person's <b style="color:var(--rink)">own phone clock</b>. If it is wrong, use <b style="color:var(--rink)">Change time</b>.</div>
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
+    <div class="ver" data-st>Version ${typeof __BUILD__ === 'undefined' ? 'dev' : __BUILD__}</div>
     <button class="bigbtn" id="sLock" data-st style="background:var(--rsurf);color:var(--rink);animation:none">Lock admin</button>`;
   [['gName', 'name'], ['gTitle', 'title'], ['gLabel', 'label']].forEach(([id, k]) => { $('#' + id).oninput = e => saveSignatory({ [k]: e.target.value }); });
   $('#pinSave').onclick = async () => {

@@ -96,6 +96,7 @@ export function autoToggle() {
 }
 export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
+  if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
   $('#toggles').classList.toggle('away', !!away);
   $$('.tg').forEach(b => {

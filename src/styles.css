@@ -3,7 +3,7 @@
 #keyIn:focus{outline:2px solid var(--acc)}
 /* DTRV — styles. Theme: "Rail · dark". Mobile-first; on a desktop it is a centred column. */
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;background:#0a0f1c}
 body{font-family:Poppins,system-ui,sans-serif;background:#0a0f1c;color:#eef2fa;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 input,select{font:inherit}
@@ -20,17 +20,11 @@ input,select{font:inherit}
 @media (min-width:521px){ body{background:#05080f} .app{box-shadow:0 0 0 1px var(--rline),0 24px 70px rgba(0,0,0,.6)} }
 
 /* living background */
-.glow{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none}
-.glow i{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(64px);opacity:.26}
-.glow i:nth-child(1){background:#ff6a3d;top:-130px;left:-110px;animation:drift1 15s ease-in-out infinite alternate}
-.glow i:nth-child(2){background:#2ec4b6;top:34%;right:-170px;animation:drift2 19s ease-in-out infinite alternate}
-.glow i:nth-child(3){background:#6d6df0;bottom:-150px;left:-70px;animation:drift3 17s ease-in-out infinite alternate}
-@keyframes drift1{to{transform:translate(120px,90px) scale(1.2)}}
-@keyframes drift2{to{transform:translate(-110px,-120px) scale(.85)}}
-@keyframes drift3{to{transform:translate(140px,-100px) scale(1.15)}}
+.glow{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none;background:radial-gradient(circle 300px at -8% -3%,rgba(255,106,61,.30),transparent 72%),radial-gradient(circle 320px at 108% 44%,rgba(46,196,182,.24),transparent 72%),radial-gradient(circle 320px at 6% 106%,rgba(109,109,240,.30),transparent 72%)}
+.glow i{display:none}
 
 /* screens */
-.scr{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;min-height:0;padding:calc(var(--sat) + 22px) 16px calc(var(--sab) + 14px)}
+.scr{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;min-height:0;padding:calc(var(--sat) + 22px) 16px max(calc(var(--sab) - 14px),12px)}
 .scr.hide{display:none}
 .scr.enter-r{animation:enterR .5s cubic-bezier(.2,.9,.25,1) backwards}
 .scr.enter-l{animation:enterL .5s cubic-bezier(.2,.9,.25,1) backwards}
@@ -133,7 +127,7 @@ input,select{font:inherit}
 .toast.err b{color:var(--rhol)}
 
 /* ----- bottom sheet ----- */
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
 .scrim.show{opacity:1;pointer-events:auto}
 .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--rsurf);border-radius:30px 30px 0 0;padding:12px 20px calc(var(--sab) + 16px);transform:translateY(105%);transition:transform .5s cubic-bezier(.2,.9,.25,1);z-index:21;max-height:calc(100% - var(--sat) - 8px);overflow:auto;border-top:1px solid var(--rline);visibility:hidden}
 .sheet.show{transform:none;visibility:visible}
@@ -306,7 +300,7 @@ input,select{font:inherit}
 .prev.grab{cursor:grabbing}
 .paper{position:absolute;left:0;top:0;transform-origin:0 0;animation:paperin .7s cubic-bezier(.2,.9,.3,1.1) backwards}
 .zbar{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;gap:6px}
-.zbar button{min-width:38px;height:38px;border-radius:19px;border:0;padding:0 12px;background:rgba(10,15,28,.82);color:#eef2fa;font:700 18px Poppins,sans-serif;cursor:pointer;backdrop-filter:blur(6px)}
+.zbar button{min-width:38px;height:38px;border-radius:19px;border:0;padding:0 12px;background:rgba(10,15,28,.82);color:#eef2fa;font:700 18px Poppins,sans-serif;cursor:pointer;}
 .zbar button.zFit{font-size:13px}
 .zbar button:active{transform:scale(.92)}
 @keyframes paperin{from{opacity:0;transform:translateY(30px) scale(.92)}}
@@ -471,9 +465,12 @@ input,select{font:inherit}
 
 /* keypad: smooth colour change, a quick wave when it flips between normal and PIN mode, bigger icon keys */
 .keys button{transition:background .4s,color .3s,box-shadow .4s,transform .12s;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.keys button.down{transform:scale(.93);filter:brightness(1.25)}
+.keys button.down{transform:scale(.93);opacity:.8}
 .keys.swap button{animation:keyswap .55s cubic-bezier(.3,1.5,.5,1) backwards;animation-delay:calc(var(--k,0)*28ms)}
-@keyframes keyswap{0%{transform:scale(.82) translateY(10px);opacity:.35;filter:brightness(1.6)}60%{transform:scale(1.05)}100%{transform:none;opacity:1}}
+@keyframes keyswap{0%{transform:scale(.82) translateY(10px);opacity:.35}60%{transform:scale(1.05)}100%{transform:none;opacity:1}}
 .keys .m svg{width:clamp(28px,8.5cqw,38px);height:auto;color:#aeb8d0}
 .keys .m.on svg{color:var(--acc)}
 .chooser button.off{opacity:.35}
+
+#updBar{position:absolute;left:16px;right:16px;bottom:calc(var(--sab) + 6px);z-index:60;border:0;border-radius:16px;padding:14px;background:var(--acc);color:var(--acc-ink);font:700 14px Poppins,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:rise .5s cubic-bezier(.2,.9,.3,1.15) backwards}
+.ver{margin:14px 0 4px;text-align:center;font:500 11px Poppins,sans-serif;color:var(--rmuted)}

@@ -1,10 +1,14 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
+
+const build = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || (() => { try { return execSync('git rev-parse --short HEAD').toString().trim(); } catch { return 'dev'; } })();
 
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(build) },
   build: { target: 'es2022', sourcemap: false },
   plugins: [VitePWA({
-    registerType: 'autoUpdate',
+    registerType: 'prompt', injectRegister: false,   // updates are applied by src/main.js: at once if the app is in the background, otherwise on tap
     includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
     workbox: { navigateFallbackDenylist: [/^\/api\//], globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'] },
     manifest: {

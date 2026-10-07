@@ -72,10 +72,8 @@ try {
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);
   await pg.click('#aTabs button[data-t="3"]'); await wait(pg, 700); await pg.click('#pAll');
-  const [popup] = await Promise.all([pg.context().waitForEvent('page'), pg.click('#pGo')]);      // touch devices print from their own tab
-  await popup.waitForSelector('#printRoot .a4'); await popup.waitForTimeout(300);
-  ok(await popup.$$eval('#printRoot .a4', a => a.length) === 3 && await popup.isVisible('.pbar button'), 'multi print opens a tab with 3 A4 pages and a Print button');
-  await popup.close();
+  await pg.click('#pGo'); await wait(pg, 700);
+  ok(await pg.evaluate(() => document.getElementById('printFrame')?.contentDocument.querySelectorAll('#printRoot .a4').length) === 3, 'multi print puts 3 A4 pages in the print frame');
   await pg.click('#pView'); await wait(pg, 900);
   ok(await pg.isVisible('#printBody .paper'), 'preview shows the paper');
   ok(pg.errs.length === 0, 'no console errors (demo) ' + pg.errs.join('|'));
