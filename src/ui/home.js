@@ -98,6 +98,9 @@ export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
   if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
+  { const p = lastCode && emp(lastCode), ym = now().date.slice(0, 7), n = p ? monthStats(lastCode, ym).lates : 0, chip = $('#lateChip');
+    const txt = n ? `⚠ ${n} late${n === 1 ? '' : 's'} in ${MONTHS[+ym.slice(5) - 1]}` : '';
+    if (chip.textContent !== txt) { chip.textContent = txt; chip.hidden = !n; if (n) { chip.style.animation = 'none'; void chip.offsetWidth; chip.style.animation = ''; } } }
   $('#toggles').classList.toggle('away', !!away);
   $$('.tg').forEach(b => {
     const k = b.dataset.s, t = e?.[k], chk = canRecord(e, k), st = b.querySelector('.st');

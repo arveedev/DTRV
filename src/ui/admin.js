@@ -6,7 +6,7 @@ import { S, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignat
   hasAdminPin, setAdminPin, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
-import { openPreview, doPrint, setPrintSel } from './print.js';
+import { openPreview, printWith, setPrintSel } from './print.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
@@ -263,7 +263,7 @@ function aPrint(b) {
   $('#pPrev').onclick = () => { st.ym = shiftYM(st.ym, -1); $('#pLbl').textContent = label(); counts(); };
   $('#pNext').onclick = () => { st.ym = shiftYM(st.ym, 1); $('#pLbl').textContent = label(); counts(); };
   $('#pView').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } openPreview({ nos: nos(), ym: st.ym, page: 0 }, 'admin'); };
-  $('#pGo').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } doPrint({ nos: nos(), ym: st.ym, page: 0 }).catch(fail); };
+  $('#pGo').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } printWith($('#pGo'), { nos: nos(), ym: st.ym, page: 0 }).catch(fail); };
   paint(false);
 }
 

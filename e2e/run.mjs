@@ -68,6 +68,14 @@ try {
   const k1 = await p3.$('#keys [data-d="1"]'), bx = await k1.boundingBox();
   await p3.touchscreen.tap(bx.x + bx.width / 2, bx.y + bx.height / 2); await p3.touchscreen.tap(bx.x + bx.width / 2, bx.y + bx.height / 2);
   ok(await p3.$$eval('#empno div.f', d => d.length) === 2, 'two fast touch taps register as two digits');
+  /* a change arriving from elsewhere (another tab / sync) must not undo an armed PIN keypad */
+  const pA = await fresh('2026-10-07T09:00:00', '?demo=1'), pB = await pA.context().newPage();
+  await pB.clock.install({ time: new Date('2026-10-07T09:00:00') }); await pB.goto(URL); await pB.waitForSelector('html[data-ready]'); await pB.waitForTimeout(800);
+  await pA.click('#remarkBtn'); await wait(pA, 600);
+  ok(await pA.$eval('#keys', k => k.classList.contains('pin')), 'keypad armed (teal) before the outside change');
+  await keys(pB, '331'); await wait(pB, 1200);                                    // someone records on another tab
+  await pA.waitForTimeout(900); await wait(pA, 900);
+  ok(await pA.$eval('#keys', k => k.classList.contains('pin')), 'armed keypad survives a change from another tab / sync');
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

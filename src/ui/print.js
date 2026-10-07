@@ -34,6 +34,53 @@ export async function doPrint(st) {
   catch { $('#printRoot').innerHTML = html; printReady = true; window.print(); }   // last resort: print the page itself
 }
 
+/* ---- iPhone home-screen apps cannot open the print dialog from a web page. They can open the share sheet, which has Print. ---- */
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const useShare = () => isIOS() && standalone();
+const sigOf = st => st.ym + ':' + st.nos.join(',') + ':' + JSON.stringify(S.sign);
+let ready = null;      // { sig, file } the PDF made by the first tap, shared by the second
+
+async function makePdf(st, progress) {
+  const [{ jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
+  await ensureMonth(st.ym);
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff'; document.body.append(host);
+  try {
+    for (let i = 0; i < st.nos.length; i++) {
+      progress?.(i + 1, st.nos.length);
+      const c = copy(st.nos[i], st.ym); host.innerHTML = `<div class="a4" style="box-shadow:none;margin:0">${c}${c}</div>`;
+      const canvas = await html2canvas(host.firstElementChild, { scale: 2, backgroundColor: '#fff', logging: false });
+      if (i) doc.addPage();
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+      await new Promise(r => setTimeout(r));                            // let the screen breathe between pages
+    }
+  } finally { host.remove(); }
+  return new File([doc.output('blob')], `DTR-${st.ym}.pdf`, { type: 'application/pdf' });
+}
+
+/** The Print button. Desktops and Android print at once; on an iPhone app the first tap makes the pages, the second opens the share sheet. */
+export async function printWith(btn, st) {
+  if (!st.nos.length) return;
+  if (!useShare()) return doPrint(st);
+  const sig = sigOf(st);
+  if (ready?.sig === sig) {                                             // second tap: a fresh tap is what the share sheet needs
+    const { file } = ready; ready = null;
+    try {
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: 'DTR' });
+      else window.open(URL.createObjectURL(file), '_blank');
+    } catch (e) { if (e.name !== 'AbortError') toast(esc(e.message), 'err'); }
+    return;
+  }
+  const label = btn.textContent; btn.disabled = true;
+  try {
+    const file = await makePdf(st, (i, n) => { btn.textContent = n > 1 ? `Preparing ${i} of ${n}…` : 'Preparing…'; });
+    ready = { sig, file }; btn.textContent = 'Tap again, then choose Print';
+    setTimeout(() => { if (ready?.file === file && btn.isConnected) btn.textContent = label, ready = null; }, 60000);
+  } catch (e) { btn.textContent = label; toast(esc(e.message || 'Could not prepare the pages'), 'err'); }
+  finally { btn.disabled = false; }
+}
+
 export function initPrint() {
   /* Ctrl+P / browser menu: rebuild from the current selection right before printing, so it is never stale. */
   window.addEventListener('beforeprint', () => { if (!printReady && curPrintSt?.nos.length) $('#printRoot').innerHTML = pages(curPrintSt); });
@@ -113,6 +160,6 @@ function renderPreview(st) {
   q('.pgNext').onclick = () => { st.page = (st.page + 1) % st.nos.length; draw(); };
   q('.pPrev').onclick = () => month(-1);
   q('.pNext').onclick = () => month(1);
-  q('.bigbtn').onclick = () => doPrint(st).catch(e => toast(esc(e.message), 'err'));
+  q('.bigbtn').onclick = () => printWith(q('.bigbtn'), st).catch(e => toast(esc(e.message), 'err'));
   stagger(host, 60); draw();
 }

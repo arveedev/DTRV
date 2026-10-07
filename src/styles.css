@@ -474,3 +474,9 @@ input,select{font:inherit}
 
 #updBar{position:absolute;left:16px;right:16px;bottom:calc(var(--sab) + 6px);z-index:60;border:0;border-radius:16px;padding:14px;background:var(--acc);color:var(--acc-ink);font:700 14px Poppins,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:rise .5s cubic-bezier(.2,.9,.3,1.15) backwards}
 .ver{margin:14px 0 4px;text-align:center;font:500 11px Poppins,sans-serif;color:var(--rmuted)}
+
+/* the last stretch of the app fades into the page colour, so any strip the phone leaves under it looks intentional */
+.app::after{content:'';position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(10,15,28,0),#0a0f1c 82%);pointer-events:none;z-index:0}
+/* this month's lates, under the clock */
+.latechip{display:inline-block;margin-top:8px;padding:5px 14px;border-radius:99px;background:var(--rlate-bg);color:var(--rlate);font:600 12.5px Poppins,sans-serif;animation:rise .5s cubic-bezier(.2,.9,.3,1.2) backwards}
+.latechip[hidden]{display:none}
