@@ -204,6 +204,18 @@ export function expectedOut(day, sc) {          // flexi only
   return hhmm(start + sc.requiredHours * 60 + m(sc.lunchEnd) - m(sc.lunchStart));
 }
 
+// What this person typed before for "Others", most used first, then most recent.
+export function remarkHistory(days /* this employee's days */, limit = 6) {
+  const c = new Map();
+  for (const d of days) if (d.remark?.code === 'OTHER') { const r = c.get(d.remark.text) ?? { n:0, last:'' }; r.n++; if (d.date > r.last) r.last = d.date; c.set(d.remark.text, r); }
+  return [...c].sort((a, b) => b[1].n - a[1].n || b[1].last.localeCompare(a[1].last)).slice(0, limit).map(x => x[0]);
+}
+
+// Flexi covers clock in & out only; lunch is the same in fixed and flexi.
+export const clockOutWindow = sc => sc.mode !== 'flexi' ? null :
+  [hhmm(m(sc.flexStart) + sc.requiredHours*60 + m(sc.lunchEnd) - m(sc.lunchStart)),
+   hhmm(m(sc.flexEnd)   + sc.requiredHours*60 + m(sc.lunchEnd) - m(sc.lunchStart))];
+
 export function monthStats(days, sc) {
   let present = 0, lates = 0, lateMin = 0, remarks = 0;
   for (const d of days) {
@@ -264,11 +276,12 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 - **Palette**: background `#0a0f1c`, surface `#141b2d`, surface-2 `#1d2640`, lines `#26304a`, text `#eef2fa`, muted `#7c8aa8`, accent teal `#5eead4` on `#062a26`. Status: on time `#5eead4`/`#123b37`, late `#fb923c`/`#3d2312`, remark `#c4b5fd`/`#2a1f4a`, holiday `#fb7185`/`#4a1d2b`, incomplete `#facc15`/`#3b3410`.
 - **Tiles** (row of 4): orange `#ff9a3c→#ff6a3d`, yellow `#f6c445→#f39c12`, teal `#2ec4b6→#1a9c8f`, indigo `#6d6df0→#3d3db8`. States: selected (100% + ✓ + breathing glow) · recorded (82%, time chip) · locked-empty (16%, greyscale) · other (36%).
 - **Remembered user**: `localStorage['dtrv.lastCode']`, never displayed. A "Reset device" action (admin Settings) clears it.
-- **Home**: no text above the keypad, only 3 dots; keypad digits 34 px (key 76 px tall phones, stepping down).
+- **Home**: no text above the keypad, only 3 dots. The keypad is `display:grid` (3×4, `flex:1`) with `container-type:size` and `font-size: clamp(28px, min(9.5cqh, 15cqw), 54px)`: keys fill all remaining height, digits scale with them. Admin entry is a 46 px transparent button with a ✦ at 16% opacity (`aria-label="·"`); no settings icon.
+- **Tiles**: tap a recorded or blocked tile → `openTimeSheet(code, date, slot)` (time picker, Save/Clear, order check); tap an open tile → select it for recording. Recorded tiles show `7:58 ✎`.
 - **Sheets**: result sheet has no auto-close and no sub-line; the greeting uses `employee.nickname`.
-- **Remark sheet**: 4-way sliding switch; Leave/Day-off/Holiday show From/To + skip Sundays; **Others shows only a text field (max 40) + suggestion chips and applies to today**.
+- **Remark sheet**: 4-way sliding switch, title only (no name/sub-line). Leave/Day-off/Holiday: From/To + skip Sundays. **Others**: text (max 40) + **suggestions from `remarkHistory(code)`** + a single **Date** field (default today or the selected day). Dismissing the sheet un-arms the pill.
 - **Admin on the phone**: gate (6 dots) → `p-admin` with 5 tabs and a sliding indicator; list cards, bars, switches and the segmented control are the same components as the employee side.
-- **Print on the phone**: a hidden full-size `#printRoot` (2 copies) is what `window.print()` prints (`body > *:not(#printRoot){display:none}` in `@media print`); the on-screen preview is a scaled copy (tap to zoom).
+- **Print on the phone**: hidden `#printRoot` holds one `.a4` per selected person (2 copies each, `break-after:page` except the last); `window.print()` prints exactly those. The on-screen preview is a scaled copy of the current page with a pager. Admin picks people with name chips (All / individual); employees print only themselves.
 - **Safe areas**:
   ```css
   /* <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> */
@@ -277,7 +290,7 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
   .sheet { padding-bottom: calc(var(--sab) + 16px); max-height: calc(100dvh - var(--sat) - 8px); }
   .toast { top: calc(var(--sat) + 6px); }
   ```
-- **Height steps** (`--k` key size): 76 → 68 (≤ 800) → 62 (≤ 720, tile subtitles hidden) → 54 (≤ 640) → 46 px (≤ 600). Verified 568 → 932 px.
+- **Height steps** (non-keypad): clock 54 → 46 → 40 → 36 px, tiles 96 → 86 → 72 → 62 px, tile subtitles hidden ≤ 720 px, lock icon hidden ≤ 600 px on the PIN screen. The keypad needs no steps: it simply fills what's left. Verified 568 → 932 px.
 - **Motion** (CSS only, plus tiny JS for counters and the burst): screen enter/leave slide+fade; `data-st` stagger (`--i` × 28–55 ms); spring easing `cubic-bezier(.3,1.5,.5,1)`; aurora `filter:blur` blobs; digit roll; count-up; confetti burst; sliding tab indicator. **Always** add `@media (prefers-reduced-motion: reduce)` to collapse durations. Use `animation-fill-mode: backwards` (not `both`) for entrances so final transforms (selected tile, pressed keys) aren't frozen.
 - Never call `scrollIntoView` inside the app. Fonts: Poppins (UI), Space Grotesk (clock, digits), self-hosted in `/public/fonts`.
 
@@ -302,6 +315,8 @@ The prototype `mockup/index.html` is the reference (employee **and** admin scree
 | Repo (`fake-indexeddb`) | code `'024'` keeps leading 0; `record` twice → `already`; undo window 60 s; undo after change → rejected; remark range skips Sundays; same day recorded on two "devices" → one `days` row |
 | Slot rules | `canRecord`: free slot ok; filled slot → SLOT_TAKEN; AM IN after PM OUT → OUT_OF_ORDER; AM OUT after PM IN blocked; `suggest` never returns a slot earlier than the last recorded one; day full → null |
 | Token function | wrong setup code → 401; rate limit; client secret never in the response |
+| Remarks | `remarkHistory` is per person (Maria never sees Juan's reasons), sorted by use then recency, max 6; Others saves to the chosen date |
+| Print | 3 people selected → PDF has 3 A4 pages; 1 person → 1 page |
 | Layout | Playwright at 390×568/664/844/932: keypad bottom ≤ viewport − 30 px; no horizontal scroll; sheets' buttons above the bottom safe area |
 | E2E (Playwright) | record → sheet → change time; My DTR edit; print = 1 A4 page, blank Regular days, remark in Undertime, worked Saturday shows times |
 

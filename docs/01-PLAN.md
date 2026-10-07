@@ -16,6 +16,11 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 | Users | **1 Dexie Cloud user** (admin). No per-employee or per-office accounts |
 | Hosting | Vercel (personal use, so the free Hobby plan is fine) + Dexie Cloud |
 | Time source | **The phone's own clock** (device time). No server time |
+| Big keypad | Fills all free space; larger digits |
+| Tap a tile = edit | Tapping one of the 4 tiles edits that slot's time for the phone's user |
+| Secret admin | A faint ✦ replaces the settings icon |
+| Flexi | Affects **clock in & out only**; lunch is identical in fixed and flexi |
+| Print | Admin can print **many people at once** |
 | One time per slot | Each of AM IN / AM OUT / PM IN / PM OUT can be recorded **once a day**, and **in order** (a slot can't be recorded after a later one). Mistakes are fixed with *Change time* / My DTR, not by recording again |
 | Nicknames | Admin sets a **nickname** per person; greetings use it ("Good morning, Juan!") |
 | Quiet home screen | No sync indicator, no user name, no "not you". The phone silently remembers its user so the tiles show *their* times |
@@ -47,7 +52,7 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 | Role | Identifies with | Can do |
 |------|-----------------|--------|
 | **Employee** | 3-digit code `000`–`999` (stored as text so the leading 0 stays) | Record the 4 daily times (once each, in order); change a time; add remarks; see their month, lates and calendar; print their own DTR |
-| **Admin** | 6-digit PIN (from the ⚙ button on the home screen) | Overview of lates; add/edit/deactivate people (code, nickname, full name, position, schedule); working hours (fixed / flexi); signatory; edit any person's days; print any DTR |
+| **Admin** | 6-digit PIN (typed after tapping a **faint ✦** at the top right of the home screen) | Overview of lates; add/edit/deactivate people (code, nickname, full name, position, schedule); working hours (fixed / flexi); signatory; edit any person's days; print any DTR |
 
 ---
 
@@ -57,7 +62,7 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 ```
 ┌──────────────────────────────┐
 │ ░░ status bar / notch ░░     │  ← safe area top
-│                          ⚙   │  ← admin
+│                          ✦   │  ← faint, almost invisible: opens the admin PIN
 │      WED · OCT 7 · 2026      │
 │          8:20 AM             │  ← centred, large, device time
 │ ┌────┐┌────┐┌────┐┌────┐     │
@@ -68,10 +73,10 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 │ └────┘└────┘└────┘└────┘     │
 │ (Leave)(Day-off)(Holiday)(Others)
 │          ●  ●  ○             │  ← 3 dots, nothing else above the keypad
-│      (1)   (2)   (3)         │  ← large round keypad, bottom
-│      (4)   (5)   (6)         │
-│      (7)   (8)   (9)         │
-│    My DTR  (0)    ⌫          │
+│  [ 1 ]  [ 2 ]  [ 3 ]         │  ← big rounded keys that fill all the free space
+│  [ 4 ]  [ 5 ]  [ 6 ]         │
+│  [ 7 ]  [ 8 ]  [ 9 ]         │
+│  My DTR [ 0 ]    ⌫           │
 │ ░░ home / gesture bar ░░     │  ← safe area bottom
 └──────────────────────────────┘
 ```
@@ -87,7 +92,7 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable (e
 | A slot **can't be recorded after a later one** | e.g. AM IN after PM OUT → *"Can't record AM IN after PM OUT (8:15 AM)"* |
 | Earlier empty slots stay open only if no later slot exists | A forgotten AM OUT can still be recorded before PM IN; once PM IN exists it's locked |
 | All four recorded | *"All 4 times are already recorded today"* |
-| Fixing a mistake | **Change time** on the sheet, or My DTR → day → Edit (always allowed) |
+| Fixing a mistake | **Tap a tile** to edit that time (recorded tiles show ✎; so do blocked empty tiles, which open "Add"), or **Change time** on the sheet, or My DTR → day → Edit. Edits must stay in order (AM IN can't be later than AM OUT, etc.) |
 Time = **the phone's clock**. If it's wrong, use Change time.
 
 ### 3.3 Confirmation sheet (slides up from the bottom, dark)
@@ -102,7 +107,7 @@ Time = **the phone's clock**. If it's wrong, use Change time.
 ### 3.4 Quick buttons: Leave · Day-off · Holiday · Others
 Tap one → type the code → a sheet with a 4-way switch (Leave · Day-off · Holiday · Others).
 - **Leave / Day-off / Holiday**: From / To dates (default today), "Skip Sundays". Prints `ON LEAVE` / `DAY-OFF` / `HOLIDAY` in the Undertime column for each day.
-- **Others** = a **reason for today only**, no dates. Example: clocked in AM, then out in the field. Type where you went or why (max 40 chars) or tap a suggestion (*Field work · Official business · Meeting · Training · No time-out · No lunch punch*). It prints in the Undertime column **next to your times**.
+- **Others** = a **reason** for one day (e.g. clocked in AM, then out in the field). Type where you went or why (max 40 chars) and pick the **date** (default today; one day, no range). **Suggestions are the person's own past reasons**, most used first (up to 6), so "FIELD WORK – CITY HALL" is one tap the second time. Nothing is suggested until they've typed something. No explanatory subtext on the sheet; it prints in the Undertime column beside the times.
 
 ### 3.5 My DTR
 Tap **My DTR** on the keypad → type the code:
@@ -117,21 +122,21 @@ Screen changes slide + fade (direction follows navigation) · tiles, pills, dots
 
 ### 3.7 Mobile spacing rules
 - `viewport-fit=cover`; top padding = `safe-area-inset-top + 10px`, bottom = `safe-area-inset-bottom + 14px` (min 16px each when the phone reports 0). Sheets add the bottom safe area too.
-- Keypad key size steps with the screen height: 76 px (tall) → 68 (≤ 800) → 62 (≤ 720, tile subtitles hidden) → 54 (≤ 640) → 46 px (≤ 600).
+- The keypad is a **grid that fills the screen** between the dots and the bottom safe area: 3 columns × 4 rows of rounded keys, each ~100 × 100 px on a tall phone and ~70 px high on an iPhone SE. Digits scale with the key (28–54 px). No fixed key size, so there is never an empty gap.
 - Tested at 568, 640, 667, 700, 740, 780, 844 and 932 px heights: the keypad always ends ≥ 30 px above the bottom edge and never touches the dots.
 
 ---
 
 ## 4. Admin (phone)
 
-Tap **⚙** → 6-digit PIN (lock icon floats; right PIN → it "unlocks") → the admin app, with a floating tab bar:
+Tap the faint **✦** (top right of the home screen) → 6-digit PIN (lock icon floats; right PIN → it "unlocks") → the admin app, with a floating tab bar:
 
 | Tab | Contents |
 |-----|----------|
 | **Overview** | Month switcher; big **lates this month** card; one card per person: initial avatar, nickname, full name, a lateness bar, lates badge, days present. Tap a person → their calendar (same as My DTR, with Edit and Print) |
 | **People** | List with schedule badge; **+ Add person** and tap-to-edit sheet: code (3 digits, unique), **nickname**, full name (printed), position, working hours (Default / Custom fixed / Custom flexi); Deactivate/Reactivate |
-| **Hours** | Fixed-time / Flexi-time switch (sliding); fixed: time in; flexi: earliest in, latest in, required hours; lunch from/to, grace minutes, "count late return from lunch" switch; a live sentence explaining the rule |
-| **Print** | Person picker, month switcher, A4 preview (tap to zoom), **Print / Save as PDF** |
+| **Hours** | Fixed-time / Flexi-time switch (sliding). **Fixed**: time in. **Flexi (clock in & out only)**: earliest clock in, latest clock in, hours to work → shows the **clock-out window** (e.g. 4:00–6:00 PM). **Lunch is the same for both** (own card: from / to). Late rules: grace minutes, "count late return from lunch". A live sentence explains the rule |
+| **Print** | Month switcher; **pick one, several or All people** (name chips); A4 preview with a pager (‹ Juan · 1 of 3 ›), tap the paper to zoom; **Print 3 DTRs (3 pages)** / Save as PDF: one A4 page per person |
 | **Settings** | Signatory (name, title, label), change PIN, "times come from the phone's clock" note, **Lock admin** |
 
 ---

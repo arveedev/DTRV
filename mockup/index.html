@@ -28,7 +28,7 @@ input,select{font:inherit}
 
 /* ---------- phone + theme (Rail · dark) ---------- */
 .phone{
-  --sat:47px; --sab:34px; --k:76px; --kg:14px;
+  --sat:47px; --sab:34px; --kg:10px;
   --rbg:#0a0f1c; --rsurf:#141b2d; --rsurf2:#1d2640; --rink:#eef2fa; --rmuted:#7c8aa8; --rline:#26304a;
   --acc:#5eead4; --acc-ink:#062a26; --rlate:#fb923c; --rlate-bg:#3d2312; --rok:#5eead4; --rok-bg:#123b37;
   --rrem:#c4b5fd; --rrem-bg:#2a1f4a; --rhol:#fb7185; --rhol-bg:#4a1d2b; --rwarn:#facc15; --rwarn-bg:#3b3410;
@@ -71,8 +71,8 @@ input,select{font:inherit}
 .g4{background:linear-gradient(140deg,#6d6df0,#3d3db8)}
 
 /* ----- record screen ----- */
-.gear{position:absolute;top:calc(var(--sat) + 6px);right:16px;width:36px;height:36px;border-radius:50%;border:0;background:var(--rsurf);color:var(--rmuted);cursor:pointer;display:grid;place-items:center;z-index:3;transition:transform .5s cubic-bezier(.3,1.4,.5,1),color .2s}
-.gear:hover,.gear:active{transform:rotate(90deg) scale(1.08);color:var(--acc)}
+.secret{position:absolute;top:calc(var(--sat) + 2px);right:8px;width:46px;height:46px;border:0;background:none;color:#fff;opacity:.16;font-size:11px;cursor:pointer;z-index:3;display:grid;place-items:center;transition:opacity .3s,transform .5s cubic-bezier(.3,1.5,.5,1)}
+.secret:active{opacity:.9;transform:rotate(90deg) scale(1.6);color:var(--acc)}
 .rclock{text-align:center;margin-top:2px}
 .rclock .date{font:500 11px "Space Grotesk",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--rmuted)}
 .rclock .clock{font:600 64px/1.04 "Space Grotesk",sans-serif;letter-spacing:-2.5px;font-variant-numeric:tabular-nums;display:flex;justify-content:center;align-items:baseline}
@@ -86,6 +86,7 @@ input,select{font:inherit}
 .tg{border:0;border-radius:18px;padding:10px 4px 9px;color:#fff;position:relative;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;opacity:.36;cursor:pointer;transition:opacity .25s,transform .25s cubic-bezier(.3,1.4,.5,1),filter .25s;font-family:Poppins}
 .tg b{font-size:13px;font-weight:800;line-height:1.05}
 .tg .st{font-size:9.5px;font-weight:500;opacity:.92}
+.tg .st.tm::after{content:' ✎';font-size:9px;opacity:.75}
 .tg .st.tm{font:600 12px "Space Grotesk",sans-serif;background:rgba(0,0,0,.24);border-radius:7px;padding:1px 6px;opacity:1}
 .tg .st.chipin{animation:chipin .6s cubic-bezier(.3,1.6,.5,1)}
 @keyframes chipin{0%{transform:scale(.2) rotate(-12deg);opacity:0}100%{transform:none;opacity:1}}
@@ -107,8 +108,8 @@ input,select{font:inherit}
 .chip[data-r=HOLIDAY].on{border-color:var(--rhol);background:var(--rhol-bg);color:var(--rhol)}
 @keyframes popchip{from{transform:scale(.85)}}
 
-.dots{display:flex;justify-content:center;gap:20px;margin-top:20px}
-.dots div{width:17px;height:17px;border-radius:50%;border:2px solid var(--rline);transition:border-color .2s,background .2s}
+.dots{display:flex;justify-content:center;gap:22px;margin-top:22px}
+.dots div{width:19px;height:19px;border-radius:50%;border:2px solid var(--rline);transition:border-color .2s,background .2s}
 .dots div.f{background:var(--acc);border-color:var(--acc);box-shadow:0 0 16px rgba(94,234,212,.7);animation:dotpop .38s cubic-bezier(.3,1.9,.5,1)}
 @keyframes dotpop{0%{transform:scale(.3)}60%{transform:scale(1.5)}100%{transform:scale(1)}}
 .dots.ok div{animation:wave .55s ease calc(var(--n)*80ms) both}
@@ -116,10 +117,10 @@ input,select{font:inherit}
 .dots.err div.f{background:var(--rhol);border-color:var(--rhol);box-shadow:0 0 16px rgba(251,113,133,.7)}
 .dots.six{gap:15px}.dots.six div{width:15px;height:15px}
 
-.keys{display:grid;grid-template-columns:repeat(3,var(--k));gap:var(--kg) 26px;justify-content:center;margin-top:auto;padding-top:12px}
-.keys button{width:var(--k);height:var(--k);border-radius:50%;border:0;background:var(--rsurf);color:var(--rink);font:500 34px "Space Grotesk",sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.3,1.6,.5,1),background .14s}
-.keys button:active{transform:scale(.84);background:var(--rsurf2)}
-.keys .m{background:none;font:600 12px Poppins,sans-serif;color:var(--rmuted);white-space:nowrap;transition:color .2s,transform .14s}
+.keys{flex:1;min-height:0;container-type:size;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:var(--kg);margin-top:16px}
+.keys button{width:100%;height:100%;border-radius:26px;border:0;background:var(--rsurf);color:var(--rink);font:500 40px "Space Grotesk",sans-serif;font-size:clamp(28px,min(9.5cqh,15cqw),54px);cursor:pointer;transition:transform .14s cubic-bezier(.3,1.6,.5,1),background .14s}
+.keys button:active{transform:scale(.92);background:var(--rsurf2)}
+.keys .m{background:none;font:600 13px Poppins,sans-serif;color:var(--rmuted);white-space:nowrap;transition:color .2s,transform .14s}
 .keys .m.on{color:var(--acc)}
 
 /* ----- toast ----- */
@@ -294,6 +295,8 @@ input,select{font:inherit}
 .swt.on{background:var(--acc)}.swt.on i{transform:translateX(22px);background:var(--acc-ink)}
 .preview{background:var(--rok-bg);color:var(--rok);border-radius:14px;padding:11px 13px;font-size:12.5px;line-height:1.5;margin-top:10px}
 .preview b{color:#fff}
+.rangeline{margin-top:10px;background:var(--rsurf2);border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--rmuted)}
+.rangeline b{color:var(--acc)}
 .pctl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
 .pctl select{flex:1;min-width:0;border:1.5px solid var(--rline);border-radius:12px;padding:9px 10px;background:var(--rsurf);color:var(--rink);font:500 13px Poppins;color-scheme:dark}
 .pctl .pname{font-weight:700;font-size:15px;flex:1}
@@ -303,6 +306,13 @@ input,select{font:inherit}
 .zoom .paper{cursor:zoom-out}
 @keyframes paperin{from{opacity:0;transform:translateY(30px) rotate(-2deg) scale(.92)}}
 .paper .a4{position:absolute;left:0;top:0;margin:0;transform-origin:0 0}
+.pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pk{border:1.5px solid var(--rline);background:transparent;color:var(--rmuted);border-radius:99px;padding:7px 14px;font:600 12px Poppins,sans-serif;cursor:pointer;transition:all .25s cubic-bezier(.3,1.5,.5,1)}
+.pk:active{transform:scale(.9)}
+.pk.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);transform:scale(1.04)}
+.pager{display:none;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;font:600 12px "Space Grotesk",sans-serif;color:var(--rmuted)}
+.pager button{width:30px;height:30px;border-radius:50%;border:0;background:var(--rsurf);color:var(--rink);cursor:pointer}
+.emptyprev{padding:60px 0;color:var(--rmuted);font-size:13px}
 .tap{font-size:11px;color:var(--rmuted);text-align:center;margin-top:6px}
 
 /* ----- DTR (CS Form 48) ----- */
@@ -341,15 +351,16 @@ input,select{font:inherit}
   html,body{background:#fff!important;height:auto}
   body>*:not(#printRoot){display:none!important}
   #printRoot{display:block!important}
-  #printRoot .a4{box-shadow:none;margin:0}
+  #printRoot .a4{box-shadow:none;margin:0;break-after:page;page-break-after:always}
+  #printRoot .a4:last-child{break-after:auto;page-break-after:auto}
 }
 
 /* height steps: keep the dialer above the home bar on every phone */
-@media (max-height:800px){ .phone{--k:68px;--kg:11px} .keys button{font-size:32px} .rclock .clock{font-size:54px} .tg{min-height:86px} .dots{margin-top:14px} }
-@media (max-height:720px){ .phone{--k:62px;--kg:9px} .keys button{font-size:30px} .rclock .clock{font-size:46px} .tg{min-height:72px;padding:8px 4px} .tg .st:not(.tm){display:none}
+@media (max-height:800px){ .phone{--kg:11px} .rclock .clock{font-size:54px} .tg{min-height:86px} .dots{margin-top:14px} }
+@media (max-height:720px){ .phone{--kg:9px} .rclock .clock{font-size:46px} .tg{min-height:72px;padding:8px 4px} .tg .st:not(.tm){display:none}
   .rail{margin-top:10px} .chips{margin-top:8px} .dots{margin-top:12px} .dots div{width:15px;height:15px} .cal .c{aspect-ratio:1.35} }
-@media (max-height:640px){ .phone{--k:54px;--kg:8px} .keys button{font-size:26px} .rclock .clock{font-size:40px} .tg{min-height:62px} }
-@media (max-height:600px){ .phone{--k:46px;--kg:7px} .keys button{font-size:23px} .rclock .clock{font-size:36px} }
+@media (max-height:640px){ .phone{--kg:8px} .rclock .clock{font-size:40px} .tg{min-height:62px} }
+@media (max-height:600px){ .phone{--kg:7px} .rclock .clock{font-size:36px} .gate .lock{display:none} }
 /* a real phone: full screen with the device's own safe areas */
 @media (max-width:520px){
   .demo,.explain,.sbar,.homebar{display:none!important}
@@ -368,7 +379,7 @@ input,select{font:inherit}
   <label><input type="checkbox" id="simLive" checked> device time</label>
   <input type="date" id="simDate"> <input type="time" id="simTime">
   <button id="resetDev">Reset device</button>
-  <span class="hint">Codes <b>024</b> (fixed) · <b>205</b> (flexi) · <b>331</b> — admin PIN <b>123456</b> (⚙ top right)</span>
+  <span class="hint">Codes <b>024</b> (fixed) · <b>205</b> (flexi) · <b>331</b> — admin PIN <b>123456</b> (✦ top right, faint)</span>
 </div>
 
 <div class="stage">
@@ -381,7 +392,7 @@ input,select{font:inherit}
 
     <!-- 1 · Record -->
     <div class="scr" id="p-record">
-      <button class="gear" id="toAdmin" aria-label="Admin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="secret" id="toAdmin" aria-label="·">✦</button>
       <div class="rclock" data-st><div class="date" id="hDate"></div><div class="clock" id="hTime"></div></div>
       <div class="rail" id="toggles">
         <button class="tg g1" data-st data-s="am_in"><span data-ic="sun"></span><b>AM<br>IN</b><span class="st">Arrive</span></button>
@@ -439,18 +450,17 @@ input,select{font:inherit}
   <div class="explain">
     <h3>What changed</h3>
     <ol>
-      <li><b>Home:</b> only the dots and a bigger keypad. The 4 tiles remember <i>this phone's</i> user silently (no name, no sync dot).</li>
-      <li><b>One time per slot.</b> A recorded tile is locked. A slot can't be recorded after a later one (e.g. AM IN after PM OUT). Use <b>Change time</b> or My DTR to fix a mistake.</li>
-      <li><b>Device time.</b> Times come from this phone's clock.</li>
-      <li><b>Sheet:</b> just the greeting with the <b>nickname</b> (set by admin), the time, and the late bar. No auto-close; tap <b>Done</b>.</li>
-      <li><b>Others</b> = a reason for today only (field work, where you went…). No dates.</li>
-      <li><b>Admin is a phone app too</b>: tap ⚙, enter 123456. Overview · People · Hours · Print · Settings.</li>
+      <li><b>Bigger keypad</b> that fills the screen, with larger digits.</li>
+      <li><b>Tap a tile</b> to edit that time (recorded tiles show ✎). Empty tiles you can record are selected instead.</li>
+      <li><b>Others</b> remembers what <i>you</i> typed and suggests it; it has a date.</li>
+      <li><b>Flexi</b> sets clock in &amp; out only; lunch is the same for both.</li>
+      <li><b>Admin</b> is behind the faint ✦ at the top right of the home screen (PIN 123456). Print tab can print <b>several people</b> at once.</li>
     </ol>
     <p>Open this file on your phone for the full-screen version.</p>
   </div>
 </div>
 
-<div id="printRoot"><div class="a4" id="a4"></div></div>
+<div id="printRoot"></div>
 
 <script>
 /* =================== data =================== */
@@ -557,6 +567,7 @@ function suggest(e){
     });
   }
   if(today > 9){ for(const no of ['024','205','331']){ const x=ensure(no,`${ym}-${pad(today-8)}`); if(new Date(Y,M,today-8).getDay()%6){ x.am_in=x.am_out=x.pm_in=x.pm_out=null; x.remark={code:'HOLIDAY',text:''}; } } }
+  [[2,'FIELD WORK – CITY HALL'],[4,'MEETING – DISTRICT OFFICE'],[5,'FIELD WORK – CITY HALL']].forEach(([d,t],i)=>{ if(d<today){ const x=get('024',`${ym}-${pad(d)}`); if(x) x.remark={code:'OTHER',text:t}; } });
   if(today > 3){ const e = ensure('024', `${ym}-${pad(today-1)}`); e.pm_out=null; e.remark={code:'OTHER', text:'FIELD WORK – CITY HALL'}; }
   if(today > 6){ const ds=`${ym}-${pad(today-4)}`; if(new Date(Y,M,today-4).getDay()%6) S.e[key('205',ds)]={am_in:null,am_out:null,pm_in:null,pm_out:null,remark:{code:'LEAVE',text:''},edited:false}; }
 })();
@@ -649,8 +660,8 @@ function dotsFlash(box, kind, n){
 }
 
 $$('.tg').forEach(b => b.onclick = () => {
-  const k = b.dataset.s, chk = canRecord(entryOf(lastCode), k);
-  if(!chk.ok){ toast(chk.why,'err'); shake(b); return; }
+  const k = b.dataset.s, e = entryOf(lastCode), chk = canRecord(e,k);
+  if(lastCode && (e?.[k] || !chk.ok)){ openTimeSheet(lastCode, now().date, k, 'tile'); return; }   // recorded, or blocked: edit the time
   selSlot = k; selRemark = null; pendingMy = false; paintToggles();
 });
 $$('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; pendingMy = false; paintToggles(); });
@@ -688,7 +699,7 @@ let toastTimer;
 function toast(html, kind=''){ const T=$('#toast'); T.className='toast '+kind; T.innerHTML=`<span class="ti">${html}</span>`; void T.offsetWidth; T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'), kind==='err'?3400:2600); }
 $('#toast').onclick = () => $('#toast').classList.remove('show');
 function openSheet(html, cls=''){ const sh=$('#sheet'); sh.className='sheet '+cls; sh.innerHTML='<div class="grab"></div>'+html; sh.scrollTop=0; requestAnimationFrame(()=>{ sh.classList.add('show'); stagger(sh,55); }); $('#scrim').classList.add('show'); }
-function closeSheet(){ $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
+function closeSheet(){ $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); if(selRemark){ selRemark = null; paintToggles(); } }   // dismissing a remark sheet also un-arms the pill
 $('#scrim').onclick = closeSheet;
 
 /* result sheet — no auto-close */
@@ -706,44 +717,61 @@ function showResult(no, date, slot, opt={}){
     <div class="act" data-st>${opt.fresh?'<button id="rsUndo">Undo</button>':''}<button id="rsChange">Change time</button><button class="p" id="rsDone">Done</button></div>`, 'res');
   setTimeout(()=>{ countUp($('#lateN'), late); if(!late && slot==='am_in') burst($('#rsIc').parentElement); }, 250);
   $('#rsDone').onclick = closeSheet;
-  $('#rsChange').onclick = () => openTimeSheet(no, date, slot);
+  $('#rsChange').onclick = () => openTimeSheet(no, date, slot, 'result');
   if(opt.fresh) $('#rsUndo').onclick = () => { e[slot] = null; if(!SLOTS.some(s=>e[s]) && !e.remark) delete S.e[key(no,date)]; closeSheet(); autoToggle(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed`); };
 }
-function openTimeSheet(no, date, slot){
-  const e = ensure(no,date);
-  openSheet(`<h3 data-st>Change ${SLOT_LABEL[slot]}</h3>
-    <div class="sub" data-st>${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})} · match it to the office biometric</div>
+function orderError(e, slot, time){
+  const i = SLOTS.indexOf(slot);
+  for(let j=0;j<4;j++){ const o = SLOTS[j]; if(j===i || !e[o]) continue;
+    if(j<i && m(e[o])>m(time)) return `<b>${SLOT_LABEL[slot]}</b> can't be earlier than <b>${SLOT_LABEL[o]}</b> (${t12(e[o])})`;
+    if(j>i && m(e[o])<m(time)) return `<b>${SLOT_LABEL[slot]}</b> can't be later than <b>${SLOT_LABEL[o]}</b> (${t12(e[o])})`; }
+  return null;
+}
+function openTimeSheet(no, date, slot, from='result'){
+  const e = get(no,date) || {};
+  openSheet(`<h3 data-st>${e[slot]?'Edit':'Add'} ${SLOT_LABEL[slot]}</h3>
+    <div class="sub" data-st>${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}</div>
     <div class="field" data-st><input type="time" class="big" id="shT" value="${e[slot]||''}"></div>
     <div class="btns" data-st><button class="btn danger" id="shClr">Clear</button><button class="btn primary" id="shOk">Save</button></div>`);
-  $('#shOk').onclick = () => { const v=$('#shT').value; if(!v) return; e[slot]=v; e.edited=true; afterChange(); showResult(no,date,slot,{}); };
-  $('#shClr').onclick = () => { e[slot]=null; e.edited=true; closeSheet(); autoToggle(); afterChange(); toast(`<b>${SLOT_LABEL[slot]}</b> cleared`); };
+  $('#shOk').onclick = () => {
+    const v = $('#shT').value; if(!v){ shake($('#shT')); return; }
+    const err = orderError(e, slot, v); if(err){ toast(err,'err'); shake($('#shT')); return; }
+    const t = ensure(no,date); t[slot] = v; t.edited = true; afterChange();
+    if(from==='result') showResult(no,date,slot,{}); else { closeSheet(); autoToggle(); toast(`<b>${SLOT_LABEL[slot]}</b> set to ${t12(v)}`); }
+  };
+  $('#shClr').onclick = () => { const t = ensure(no,date); t[slot]=null; t.edited=true; if(!SLOTS.some(x=>t[x]) && !t.remark) delete S.e[key(no,date)]; closeSheet(); autoToggle(); afterChange(); toast(`<b>${SLOT_LABEL[slot]}</b> cleared`); };
 }
 
 /* =================== remarks =================== */
-const SUGG = ['FIELD WORK','OFFICIAL BUSINESS','MEETING','TRAINING','NO TIME-OUT','NO LUNCH PUNCH'];
-function remarkBody(code, date){
-  if(code==='OTHER') return `
+function remarkHistory(no){          // what this person actually typed before, most used first
+  const c = {};
+  Object.entries(S.e).forEach(([k,e]) => { if(!k.startsWith(no+'|') || e.remark?.code!=='OTHER') return;
+    const t = e.remark.text, d = k.split('|')[1], r = c[t] ||= {n:0,last:''}; r.n++; if(d>r.last) r.last = d; });
+  return Object.entries(c).sort((a,b)=>b[1].n-a[1].n || b[1].last.localeCompare(a[1].last)).slice(0,6).map(x=>x[0]);
+}
+function remarkBody(code, date, no){
+  if(code==='OTHER'){ const h = remarkHistory(no); return `
     <div class="field" data-st><label>Where did you go, or what's the reason?</label><input id="oTxt" maxlength="40" placeholder="e.g. FIELD WORK – CITY HALL" autocomplete="off"></div>
-    <div class="sugg" data-st>${SUGG.map(x=>`<button data-t="${x}">${x}</button>`).join('')}</div>
-    <div class="hintline" data-st>For <b>${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}</b> only. Printed in the Undertime column, next to your times.</div>`;
+    ${h.length ? `<div class="sugg" data-st>${h.map(x=>`<button data-t="${x.replace(/"/g,'&quot;')}">${x}</button>`).join('')}</div>` : ''}
+    <div class="field" data-st><label>Date</label><input type="date" id="oDate" value="${date}"></div>`; }
   return `<div class="row2" data-st><div class="field"><label>From</label><input type="date" id="rFrom" value="${date}"></div><div class="field"><label>To</label><input type="date" id="rTo" value="${date}"></div></div>
     <label class="check" data-st><input type="checkbox" id="rSkip" checked> Skip Sundays in the range</label>`;
 }
 function openRemarkSheet(no, code='LEAVE', date=now().date){
   const p = emp(no), codes = Object.keys(REMARK_LABEL); let cur = code;
-  openSheet(`<h3 data-st>Remark</h3><div class="sub" data-st>${p.name}</div>
+  openSheet(`<h3 data-st style="margin-bottom:12px">Remark</h3>
     <div class="chooser" data-st style="--p:${codes.indexOf(cur)}"><i class="th"></i>${codes.map(c=>`<button data-c="${c}" class="${c===cur?'on':''}">${REMARK_LABEL[c]}</button>`).join('')}</div>
-    <div id="rBody">${remarkBody(cur,date)}</div>
+    <div id="rBody">${remarkBody(cur,date,no)}</div>
     <div class="btns" data-st><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
   const bind = () => $$('#rBody .sugg button').forEach(b => b.onclick = () => { $('#oTxt').value = b.dataset.t; $('#oTxt').focus(); });
   bind();
   $$('.chooser button').forEach(b => b.onclick = () => { cur = b.dataset.c; $('.chooser').style.setProperty('--p', codes.indexOf(cur));
-    $$('.chooser button').forEach(x=>x.classList.toggle('on', x===b)); $('#rBody').innerHTML = remarkBody(cur,date); stagger($('#rBody'),55); bind(); });
+    $$('.chooser button').forEach(x=>x.classList.toggle('on', x===b)); $('#rBody').innerHTML = remarkBody(cur,date,no); stagger($('#rBody'),55); bind(); });
   $('#rCancel').onclick = () => { closeSheet(); selRemark=null; paintToggles(); };
   $('#rOk').onclick = () => {
     if(cur==='OTHER'){
       const txt = $('#oTxt').value.trim().toUpperCase(); if(!txt){ shake($('#oTxt')); $('#oTxt').focus(); return; }
-      ensure(no,date).remark = {code:'OTHER', text:txt}; closeSheet(); selRemark=null; paintToggles(); afterChange(); toast(`Saved · <b>${txt}</b>`); return;
+      ensure(no,$('#oDate').value||date).remark = {code:'OTHER', text:txt}; closeSheet(); selRemark=null; paintToggles(); afterChange(); toast(`Saved · <b>${txt}</b>`); return;
     }
     let d = new Date($('#rFrom').value+'T00:00'), end = new Date(($('#rTo').value||$('#rFrom').value)+'T00:00'), n=0;
     while(d <= end && n < 62){ if(!($('#rSkip').checked && d.getDay()===0)){ ensure(no, ymd(d)).remark = {code:cur, text:''}; n++; } d.setDate(d.getDate()+1); }
@@ -758,7 +786,7 @@ $('#myBack').onclick = () => { if(myFrom==='admin'){ go('p-admin','l'); renderAd
 $('#mPrev').onclick = () => { myYM = shiftYM(myYM,-1); paintMy({dir:'L'}); };
 $('#mNext').onclick = () => { myYM = shiftYM(myYM, 1); paintMy({dir:'R'}); };
 $('#myRemark').onclick = () => openRemarkSheet(myNo, 'LEAVE', mySel || now().date);
-$('#myPrint').onclick = () => { go('p-print','r'); setTimeout(()=>printUI($('#printBody'), {no:myNo, ym:myYM, locked:true}), 60); };
+$('#myPrint').onclick = () => { go('p-print','r'); setTimeout(()=>printUI($('#printBody'), {nos:[myNo], ym:myYM, locked:true}), 60); };
 $('#printBack').onclick = () => go('p-my','l');
 
 function dayClass(e, ds, wd, sc, today){
@@ -800,6 +828,8 @@ function openDaySheet(no, ds){
   $('#dCode').value = e.remark?.code || '';
   const sync = () => $('#dTxtF').style.display = $('#dCode').value==='OTHER' ? '' : 'none'; sync(); $('#dCode').onchange = sync;
   $('#dOk').onclick = () => {
+    const vals = {}; $$('#sheet input[data-s]').forEach(i => vals[i.dataset.s] = i.value||null);
+    let last = null; for(const k of SLOTS){ if(!vals[k]) continue; if(last && m(vals[k])<m(vals[last])){ toast(`<b>${SLOT_LABEL[k]}</b> can't be earlier than <b>${SLOT_LABEL[last]}</b> (${t12(vals[last])})`,'err'); return; } last = k; }
     const t = ensure(no, ds);
     $$('#sheet input[data-s]').forEach(i => { const v=i.value||null; if(v!==t[i.dataset.s]){ t[i.dataset.s]=v; t.edited=true; } });
     const c=$('#dCode').value; t.remark = c ? {code:c, text:c==='OTHER'?$('#dTxt').value.trim().toUpperCase():''} : null;
@@ -847,26 +877,44 @@ function dtrCopy(no, ym){
 }
 
 let zoomPrev = false;
-function paintPreview(no, ym){
-  const copy = dtrCopy(no, ym); $('#a4').innerHTML = copy + copy;              // real size, used by window.print()
+function paintPreview(st){
+  $('#printRoot').innerHTML = st.nos.map(no => { const c = dtrCopy(no, st.ym); return `<div class="a4">${c}${c}</div>`; }).join('');   // real size, used by window.print()
   const box = $('#prevBox'); if(!box) return;
-  const w = (box.clientWidth || 340) - 20, sc = zoomPrev ? 1.1 : w/793.7;
+  if(!st.nos.length){ box.classList.remove('zoom'); box.innerHTML = '<div class="emptyprev">Pick at least one person</div>'; return; }
+  st.page = Math.min(st.page||0, st.nos.length-1);
+  const w = (box.clientWidth || 340) - 20, sc = zoomPrev ? 1.1 : w/793.7, c = dtrCopy(st.nos[st.page], st.ym);
   box.classList.toggle('zoom', zoomPrev);
-  box.innerHTML = `<div class="paper" style="width:${793.7*sc}px;height:${1122.5*sc}px"><div class="a4" style="transform:scale(${sc})">${copy}${copy}</div></div>`;
-  $('.paper').onclick = () => { zoomPrev = !zoomPrev; paintPreview(no, ym); };
+  box.innerHTML = `<div class="paper" style="width:${793.7*sc}px;height:${1122.5*sc}px"><div class="a4" style="transform:scale(${sc})">${c}${c}</div></div>`;
+  $('.paper').onclick = () => { zoomPrev = !zoomPrev; paintPreview(st); };
 }
 function printUI(host, st){
+  st.page = st.page || 0;
   const label = () => MONTHS[+st.ym.slice(5)-1]+' '+st.ym.slice(0,4);
-  host.innerHTML = `<div class="pctl" data-st>${st.locked ? `<div class="pname">${emp(st.no).name}</div>` : `<select id="pSel">${S.emps.map(p=>`<option value="${p.no}"${p.no===st.no?' selected':''}>${p.name}</option>`).join('')}</select>`}
+  const people = S.emps.filter(p=>p.active!==false);
+  host.innerHTML = `<div class="pctl" data-st>${st.locked ? `<div class="pname">${emp(st.nos[0]).name}</div>` : `<span style="font-weight:700">Who to print</span>`}
     <div class="mnav"><button id="pPrev">‹</button><span id="pLbl">${label()}</span><button id="pNext">›</button></div></div>
+    ${st.locked ? '' : `<div class="pick" data-st><button class="pk all" data-no="*">All</button>${people.map(p=>`<button class="pk" data-no="${p.no}">${nickOf(p)}</button>`).join('')}</div>`}
+    <div class="pager" id="pager"><button id="pgPrev">‹</button><span id="pgLbl"></span><button id="pgNext">›</button></div>
     <div class="prev" id="prevBox"></div><div class="tap">Tap the paper to zoom</div>
-    <button class="bigbtn" id="doPrint">Print / Save as PDF</button>`;
-  const redraw = () => { $('#pLbl').textContent = label(); paintPreview(st.no, st.ym); };
-  if(!st.locked) $('#pSel').onchange = e => { st.no = e.target.value; redraw(); };
-  $('#pPrev').onclick = () => { st.ym = shiftYM(st.ym,-1); redraw(); };
-  $('#pNext').onclick = () => { st.ym = shiftYM(st.ym, 1); redraw(); };
-  $('#doPrint').onclick = () => window.print();
-  stagger(host,60); paintPreview(st.no, st.ym);
+    <button class="bigbtn" id="doPrint"></button>`;
+  const refresh = () => {
+    $('#pLbl').textContent = label();
+    $$('.pk').forEach(b => b.classList.toggle('on', b.dataset.no==='*' ? st.nos.length===people.length : st.nos.includes(b.dataset.no)));
+    const n = st.nos.length; $('#pager').style.display = n>1 ? 'flex' : 'none';
+    if(n>1) $('#pgLbl').textContent = `${nickOf(emp(st.nos[st.page]))} · ${st.page+1} of ${n}`;
+    const bt = $('#doPrint'); bt.disabled = !n; bt.textContent = st.locked||n<=1 ? 'Print / Save as PDF' : `Print ${n} DTRs (${n} pages)`; bt.style.opacity = n ? 1 : .4;
+    paintPreview(st);
+  };
+  $$('.pk').forEach(b => b.onclick = () => {
+    if(b.dataset.no==='*') st.nos = st.nos.length===people.length ? [] : people.map(p=>p.no);
+    else st.nos = people.map(p=>p.no).filter(no => no===b.dataset.no ? !st.nos.includes(no) : st.nos.includes(no));
+    st.page = 0; refresh(); });
+  $('#pgPrev').onclick = () => { st.page = (st.page - 1 + st.nos.length) % st.nos.length; refresh(); };
+  $('#pgNext').onclick = () => { st.page = (st.page + 1) % st.nos.length; refresh(); };
+  $('#pPrev').onclick = () => { st.ym = shiftYM(st.ym,-1); refresh(); };
+  $('#pNext').onclick = () => { st.ym = shiftYM(st.ym, 1); refresh(); };
+  $('#doPrint').onclick = () => { if(st.nos.length) window.print(); };
+  stagger(host,60); refresh();
 }
 
 /* =================== admin =================== */
@@ -938,10 +986,13 @@ function openPersonSheet(p){
 function aHours(b){
   const sc = S.sched;
   b.innerHTML = `<div class="seg" id="hSeg" data-st style="--p:${sc.mode==='flexi'?1:0}"><i class="th"></i><button data-m="fixed" class="${sc.mode==='fixed'?'on':''}">Fixed time</button><button data-m="flexi" class="${sc.mode==='flexi'?'on':''}">Flexi-time</button></div>
-    <div class="card" id="fixedF" data-st ${sc.mode==='fixed'?'':'hidden'}><h4>Fixed</h4><div class="field"><label>Time in (late after this)</label><input type="time" id="hAmIn" value="${sc.amIn}"></div></div>
-    <div class="card" id="flexiF" data-st ${sc.mode==='flexi'?'':'hidden'}><h4>Flexi</h4><div class="row2"><div class="field"><label>Earliest in</label><input type="time" id="hFs" value="${sc.flexStart}"></div><div class="field"><label>Latest in (late after)</label><input type="time" id="hFe" value="${sc.flexEnd}"></div></div><div class="field"><label>Required hours per day</label><input type="number" id="hReq" min="1" max="12" value="${sc.req}"></div></div>
-    <div class="card" data-st><h4>Lunch &amp; grace</h4><div class="row2"><div class="field"><label>Lunch from</label><input type="time" id="hLs" value="${sc.lunchS}"></div><div class="field"><label>Lunch to</label><input type="time" id="hLe" value="${sc.lunchE}"></div></div>
-      <div class="field"><label>Grace period (minutes)</label><input type="number" id="hGr" min="0" max="60" value="${sc.grace}"></div>
+    <div class="card" id="fixedF" data-st ${sc.mode==='fixed'?'':'hidden'}><h4>Clock in</h4><div class="field"><label>Time in (late after this)</label><input type="time" id="hAmIn" value="${sc.amIn}"></div></div>
+    <div class="card" id="flexiF" data-st ${sc.mode==='flexi'?'':'hidden'}><h4>Flexi · clock in &amp; out</h4>
+      <div class="row2"><div class="field"><label>Earliest clock in</label><input type="time" id="hFs" value="${sc.flexStart}"></div><div class="field"><label>Latest clock in</label><input type="time" id="hFe" value="${sc.flexEnd}"></div></div>
+      <div class="field"><label>Hours to work (not counting lunch)</label><input type="number" id="hReq" min="1" max="12" value="${sc.req}"></div>
+      <div class="rangeline" id="hRange"></div></div>
+    <div class="card" data-st><h4>Lunch · same for fixed &amp; flexi</h4><div class="row2"><div class="field"><label>From</label><input type="time" id="hLs" value="${sc.lunchS}"></div><div class="field"><label>To</label><input type="time" id="hLe" value="${sc.lunchE}"></div></div></div>
+    <div class="card" data-st><h4>Late rules</h4><div class="field"><label>Grace period (minutes)</label><input type="number" id="hGr" min="0" max="60" value="${sc.grace}"></div>
       <div class="swrow"><span>Also count late return from lunch</span><button class="swt ${sc.pmLate?'on':''}" id="hPm"><i></i></button></div></div>
     <div class="preview" id="hPrev" data-st></div>`;
   const bind = (id,k,num) => $('#'+id).addEventListener('input', e => { if(!e.target.value) return; sc[k] = num ? +e.target.value : e.target.value; hoursPreview(); });
@@ -953,12 +1004,15 @@ function aHours(b){
   hoursPreview();
 }
 function hoursPreview(){
-  const s = S.sched, lim = lateLimit(s), el = $('#hPrev'); if(!el) return;
+  const s = S.sched, el = $('#hPrev'); if(!el) return;
+  const lunchLen = m(s.lunchE) - m(s.lunchS), outA = hm(m(s.flexStart)+s.req*60+lunchLen), outB = hm(m(s.flexEnd)+s.req*60+lunchLen);
+  if($('#hRange')) $('#hRange').innerHTML = `Clock out between <b>${t12(outA)}</b> and <b>${t12(outB)}</b>`;
   el.innerHTML = s.mode==='flexi'
-    ? `Arrive between <b>${t12(s.flexStart)}</b> and <b>${t12(s.flexEnd)}</b>. Late if AM IN is after <b>${t12(hm(m(lim)+ +s.grace))}</b>. Time out = arrival + ${s.req} h + lunch (in at 8:30 AM → out at <b>${t12(hm(m('08:30')+s.req*60+m(s.lunchE)-m(s.lunchS)))}</b>).`
-    : `Late if AM IN is after <b>${t12(hm(m(lim)+ +s.grace))}</b>${s.pmLate?` or PM IN after <b>${t12(hm(m(s.lunchE)+ +s.grace))}</b>`:''}.`;
+    ? `Clock in any time from <b>${t12(s.flexStart)}</b> to <b>${t12(s.flexEnd)}</b>; late after <b>${t12(hm(m(s.flexEnd)+ +s.grace))}</b>. Clock out after <b>${s.req} h</b> of work (in at 8:30 AM → out at <b>${t12(hm(m('08:30')+s.req*60+lunchLen))}</b>). Lunch stays <b>${t12(s.lunchS)}–${t12(s.lunchE)}</b>.`
+    : `Late if AM IN is after <b>${t12(hm(m(s.amIn)+ +s.grace))}</b>${s.pmLate?` or PM IN after <b>${t12(hm(m(s.lunchE)+ +s.grace))}</b>`:''}. Lunch <b>${t12(s.lunchS)}–${t12(s.lunchE)}</b>.`;
 }
-function aPrint(b){ printUI(b, { no:S.emps[0].no, ym:aYM, locked:false }); }
+let aPrintSt = null;
+function aPrint(b){ const first = S.emps.find(p=>p.active!==false); aPrintSt ||= { nos:[first.no], ym:aYM, locked:false, page:0 }; aPrintSt.nos = aPrintSt.nos.filter(no=>emp(no)&&emp(no).active!==false); printUI(b, aPrintSt); }
 function aSet(b){
   b.innerHTML = `<div class="card" data-st style="margin-top:0"><h4>Signatory on the DTR</h4>
       <div class="field"><label>Name</label><input id="gName" value="${S.sign.name}"></div><div class="field"><label>Title</label><input id="gTitle" value="${S.sign.title}"></div><div class="field"><label>Label under title</label><input id="gLabel" value="${S.sign.label}"></div></div>
