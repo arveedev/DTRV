@@ -3,400 +3,744 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DTRV UI Mockup</title>
+<title>DTRV Prototype</title>
 <style>
-  :root{
-    --bg:#f4f5f7; --card:#fff; --ink:#1d2330; --muted:#6b7280; --line:#d9dde3;
-    --brand:#1e4fa8; --brand-ink:#fff; --ok:#1f8a4c; --warn:#b7791f; --warn-bg:#fff7e0; --bad:#c0392b;
-    --hl:#e8f0ff;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-  .mocknav{position:sticky;top:0;z-index:5;background:#111827;color:#fff;padding:8px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  .mocknav b{margin-right:8px;font-size:13px;opacity:.8}
-  .mocknav button{background:#374151;color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer}
-  .mocknav button.on{background:var(--brand)}
-  .screen{display:none;padding:24px 16px;max-width:1100px;margin:0 auto}
-  .screen.on{display:block}
-  .note{font-size:13px;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
-  h1,h2,h3{margin:0 0 12px}
-  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
-  .btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
-  .btn.danger{color:var(--bad)}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
-  input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
-  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-  table.data{width:100%;border-collapse:collapse;font-size:14px}
-  table.data th,table.data td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
-  table.data th{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.03em}
-  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#eef2f7}
-  .pill.ok{background:#e3f5ea;color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
-  tr.incomplete td{background:var(--warn-bg)}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
-  .side{display:grid;grid-template-columns:200px 1fr;gap:16px}
-  @media (max-width:700px){.side{grid-template-columns:1fr}}
-  .menu a{display:block;padding:9px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
-  .menu a.on{background:var(--hl);color:var(--brand);font-weight:600}
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#14213d; --muted:#64708a; --line:#dde3ec;
+  --brand:#0f5c8c; --brand-2:#0b4870; --brand-soft:#e3f0f8;
+  --ok:#1b8a5a; --ok-soft:#e2f4ea; --late:#c2410c; --late-soft:#fdeee4; --warn:#a16207; --warn-soft:#fdf6dc;
+  --leave:#6d28d9; --leave-soft:#efe8fd;
+  --r:14px; --shadow:0 8px 30px rgba(20,33,61,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+input,select{font:inherit;color:var(--ink)}
 
-  /* Login pad */
-  .kiosk{max-width:360px;margin:20px auto;text-align:center}
-  .clock{font-size:44px;font-weight:700;letter-spacing:1px}
-  .dots{display:flex;justify-content:center;gap:14px;margin:22px 0}
-  .dots span{width:18px;height:18px;border-radius:50%;border:2px solid var(--brand)}
-  .dots span.f{background:var(--brand)}
-  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .pad button{font-size:28px;padding:18px 0;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer}
-  .pad button:active{background:var(--hl)}
-  .link{color:var(--brand);font-size:14px;background:none;border:0;cursor:pointer;margin-top:18px}
+/* ---------- mockup chrome ---------- */
+.demo{position:sticky;top:0;z-index:50;background:#0d1626;color:#cdd6e4;padding:8px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px}
+.demo b{color:#fff}
+.demo .tabs{display:flex;gap:4px;flex-wrap:wrap}
+.demo .tabs button{background:#1d2a40;border:0;border-radius:6px;padding:6px 10px;color:#cdd6e4;cursor:pointer}
+.demo .tabs button.on{background:var(--brand);color:#fff}
+.demo input{background:#1d2a40;border:1px solid #2c3b57;border-radius:6px;color:#fff;padding:4px 6px}
+.demo .hint{opacity:.7}
+.view{display:none}.view.on{display:block}
 
-  /* Clock screen */
-  .punches{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
-  .punch{border:2px solid var(--line);border-radius:16px;padding:22px 10px;background:#fff;font-size:20px;font-weight:700;cursor:pointer}
-  .punch small{display:block;font-size:14px;font-weight:500;color:var(--muted);margin-top:6px}
-  .punch.done{opacity:.55;cursor:not-allowed}
-  .punch.next{border-color:var(--brand);background:var(--hl);color:var(--brand)}
-  .modal{position:relative;max-width:380px;margin:20px auto;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.15);padding:22px;text-align:center}
+/* ---------- employee app (phone) ---------- */
+.stage{display:flex;justify-content:center;gap:32px;padding:24px 16px 48px;flex-wrap:wrap}
+.phone{width:390px;max-width:100%;min-height:780px;background:var(--surface);border-radius:32px;box-shadow:var(--shadow);overflow:hidden;position:relative;display:flex;flex-direction:column;border:8px solid #0d1626}
+.explain{max-width:360px;font-size:14px;line-height:1.55;color:var(--muted)}
+.explain h3{color:var(--ink);margin:0 0 8px}
+.explain ol{padding-left:18px}
+.explain code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 4px}
 
-  /* ---------- DTR (CS Form 48) PRINT ---------- */
-  .paper-wrap{overflow:auto;background:#9aa1ab;padding:16px;border-radius:8px}
-  .a4{width:210mm;height:297mm;background:#fff;margin:0 auto;padding:8mm 7mm;display:flex;gap:8mm;color:#000;
-      font-family:Arial,Helvetica,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-  .dtr{flex:1;display:flex;flex-direction:column;font-size:7.5pt}
-  .dtr .formno{font-style:italic;font-size:7pt}
-  .dtr .title{text-align:center;font-weight:700;font-size:11pt;margin-top:2mm}
-  .dtr .ooo{text-align:center;font-size:7pt;margin-bottom:3mm}
-  .dtr .name{border-bottom:1px solid #000;text-align:center;font-weight:700;font-size:9pt;height:6mm;line-height:6mm;text-transform:uppercase}
-  .dtr .cap{text-align:center;font-size:7pt;margin-bottom:2mm}
-  .dtr table{width:100%;border-collapse:collapse;table-layout:fixed}
-  .dtr .meta td{font-size:7pt;padding:.4mm 1mm;vertical-align:bottom}
-  .dtr .meta .u{border-bottom:1px solid #000;text-align:center;font-style:normal;font-weight:700}
-  .dtr .meta i{font-style:italic}
-  .dtr .grid{margin-top:2mm}
-  .dtr .grid th,.dtr .grid td{border:1px solid #000;text-align:center;padding:0;height:5mm;font-size:7.5pt;overflow:hidden;white-space:nowrap}
-  .dtr .grid th{font-weight:700;font-size:6.5pt;line-height:1.1}
-  .dtr .grid th.big{font-size:8pt}
-  .dtr .grid td.day{font-weight:700;text-align:left;padding-left:1mm}
-  .dtr .grid td.rmk{font-size:5.2pt;white-space:normal;line-height:1}
-  .dtr .grid td.across{font-size:6pt;letter-spacing:.5px}
-  .dtr .grid tr.tot td{border:0}
-  .dtr .grid tr.tot td.b{border:1px solid #000}
-  .dtr .cert{font-style:italic;font-size:6.3pt;margin-top:4mm;line-height:1.3}
-  .dtr .sigline{border-bottom:1px solid #000;height:9mm}
-  .dtr .verified{font-style:italic;font-size:6.3pt;margin-top:4mm}
-  .dtr .sup{text-align:center;margin-top:8mm;font-size:7pt}
-  .dtr .sup .n{font-weight:700;text-transform:uppercase;border-bottom:1px solid #000;display:inline-block;min-width:60%}
-  .dtr .sup .t{font-size:6.5pt}
-  .dtr .sup .l{font-style:italic;font-size:6.5pt}
-  @media print{
-    @page{size:A4;margin:0}
-    body{background:#fff}
-    .mocknav,.screen:not(#s-print),.noprint{display:none!important}
-    #s-print{display:block!important;padding:0;max-width:none}
-    .paper-wrap{padding:0;background:none}
-    .a4{box-shadow:none;margin:0}
-  }
+.hero{background:linear-gradient(160deg,var(--brand),var(--brand-2));color:#fff;padding:22px 22px 26px}
+.hero .date{opacity:.85;font-size:14px}
+.hero .time{font-size:46px;font-weight:750;letter-spacing:-1px;line-height:1.1;font-variant-numeric:tabular-nums}
+.hero .time small{font-size:18px;font-weight:600;margin-left:4px;opacity:.85}
+.body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:14px}
+.label{font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:-34px}
+.tg{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;box-shadow:0 2px 6px rgba(20,33,61,.06);transition:.15s}
+.tg .k{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em}
+.tg .v{font-size:18px;font-weight:750}
+.tg.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.tg.on .k{color:var(--brand)}
+.chips{display:flex;gap:8px}
+.chip{flex:1;border:1.5px dashed var(--line);background:var(--surface-2);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+.chip.on{border-style:solid;border-color:var(--leave);background:var(--leave-soft);color:var(--leave)}
+
+.empno{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--line);border-radius:12px;padding:10px 14px;min-height:56px}
+.empno .val{font-size:28px;font-weight:700;letter-spacing:4px;font-variant-numeric:tabular-nums}
+.empno .ph{color:#a6b0c2;font-size:16px;font-weight:500;letter-spacing:0}
+.empno.err{border-color:var(--late);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keys button{background:var(--surface-2);border:0;border-radius:12px;font-size:24px;font-weight:600;padding:12px 0;cursor:pointer}
+.keys button:active{background:var(--brand-soft)}
+.keys .go{background:var(--brand);color:#fff;font-size:16px}
+.keys .muted{font-size:15px;color:var(--muted)}
+.foot{display:flex;justify-content:space-between;font-size:13px}
+.foot a{color:var(--brand);text-decoration:none;font-weight:600;cursor:pointer}
+
+/* toast */
+.toast{position:absolute;left:12px;right:12px;top:12px;background:var(--surface);border-radius:16px;box-shadow:0 12px 34px rgba(20,33,61,.28);padding:14px 16px;transform:translateY(-140%);transition:transform .3s cubic-bezier(.2,.9,.3,1.2);z-index:10;cursor:pointer;border-left:6px solid var(--ok)}
+.toast.show{transform:none}
+.toast.late{border-left-color:var(--late)}
+.toast.rem{border-left-color:var(--leave)}
+.toast .t1{font-size:13px;color:var(--muted)}
+.toast .t2{font-size:17px;font-weight:700;margin:2px 0}
+.toast .t3{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.toast .tap{font-size:12px;color:var(--brand);font-weight:650;margin-top:8px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:650;border-radius:99px;padding:3px 9px;background:var(--surface-2);color:var(--muted)}
+.badge.late{background:var(--late-soft);color:var(--late)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.leave{background:var(--leave-soft);color:var(--leave)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.edit{background:#eef2ff;color:#4338ca}
+
+/* bottom sheet */
+.scrim{position:absolute;inset:0;background:rgba(13,22,38,.45);opacity:0;pointer-events:none;transition:.2s;z-index:20}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;padding:10px 20px 22px;transform:translateY(105%);transition:transform .28s ease;z-index:21;max-height:88%;overflow:auto}
+.sheet.show{transform:none}
+.sheet .grab{width:40px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 12px}
+.sheet h3{margin:0 0 4px}
+.sheet .sub{color:var(--muted);font-size:14px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.field input,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.sheet .field input[type=time]{font-size:26px;font-weight:700;text-align:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:10px;margin-top:6px}
+.btn{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-weight:650;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.danger{color:var(--late)}
+.btn.sm{flex:0 0 auto;padding:7px 12px;font-size:13px;border-radius:9px}
+
+/* my month */
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.mhead button{background:var(--surface-2);border:0;border-radius:10px;width:36px;height:36px;font-size:18px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:12px;padding:10px;text-align:center}
+.stat .n{font-size:24px;font-weight:800}
+.stat .l{font-size:11px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.05em}
+.stat.late .n{color:var(--late)}
+.days{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:420px;padding-right:2px}
+.day{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;background:var(--surface-2);border-radius:12px;padding:8px 10px;cursor:pointer}
+.day .d{text-align:center;line-height:1.05}
+.day .d b{font-size:18px;display:block}
+.day .d span{font-size:11px;color:var(--muted);text-transform:uppercase}
+.day .tm{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.day .tm span{color:var(--muted)}
+.day.today{outline:2px solid var(--brand)}
+.day.we{opacity:.65}
+
+/* ---------- admin (desktop) ---------- */
+.admin{max-width:1180px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:220px 1fr;gap:20px}
+@media (max-width:820px){.admin{grid-template-columns:1fr}}
+.side{background:var(--surface);border-radius:var(--r);padding:14px;height:max-content;box-shadow:0 1px 3px rgba(20,33,61,.06)}
+.side .brand{font-weight:800;color:var(--brand);font-size:18px;padding:6px 10px 12px}
+.side a{display:block;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;text-decoration:none}
+.side a.on{background:var(--brand-soft);color:var(--brand)}
+.panel{background:var(--surface);border-radius:var(--r);padding:22px;box-shadow:0 1px 3px rgba(20,33,61,.06)}
+.panel h2{margin:0}
+.ptop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface-2);border-radius:12px;padding:14px}
+.kpi .n{font-size:28px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.05em}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.t td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t tr:hover td{background:var(--surface-2)}
+.grid-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+.section{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.section h3{margin:0 0 4px}
+.section p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:4px;gap:4px}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:8px;font-weight:650;cursor:pointer;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.preview{background:var(--brand-soft);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--brand-2);margin-top:12px}
+select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff}
+
+/* ---------- DTR print (CS Form 48) ---------- */
+.paper-wrap{overflow:auto;background:#8d96a3;padding:18px;border-radius:12px}
+.a4{width:210mm;height:297mm;background:#fff;margin:0 auto;padding:8mm 7mm;display:flex;gap:8mm;color:#000;font-family:Arial,Helvetica,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.dtr{flex:1;display:flex;flex-direction:column;font-size:7.5pt}
+.dtr .formno{font-style:italic;font-size:7pt}
+.dtr .title{text-align:center;font-weight:700;font-size:11pt;margin-top:2mm}
+.dtr .ooo{text-align:center;font-size:7pt;margin-bottom:3mm}
+.dtr .name{border-bottom:1px solid #000;text-align:center;font-weight:700;font-size:9pt;height:6mm;line-height:6mm;text-transform:uppercase}
+.dtr .cap{text-align:center;font-size:7pt;margin-bottom:2mm}
+.dtr table{width:100%;border-collapse:collapse;table-layout:fixed}
+.dtr .meta td{font-size:7pt;padding:.4mm 1mm;vertical-align:bottom}
+.dtr .meta .u{border-bottom:1px solid #000;text-align:center;font-weight:700}
+.dtr .meta i{font-style:italic}
+.dtr .meta .blank{display:inline-block;min-width:55%;border-bottom:1px solid #000;height:3mm;vertical-align:bottom}
+.dtr .grid{margin-top:2mm}
+.dtr .grid th,.dtr .grid td{border:1px solid #000;text-align:center;padding:0;height:5mm;font-size:7.5pt;overflow:hidden;white-space:nowrap}
+.dtr .grid th{font-weight:700;font-size:6.5pt;line-height:1.1}
+.dtr .grid th.big{font-size:8pt}
+.dtr .grid td.dn{font-weight:700;text-align:left;padding-left:1mm}
+.dtr .grid td.rmk{font-size:5.4pt;white-space:normal;line-height:1}
+.dtr .grid td.across{font-size:6pt;letter-spacing:.5px}
+.dtr .grid tr.tot td{border:0}
+.dtr .grid tr.tot td.b{border:1px solid #000}
+.dtr .cert{font-style:italic;font-size:6.3pt;margin-top:4mm;line-height:1.3}
+.dtr .sigline{border-bottom:1px solid #000;height:9mm}
+.dtr .verified{font-style:italic;font-size:6.3pt;margin-top:4mm}
+.dtr .sup{text-align:center;margin-top:8mm;font-size:7pt}
+.dtr .sup .n{font-weight:700;text-transform:uppercase;border-bottom:1px solid #000;display:inline-block;min-width:60%}
+.dtr .sup .t{font-size:6.5pt}
+.dtr .sup .l{font-style:italic;font-size:6.5pt}
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff}
+  .demo,.side,.noprint{display:none!important}
+  .view{display:none!important}
+  #v-admin{display:block!important}
+  .admin{display:block;margin:0;padding:0;max-width:none}
+  .panel{padding:0;box-shadow:none;border-radius:0}
+  .apage{display:none!important}
+  #a-print{display:block!important}
+  .paper-wrap{padding:0;background:none}
+  .a4{box-shadow:none;margin:0}
+}
 </style>
 </head>
 <body>
 
-<nav class="mocknav">
-  <b>MOCKUP SCREENS</b>
-  <button data-s="s-login" class="on">1 Login</button>
-  <button data-s="s-adminlogin">2 Admin login</button>
-  <button data-s="s-clock">3 Clock</button>
-  <button data-s="s-confirm">4 Confirm</button>
-  <button data-s="s-my">5 My records</button>
-  <button data-s="s-remark">6 Add remark</button>
-  <button data-s="s-users">7 Admin · Employees</button>
-  <button data-s="s-records">8 Admin · Records</button>
-  <button data-s="s-settings">9 Admin · Settings</button>
-  <button data-s="s-print">10 Print DTR (A4)</button>
-</nav>
-
-<!-- 1 LOGIN -->
-<section class="screen on" id="s-login">
-  <div class="note">Kiosk login. Auto-submits after the 2nd digit. 5 wrong tries → keypad locked for 60 s.</div>
-  <div class="kiosk card">
-    <div style="color:var(--muted)">Wednesday, October 7, 2026</div>
-    <div class="clock">7:58:12 AM</div>
-    <div style="margin-top:14px;font-weight:600">Enter your PIN</div>
-    <div class="dots"><span class="f"></span><span></span></div>
-    <div class="pad">
-      <button>1</button><button>2</button><button>3</button>
-      <button>4</button><button>5</button><button>6</button>
-      <button>7</button><button>8</button><button>9</button>
-      <button style="font-size:16px">Clear</button><button>0</button><button style="font-size:16px">⌫</button>
-    </div>
-    <button class="link">Admin login →</button>
+<div class="demo">
+  <b>DTRV prototype</b>
+  <div class="tabs">
+    <button data-v="v-emp" class="on">Employee app (phone)</button>
+    <button data-v="v-admin">Admin (desktop)</button>
   </div>
-</section>
+  <span>Demo clock:</span>
+  <input type="date" id="simDate"> <input type="time" id="simTime">
+  <label><input type="checkbox" id="simLive" checked> live</label>
+  <span class="hint">Try code <b>024</b> (fixed 8:00) or <b>205</b> (flexi 7:00–9:00) — records on the 3rd digit · admin PIN <b>123456</b></span>
+</div>
 
-<!-- 2 ADMIN LOGIN -->
-<section class="screen" id="s-adminlogin">
-  <div class="note">Separate 6-digit pad for admin. Session lasts 15 min of inactivity.</div>
-  <div class="kiosk card">
-    <h2>Admin</h2>
-    <div style="color:var(--muted)">Enter 6-digit admin PIN</div>
-    <div class="dots"><span class="f"></span><span class="f"></span><span class="f"></span><span></span><span></span><span></span></div>
-    <div class="pad">
-      <button>1</button><button>2</button><button>3</button>
-      <button>4</button><button>5</button><button>6</button>
-      <button>7</button><button>8</button><button>9</button>
-      <button style="font-size:16px">Clear</button><button>0</button><button style="font-size:16px">⌫</button>
-    </div>
-    <button class="link">← Back to employee login</button>
-  </div>
-</section>
+<!-- ================= EMPLOYEE APP ================= -->
+<section class="view on" id="v-emp">
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="toast" id="toast"></div>
+      <div class="scrim" id="scrim"></div>
+      <div class="sheet" id="sheet"></div>
 
-<!-- 3 CLOCK -->
-<section class="screen" id="s-clock">
-  <div class="note">Employee home. Filled slots are disabled; the suggested next slot is highlighted. Auto-logout after 30 s idle.</div>
-  <div class="kiosk card" style="max-width:520px">
-    <div style="color:var(--muted)">Good morning,</div>
-    <h1 style="margin:4px 0 0">JUAN A. DELA CRUZ</h1>
-    <div style="color:var(--muted);margin-top:4px">Wed, Oct 7, 2026 · server time</div>
-    <div class="clock" style="margin-top:8px">12:03 PM</div>
-    <div class="punches">
-      <button class="punch done">AM IN<small>7:58 AM ✓</small></button>
-      <button class="punch next">AM OUT<small>tap to record</small></button>
-      <button class="punch">PM IN<small>—</small></button>
-      <button class="punch">PM OUT<small>—</small></button>
-    </div>
-    <div class="row" style="justify-content:space-between;margin-top:20px">
-      <button class="btn">My records</button>
-      <button class="btn">Print my DTR</button>
-      <button class="btn">Log out</button>
-    </div>
-  </div>
-</section>
-
-<!-- 4 CONFIRM -->
-<section class="screen" id="s-confirm">
-  <div class="note">Confirmation shows the NAME so a wrong PIN is noticed before a punch is saved.</div>
-  <div class="modal">
-    <div style="font-size:15px;color:var(--muted)">Record</div>
-    <div style="font-size:30px;font-weight:800;color:var(--brand)">AM OUT</div>
-    <div style="font-size:22px;margin:6px 0">at <b>12:03 PM</b></div>
-    <div>for <b>JUAN A. DELA CRUZ</b>?</div>
-    <div class="row" style="justify-content:center;margin-top:18px">
-      <button class="btn">Cancel</button><button class="btn primary">Yes, record</button>
-    </div>
-  </div>
-  <div class="modal" style="background:#e3f5ea">
-    <div style="font-size:40px">✓</div>
-    <b>Saved — AM OUT 12:03 PM</b>
-    <div style="color:var(--muted);font-size:13px">Logging out in 3…</div>
-  </div>
-</section>
-
-<!-- 5 MY RECORDS -->
-<section class="screen" id="s-my">
-  <div class="note">Employee's month view. Incomplete workdays (missing punch, no remark) are yellow. Employees cannot edit times (unless admin enables self-edit); they can add remarks.</div>
-  <div class="card">
-    <div class="topbar">
-      <h2 style="margin:0">My records — JUAN A. DELA CRUZ</h2>
-      <div class="row"><button class="btn">‹</button><b>October 2026</b><button class="btn">›</button>
-        <button class="btn primary">+ Add remark</button><button class="btn">Print DTR</button></div>
-    </div>
-    <table class="data" id="mytable"></table>
-  </div>
-</section>
-
-<!-- 6 REMARK -->
-<section class="screen" id="s-remark">
-  <div class="note">Remark replaces undertime on the printed DTR. Range creates one remark per day (removable together).</div>
-  <div class="card" style="max-width:520px;margin:0 auto">
-    <h2>Add remark</h2>
-    <div class="grid2">
-      <div><label>From</label><input type="date" value="2026-10-12"></div>
-      <div><label>To (optional)</label><input type="date" value="2026-10-14"></div>
-    </div>
-    <div style="margin-top:12px"><label>Type</label>
-      <select><option>ON LEAVE</option><option>DAY-OFF</option><option>OFFICIAL BUSINESS</option><option>HOLIDAY</option>
-      <option>NO TIME-OUT</option><option>NO LUNCH PUNCH</option><option>OTHER (type below)</option></select></div>
-    <div style="margin-top:12px"><label>Note (max 24 chars printed for OTHER; otherwise stored only)</label>
-      <input placeholder="e.g. Sick leave, approved by BM"></div>
-    <div style="margin-top:12px" class="row"><input type="checkbox" style="width:auto" checked> <span style="font-size:14px">Skip Saturdays & Sundays in range</span></div>
-    <div class="row" style="justify-content:flex-end;margin-top:18px"><button class="btn">Cancel</button><button class="btn primary">Save 3 days</button></div>
-  </div>
-</section>
-
-<!-- 7 ADMIN USERS -->
-<section class="screen" id="s-users">
-  <div class="side">
-    <div class="card menu"><a class="on" href="#">Employees</a><a href="#">Records</a><a href="#">Print DTR</a><a href="#">Settings</a><a href="#">Audit log</a><a href="#">Backup</a><a href="#">Log out</a></div>
-    <div class="card">
-      <div class="topbar"><h2 style="margin:0">Employees</h2><button class="btn primary">+ Add employee</button></div>
-      <table class="data">
-        <tr><th>Name (as printed)</th><th>Position</th><th>PIN</th><th>In-charge override</th><th>Status</th><th></th></tr>
-        <tr><td>JUAN A. DELA CRUZ</td><td>Clerk II</td><td>•• <button class="btn" style="padding:2px 8px">Reset</button></td><td>—</td><td><span class="pill ok">Active</span></td><td><button class="btn">Edit</button></td></tr>
-        <tr><td>MARIA L. SANTOS</td><td>Cashier</td><td>•• <button class="btn" style="padding:2px 8px">Reset</button></td><td>—</td><td><span class="pill ok">Active</span></td><td><button class="btn">Edit</button></td></tr>
-        <tr><td>PEDRO R. REYES</td><td>Driver</td><td>•• <button class="btn" style="padding:2px 8px">Reset</button></td><td>—</td><td><span class="pill">Inactive</span></td><td><button class="btn">Edit</button></td></tr>
-      </table>
-      <h3 style="margin-top:22px">Add employee</h3>
-      <div class="grid2">
-        <div><label>Full name (printed on DTR)</label><input value="ANA B. GARCIA"></div>
-        <div><label>Position (optional)</label><input value="Teller"></div>
-        <div><label>2-digit PIN (must be unique)</label><input value="47"><div style="font-size:12px;color:var(--ok);margin-top:4px">Available · <a href="#">suggest random</a></div></div>
-        <div><label>In-charge override (optional)</label><input placeholder="Leave blank to use Settings"></div>
+      <!-- Record screen -->
+      <div id="p-record" style="display:flex;flex-direction:column;flex:1">
+        <div class="hero">
+          <div class="date" id="hDate"></div>
+          <div class="time" id="hTime"></div>
+        </div>
+        <div class="body">
+          <div class="toggles" id="toggles">
+            <button class="tg" data-s="am_in"><div class="k">MORNING</div><div class="v">AM IN</div></button>
+            <button class="tg" data-s="am_out"><div class="k">LUNCH</div><div class="v">AM OUT</div></button>
+            <button class="tg" data-s="pm_in"><div class="k">AFTER LUNCH</div><div class="v">PM IN</div></button>
+            <button class="tg" data-s="pm_out"><div class="k">GOING HOME</div><div class="v">PM OUT</div></button>
+          </div>
+          <div>
+            <div class="label" style="margin-bottom:6px">Not working today?</div>
+            <div class="chips" id="chips">
+              <button class="chip" data-r="LEAVE">On leave</button>
+              <button class="chip" data-r="DAYOFF">Day-off</button>
+              <button class="chip" data-r="OTHER">Others…</button>
+            </div>
+          </div>
+          <div>
+            <div class="label" style="margin-bottom:6px" id="modeLabel">3-digit employee code</div>
+            <div class="empno" id="empno"><span class="val" id="empVal"></span><span style="color:var(--muted);font-size:13px" id="empHint">records instantly</span></div>
+          </div>
+          <div class="keys" id="keys">
+            <button>1</button><button>2</button><button>3</button>
+            <button>4</button><button>5</button><button>6</button>
+            <button>7</button><button>8</button><button>9</button>
+            <button class="muted" data-k="del">⌫</button><button>0</button><button class="go" data-k="go">Record</button>
+          </div>
+          <div class="foot"><a id="toMy">📅 My DTR & lates</a><a id="toAdmin">Admin ›</a></div>
+        </div>
       </div>
-      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary">Save employee</button></div>
-    </div>
-  </div>
-</section>
 
-<!-- 8 ADMIN RECORDS -->
-<section class="screen" id="s-records">
-  <div class="side">
-    <div class="card menu"><a href="#">Employees</a><a class="on" href="#">Records</a><a href="#">Print DTR</a><a href="#">Settings</a><a href="#">Audit log</a><a href="#">Backup</a><a href="#">Log out</a></div>
-    <div class="card">
-      <div class="topbar">
-        <h2 style="margin:0">Records</h2>
-        <div class="row"><select style="width:auto"><option>JUAN A. DELA CRUZ</option></select><input type="month" value="2026-10" style="width:auto"></div>
-      </div>
-      <div class="note" style="margin-bottom:12px">Click a time to edit or clear it. Every save asks for a reason → audit log. Row ⋯ menu: Add remark · Override undertime · Delete day.</div>
-      <table class="data" id="admintable"></table>
-      <div class="modal" style="margin-top:20px;text-align:left">
-        <b>Edit Oct 5 · PM OUT</b>
-        <div style="margin-top:10px"><label>Time</label><input type="time" value="17:02"></div>
-        <div style="margin-top:10px"><label>Reason (required)</label><input value="Forgot to punch out; confirmed by BM"></div>
-        <div class="row" style="justify-content:space-between;margin-top:14px"><button class="btn danger">Clear time</button><span><button class="btn">Cancel</button> <button class="btn primary">Save</button></span></div>
+      <!-- My month screen -->
+      <div id="p-my" style="display:none;flex-direction:column;flex:1">
+        <div class="hero" style="padding-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <a id="myBack" style="color:#fff;cursor:pointer;font-weight:650">‹ Back</a>
+            <span class="date" id="myNo"></span>
+          </div>
+          <div style="font-size:22px;font-weight:750;margin-top:8px" id="myName"></div>
+        </div>
+        <div class="body">
+          <div class="mhead"><button id="mPrev">‹</button><b id="mLabel"></b><button id="mNext">›</button></div>
+          <div class="stats" id="myStats"></div>
+          <div class="days" id="myDays"></div>
+          <div class="btns"><button class="btn" id="myRemark">+ Remark / leave</button><button class="btn primary" id="myPrint">Print DTR</button></div>
+        </div>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- 9 SETTINGS -->
-<section class="screen" id="s-settings">
-  <div class="side">
-    <div class="card menu"><a href="#">Employees</a><a href="#">Records</a><a href="#">Print DTR</a><a class="on" href="#">Settings</a><a href="#">Audit log</a><a href="#">Backup</a><a href="#">Log out</a></div>
-    <div class="card">
-      <h2>Settings</h2>
-      <h3>Signatory (bottom of DTR)</h3>
-      <div class="grid2">
-        <div><label>Name</label><input value="AL MARTIN A. MENES"></div>
-        <div><label>Title</label><input value="Acting Branch Manager"></div>
-        <div><label>Label under title</label><input value="In Charge"></div>
-      </div>
-      <h3 style="margin-top:20px">Official hours</h3>
-      <div class="grid2">
-        <div><label>Regular days — AM</label><div class="row" style="flex-wrap:nowrap"><input type="time" value="08:00"><input type="time" value="12:00"></div></div>
-        <div><label>Regular days — PM</label><div class="row" style="flex-wrap:nowrap"><input type="time" value="13:00"><input type="time" value="17:00"></div></div>
-        <div><label>Regular days — printed text</label><input value="8:00-12:00 / 1:00-5:00"></div>
-        <div><label>Saturdays — printed text</label><input placeholder="(blank)"></div>
-        <div><label>Grace period (minutes)</label><input type="number" value="0"></div>
-        <div><label>Noon cutoff (suggest AM vs PM)</label><input type="time" value="12:00"></div>
-      </div>
-      <h3 style="margin-top:20px">Behaviour</h3>
-      <div style="display:grid;gap:8px;font-size:14px">
-        <label style="color:var(--ink)"><input type="checkbox" style="width:auto" checked> Print SATURDAY / SUNDAY on empty weekend rows</label>
-        <label style="color:var(--ink)"><input type="checkbox" style="width:auto"> Print whole-day remarks (leave, day-off…) across time columns instead of Undertime</label>
-        <label style="color:var(--ink)"><input type="checkbox" style="width:auto"> Allow employees to edit their own times (not recommended)</label>
-        <div><label>Allowed punch IPs / subnets (blank = any)</label><input value="192.168.1.0/24"></div>
-      </div>
-      <h3 style="margin-top:20px">Admin PIN</h3>
-      <div class="grid2"><div><label>New 6-digit PIN</label><input type="password" value="000000"></div><div><label>Confirm</label><input type="password"></div></div>
-      <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn primary">Save settings</button></div>
+    <div class="explain">
+      <h3>How the employee screen works</h3>
+      <ol>
+        <li>The app <b>pre-selects a toggle</b> from the time of day. Tap another toggle if needed.</li>
+        <li>Type your <b>3-digit code</b> (2-digit employee numbers start with 0, e.g. <code>024</code>). It records <b>on the 3rd digit</b>, no button needed.</li>
+        <li>A <b>notification</b> drops down with your name, the time, and a <span class="badge late">Late</span> badge plus <b>how many lates this month</b>. Flexi employees also see their expected out time.</li>
+        <li><b>Tap the notification</b> to change the time, e.g. to match the office biometric.</li>
+        <li>For a day off, tap <b>On leave / Day-off / Others</b>, type your code, then pick the dates.</li>
+        <li><b>My DTR</b> shows your month, late count, and lets you edit any day or print.</li>
+      </ol>
+      <p>Change the <b>Demo clock</b> above to test, e.g. set 8:20 AM and type <code>024</code>.</p>
     </div>
   </div>
 </section>
 
-<!-- 10 PRINT -->
-<section class="screen" id="s-print">
-  <div class="noprint card" style="margin-bottom:16px">
-    <div class="row">
-      <div style="min-width:220px"><label>Employee</label><select><option>JUAN A. DELA CRUZ</option><option>— All active employees —</option></select></div>
-      <div><label>Month (defaults to current)</label><input type="month" value="2026-10"></div>
-      <div style="align-self:flex-end"><button class="btn primary" onclick="window.print()">Print / Save PDF</button></div>
+<!-- ================= ADMIN ================= -->
+<section class="view" id="v-admin">
+  <div class="admin">
+    <nav class="side">
+      <div class="brand">DTRV Admin</div>
+      <a data-a="a-dash" class="on">Dashboard</a>
+      <a data-a="a-emps">Employees</a>
+      <a data-a="a-sched">Working hours</a>
+      <a data-a="a-sign">Signatory</a>
+      <a data-a="a-print">Print DTR</a>
+    </nav>
+    <div class="panel">
+
+      <!-- Dashboard -->
+      <div class="apage" id="a-dash">
+        <div class="ptop"><h2>Dashboard</h2><input type="month" class="inline" id="dMonth"></div>
+        <div class="kpis" id="dKpis"></div>
+        <table class="t" id="dTable"></table>
+      </div>
+
+      <!-- Employees -->
+      <div class="apage" id="a-emps" style="display:none">
+        <div class="ptop"><h2>Employees</h2><button class="btn primary sm" id="addEmpBtn">+ Add employee</button></div>
+        <table class="t" id="eTable"></table>
+        <div class="section" id="empForm" style="display:none">
+          <h3>Add employee</h3>
+          <p>The name is printed on the DTR exactly as typed.</p>
+          <div class="grid-f">
+            <div class="field"><label>Employee code (3 digits)</label><input id="fNo" maxlength="3" inputmode="numeric" placeholder="e.g. 047 for employee no. 47"></div>
+            <div class="field"><label>Full name (as printed)</label><input id="fName" placeholder="ANA B. GARCIA"></div>
+            <div class="field"><label>Position (optional)</label><input id="fPos"></div>
+            <div class="field"><label>Working hours</label><select id="fSched"><option value="">Office default</option><option value="fixed">Custom: fixed</option><option value="flexi">Custom: flexi-time</option></select></div>
+          </div>
+          <div class="btns" style="max-width:320px"><button class="btn" id="fCancel">Cancel</button><button class="btn primary" id="fSave">Save</button></div>
+        </div>
+      </div>
+
+      <!-- Working hours -->
+      <div class="apage" id="a-sched" style="display:none">
+        <div class="ptop"><h2>Working hours</h2></div>
+        <p style="color:var(--muted);margin-top:-8px">Used only for late alerts and late counts. Nothing from here is printed on the DTR.</p>
+        <div class="seg" id="schedMode"><button data-m="fixed">Fixed time</button><button data-m="flexi">Flexi-time</button></div>
+        <div class="section" style="border:0;margin-top:8px;padding-top:8px">
+          <div class="grid-f" id="fixedF">
+            <div class="field"><label>Time in (late after this)</label><input type="time" id="sAmIn"></div>
+          </div>
+          <div class="grid-f" id="flexiF">
+            <div class="field"><label>Earliest time in</label><input type="time" id="sFlexStart"></div>
+            <div class="field"><label>Latest time in (late after this)</label><input type="time" id="sFlexEnd"></div>
+            <div class="field"><label>Required hours per day</label><input type="number" id="sReq" min="1" max="12"></div>
+          </div>
+          <div class="grid-f">
+            <div class="field"><label>Lunch break</label><div class="row2"><input type="time" id="sLunchS"><input type="time" id="sLunchE"></div></div>
+            <div class="field"><label>Grace period (minutes)</label><input type="number" id="sGrace" min="0" max="60"></div>
+            <div class="field"><label>Also count late after lunch?</label><select id="sPmLate"><option value="0">No, morning only</option><option value="1">Yes, PM IN after lunch end</option></select></div>
+          </div>
+          <div class="preview" id="schedPreview"></div>
+        </div>
+      </div>
+
+      <!-- Signatory -->
+      <div class="apage" id="a-sign" style="display:none">
+        <div class="ptop"><h2>Signatory</h2></div>
+        <div class="grid-f">
+          <div class="field"><label>Name</label><input id="gName"></div>
+          <div class="field"><label>Title</label><input id="gTitle"></div>
+          <div class="field"><label>Label below title</label><input id="gLabel"></div>
+        </div>
+        <div class="section"><h3>Admin PIN</h3><p>6 digits.</p>
+          <div class="grid-f"><div class="field"><label>New PIN</label><input type="password" maxlength="6"></div><div class="field"><label>Confirm</label><input type="password" maxlength="6"></div></div>
+        </div>
+      </div>
+
+      <!-- Print -->
+      <div class="apage" id="a-print" style="display:none">
+        <div class="ptop noprint"><h2>Print DTR</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="inline" id="pEmp"></select>
+            <input type="month" class="inline" id="pMonth">
+            <button class="btn primary sm" onclick="window.print()">Print / Save PDF</button>
+          </div>
+        </div>
+        <p class="noprint" style="color:var(--muted);font-size:13px;margin-top:-6px">A4 · margins None · scale 100%. Undertime column shows remarks only. Regular days / Saturdays are left blank. Weekends show times if the employee worked.</p>
+        <div class="paper-wrap"><div class="a4" id="a4"></div></div>
+      </div>
+
     </div>
-    <div style="font-size:13px;color:var(--muted);margin-top:8px">A4 portrait · margins 0 · two copies per page. Sample shows: late arrivals (undertime), a NO TIME-OUT remark, a 3-day leave, weekends.</div>
   </div>
-  <div class="paper-wrap"><div class="a4" id="a4"></div></div>
 </section>
 
 <script>
-// ---- nav
-document.querySelectorAll('.mocknav button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.mocknav button').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); document.getElementById(b.dataset.s).classList.add('on');
-});
-
-// ---- sample data (Oct 2026). Times are 24h "HH:MM".
-const Y=2026,M=10, OFF={amIn:'08:00',amOut:'12:00',pmIn:'13:00',pmOut:'17:00'};
-const data={
-  1:['07:52','12:01','12:55','17:03'], 2:['08:12','12:00','12:58','17:00'],
-  5:['07:58','12:02','12:57',null,'NO TIME-OUT'], 6:['07:49','12:00','13:05','17:01'],
-  7:['07:58','12:03',null,null], 8:['07:55','12:00','12:59','16:45'], 9:['07:57','12:01','12:58','17:02'],
-  12:[null,null,null,null,'ON LEAVE'],13:[null,null,null,null,'ON LEAVE'],14:[null,null,null,null,'ON LEAVE'],
+/* =================== state =================== */
+const S = {
+  sched: { mode:'fixed', amIn:'08:00', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', grace:0, pmLate:false },
+  sign: { name:'AL MARTIN A. MENES', title:'Acting Branch Manager', label:'In Charge' },
+  emps: [
+    { no:'024', name:'JUAN A. DELA CRUZ', pos:'Clerk II', sched:null },
+    { no:'205', name:'MARIA L. SANTOS',  pos:'Cashier',  sched:{ mode:'flexi', flexStart:'07:00', flexEnd:'09:00', req:8, lunchS:'12:00', lunchE:'13:00', grace:0, pmLate:false } },
+    { no:'331', name:'PEDRO R. REYES',   pos:'Driver',   sched:null },
+  ],
+  e: {} // key "no|YYYY-MM-DD" -> {am_in,am_out,pm_in,pm_out,remark:{code,text}|null, edited:bool}
 };
-const m=t=>{const[a,b]=t.split(':');return +a*60+ +b};
-const fmt=t=>{if(!t)return'';let[h,mi]=t.split(':');h=+h;const h12=h>12?h-12:h;return h12+':'+mi};
-function undertime(r){
-  if(!r||r[4]) return null;
-  if(r.slice(0,4).some(x=>!x)) return null;           // incomplete → no auto compute
-  let u=Math.max(0,m(r[0])-m(OFF.amIn))+Math.max(0,m(OFF.amOut)-m(r[1]))
-       +Math.max(0,m(r[2])-m(OFF.pmIn))+Math.max(0,m(OFF.pmOut)-m(r[3]));
-  return u;
-}
-const dow=d=>new Date(Y,M-1,d).getDay();
-const days=new Date(Y,M,0).getDate();
+const REMARKS = { LEAVE:'ON LEAVE', DAYOFF:'DAY-OFF', OTHER:'' };
+const SLOTS = ['am_in','am_out','pm_in','pm_out'];
+const SLOT_LABEL = { am_in:'AM IN', am_out:'AM OUT', pm_in:'PM IN', pm_out:'PM OUT' };
 
-// ---- My records & admin tables
-function screenTable(el,admin){
-  let h='<tr><th>Day</th><th>AM In</th><th>AM Out</th><th>PM In</th><th>PM Out</th><th>Undertime</th><th>Remark</th>'+(admin?'<th></th>':'')+'</tr>';
-  for(let d=1;d<=9;d++){
-    const r=data[d], w=dow(d);
-    if(!r){ if(w==0||w==6){h+=`<tr><td>${d} ${w==0?'Sun':'Sat'}</td><td colspan="${admin?7:6}" style="color:var(--muted)">${w==0?'SUNDAY':'SATURDAY'}</td></tr>`;continue;} }
-    const u=undertime(r), inc=r&&!r[4]&&r.slice(0,4).some(x=>!x)&&d<7;
-    h+=`<tr class="${inc?'incomplete':''}"><td>${d}</td>`+[0,1,2,3].map(i=>`<td>${r&&r[i]?fmt(r[i]):'—'}</td>`).join('')+
-      `<td>${u==null?'':Math.floor(u/60)+'h '+u%60+'m'}</td><td>${r&&r[4]?'<span class="pill warn">'+r[4]+'</span>':(inc?'<span class="pill warn">Incomplete</span>':'')}</td>`+
-      (admin?'<td><button class="btn" style="padding:2px 10px">⋯</button></td>':'')+'</tr>';
+/* =================== helpers =================== */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const m = t => { const [a,b] = t.split(':'); return +a*60 + +b; };
+const hm = x => pad(Math.floor(x/60)) + ':' + pad(x%60);
+const t12 = t => { if(!t) return ''; let [h,mi]=t.split(':'); h=+h; return (h%12||12)+':'+mi+' '+(h<12?'AM':'PM'); };
+const tPrint = t => { if(!t) return ''; let [h,mi]=t.split(':'); h=+h; return (h>12?h-12:h)+':'+mi; };
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const key = (no,d) => no+'|'+d;
+const get = (no,d) => S.e[key(no,d)];
+const ensure = (no,d) => S.e[key(no,d)] ||= { am_in:null, am_out:null, pm_in:null, pm_out:null, remark:null, edited:false };
+const schedOf = emp => emp.sched || S.sched;
+const emp = no => S.emps.find(x => x.no === no);
+
+function lateLimit(sc){ return sc.mode === 'flexi' ? sc.flexEnd : sc.amIn; }
+function lateMinutes(entry, sc){
+  if(!entry) return 0;
+  let late = 0;
+  if(entry.am_in){ const over = m(entry.am_in) - m(lateLimit(sc)); if(over > sc.grace) late += over; }
+  if(sc.pmLate && entry.pm_in){ const over = m(entry.pm_in) - m(sc.lunchE); if(over > sc.grace) late += over; }
+  return late;
+}
+function expectedOut(entry, sc){
+  if(!entry?.am_in) return null;
+  if(sc.mode !== 'flexi') return null;
+  const start = Math.max(m(entry.am_in), m(sc.flexStart));
+  return hm(start + sc.req*60 + (m(sc.lunchE)-m(sc.lunchS)));
+}
+function monthStats(no, ym){
+  const [Y,M] = ym.split('-').map(Number), n = new Date(Y,M,0).getDate(), sc = schedOf(emp(no));
+  let present=0, lates=0, lateMin=0, remarks=0;
+  for(let d=1; d<=n; d++){
+    const e = get(no, `${ym}-${pad(d)}`); if(!e) continue;
+    if(SLOTS.some(s=>e[s])) present++;
+    if(e.remark) remarks++;
+    const l = lateMinutes(e, sc); if(l){ lates++; lateMin += l; }
   }
-  h+=`<tr><td colspan="${admin?8:7}" style="color:var(--muted);font-size:13px">… days 10–31</td></tr>`;
-  el.innerHTML=h;
+  return { present, lates, lateMin, remarks };
 }
-screenTable(document.getElementById('mytable'),false);
-screenTable(document.getElementById('admintable'),true);
 
-// ---- DTR print
-function dtrCopy(){
-  let rows='',tot=0;
-  for(let d=1;d<=31;d++){
-    if(d>days){rows+=`<tr><td class="day">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;continue;}
-    const r=data[d], w=dow(d);
-    if(!r && (w==0||w==6)){rows+=`<tr><td class="day">${d}</td><td colspan="4" class="across">${w==0?'SUNDAY':'SATURDAY'}</td><td></td><td></td></tr>`;continue;}
-    if(!r){rows+=`<tr><td class="day">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;continue;}
-    const t=[0,1,2,3].map(i=>`<td>${fmt(r[i])}</td>`).join('');
-    if(r[4]){rows+=`<tr><td class="day">${d}</td>${t}<td colspan="2" class="rmk">${r[4]}</td></tr>`;continue;}
-    const u=undertime(r); if(u)tot+=u;
-    rows+=`<tr><td class="day">${d}</td>${t}<td>${u?Math.floor(u/60)||'':''}</td><td>${u?u%60:''}</td></tr>`;
+/* =================== demo clock =================== */
+function now(){
+  if($('#simLive').checked){ const d=new Date(); $('#simDate').value=ymd(d); $('#simTime').value=pad(d.getHours())+':'+pad(d.getMinutes()); }
+  return { date:$('#simDate').value, time:$('#simTime').value };
+}
+['#simDate','#simTime'].forEach(s => $(s).addEventListener('input', () => { $('#simLive').checked=false; tick(); autoToggle(); }));
+
+/* =================== seed data =================== */
+(function seed(){
+  const d0 = new Date(), Y=d0.getFullYear(), M=d0.getMonth(), today=d0.getDate();
+  const ym = Y+'-'+pad(M+1);
+  const jitter = (base, i, spread) => hm(m(base) + ((i*37)%spread) - Math.floor(spread/2));
+  for(let d=1; d<today; d++){
+    const wd = new Date(Y,M,d).getDay(), ds = `${ym}-${pad(d)}`;
+    S.emps.forEach((p,pi) => {
+      if(p.no==='331') return;
+      if(wd===0) return;
+      if(wd===6 && !(p.no==='024' && d<=7)) return;          // Juan worked one Saturday
+      const e = ensure(p.no, ds), i = d*3+pi;
+      e.am_in  = (p.no==='024' && d%4===1) ? hm(m('08:05')+ (d%9)) : jitter(p.no==='205'?'08:10':'07:52', i, 14);
+      e.am_out = jitter('12:02', i+1, 6);
+      e.pm_in  = jitter('12:56', i+2, 8);
+      e.pm_out = jitter(p.no==='205'?'17:15':'17:03', i+3, 10);
+    });
+  }
+  if(today > 3){ const e = ensure('024', `${ym}-${pad(today-1)}`); e.pm_out=null; e.remark={code:'OTHER', text:'NO TIME-OUT'}; }
+  if(today > 6){ for(const d of [today-4]){ const ds=`${ym}-${pad(d)}`; if(new Date(Y,M,d).getDay()%6){ S.e[key('205',ds)]={am_in:null,am_out:null,pm_in:null,pm_out:null,remark:{code:'LEAVE',text:''},edited:false}; } } }
+})();
+
+/* =================== employee: record screen =================== */
+let selSlot = 'am_in', selRemark = null, typed = '';
+function tick(){
+  const {date,time} = now(); const d = new Date(date+'T'+time);
+  $('#hDate').textContent = d.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const [h,mi] = time.split(':'); $('#hTime').innerHTML = `${(+h%12||12)}:${mi}<small>${+h<12?'AM':'PM'}</small>`;
+}
+function autoToggle(){
+  const t = m(now().time);
+  selSlot = t < m('11:00') ? 'am_in' : t < m('12:30') ? 'am_out' : t < m('14:00') ? 'pm_in' : 'pm_out';
+  selRemark = null; paintToggles();
+}
+function paintToggles(){
+  document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', !selRemark && b.dataset.s===selSlot));
+  document.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.r===selRemark));
+  $('#modeLabel').textContent = selRemark ? '3-digit code — then choose dates' : '3-digit employee code';
+  document.querySelector('.keys .go').textContent = selRemark ? 'Next' : 'Record';
+  $('#empHint').textContent = selRemark ? '' : 'records '+SLOT_LABEL[selSlot]+' instantly';
+}
+function paintEmp(){ $('#empVal').innerHTML = typed ? typed.padEnd(3,'·') : '<span class="ph">· · ·</span>'; }
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { selSlot=b.dataset.s; selRemark=null; paintToggles(); });
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; paintToggles(); });
+$('#keys').onclick = ev => {
+  const b = ev.target.closest('button'); if(!b) return;
+  if(b.dataset.k==='del'){ typed = typed.slice(0,-1); }
+  else if(b.dataset.k==='go'){ submit(); return; }
+  else if(typed.length < 3){ typed += b.textContent; }
+  paintEmp();
+  if(typed.length === 3) setTimeout(submit, 150);
+};
+document.addEventListener('keydown', ev => {
+  if(!$('#v-emp').classList.contains('on') || $('#sheet').classList.contains('show') || $('#p-record').style.display==='none') return;
+  if(/^\d$/.test(ev.key) && typed.length<3){ typed+=ev.key; paintEmp(); if(typed.length===3) setTimeout(submit,150); }
+  if(ev.key==='Backspace'){ typed=typed.slice(0,-1); paintEmp(); }
+  if(ev.key==='Enter') submit();
+});
+function bad(){ typed=''; paintEmp(); const el=$('#empno'); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); $('#empHint').textContent='Not found'; }
+
+let pendingMy = false;
+function submit(){
+  const p = emp(typed); if(!p){ bad(); return; }
+  if(pendingMy){ pendingMy=false; typed=''; paintEmp(); openMy(p.no); return; }
+  if(selRemark){ typed=''; paintEmp(); openRemarkSheet(p.no, now().date, now().date, selRemark); return; }
+  const {date,time} = now(); const e = ensure(p.no, date);
+  if(e[selSlot]){ showToast(p.no, date, selSlot, {already:true}); typed=''; paintEmp(); return; }
+  e[selSlot] = time;
+  typed=''; paintEmp();
+  showToast(p.no, date, selSlot, {fresh:true});
+}
+
+/* toast */
+let toastTimer, toastCtx;
+function showToast(no, date, slot, opt){
+  const p = emp(no), e = get(no,date), sc = schedOf(p), ym = date.slice(0,7);
+  const late = slot==='am_in' ? lateMinutes({am_in:e.am_in}, {...sc, pmLate:false})
+             : (slot==='pm_in' && sc.pmLate) ? lateMinutes({pm_in:e.pm_in}, sc) : 0;
+  const st = monthStats(no, ym);
+  const exp = slot==='am_in' ? expectedOut(e, sc) : null;
+  const T = $('#toast');
+  T.className = 'toast ' + (late ? 'late' : '');
+  T.innerHTML = `
+    <div class="t1">${opt.already ? 'Already recorded' : opt.updated ? 'Time updated' : 'Recorded ✓'} · ${p.name}</div>
+    <div class="t2">${SLOT_LABEL[slot]} · ${t12(e[slot])}</div>
+    <div class="t3">
+      ${late ? `<span class="badge late">⚠ Late ${late} min</span><span class="badge late">${ordinal(st.lates)} late this ${MONTHS[+ym.slice(5)-1]}</span>`
+             : (slot==='am_in' ? `<span class="badge ok">On time</span><span class="badge">${st.lates} late${st.lates===1?'':'s'} this month</span>` : '')}
+      ${exp ? `<span class="badge">Flexi · out at ${t12(exp)}</span>` : ''}
+      ${e.edited ? '<span class="badge edit">edited</span>' : ''}
+    </div>
+    <div class="tap" style="display:flex;justify-content:space-between"><span>Tap to change the time ›</span>${opt.fresh?'<span id="undo" style="color:var(--late)">Not you? Undo</span>':''}</div>`;
+  toastCtx = {no,date,slot};
+  T.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => T.classList.remove('show'), 9000);
+}
+const ordinal = n => n + ((n%100>=11 && n%100<=13) ? 'th' : ({1:'st',2:'nd',3:'rd'}[n%10] || 'th'));
+$('#toast').onclick = ev => {
+  if(ev.target.id==='undo' && toastCtx){ const e=get(toastCtx.no,toastCtx.date); e[toastCtx.slot]=null; if(!SLOTS.some(s=>e[s])&&!e.remark) delete S.e[key(toastCtx.no,toastCtx.date)]; $('#toast').classList.remove('show'); afterChange(); return; }
+  $('#toast').classList.remove('show'); if(toastCtx?.slot) openTimeSheet(toastCtx.no, toastCtx.date, toastCtx.slot); };
+
+/* sheets */
+function openSheet(html){ $('#sheet').innerHTML = '<div class="grab"></div>'+html; $('#sheet').classList.add('show'); $('#scrim').classList.add('show'); }
+function closeSheet(){ $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
+$('#scrim').onclick = closeSheet;
+
+function openTimeSheet(no, date, slot){
+  const e = get(no,date);
+  openSheet(`<h3>Change ${SLOT_LABEL[slot]}</h3>
+    <div class="sub">${emp(no).name} · ${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}<br>Use this if the office biometric shows a different time.</div>
+    <div class="field"><input type="time" id="shT" value="${e[slot]||''}"></div>
+    <div class="btns"><button class="btn danger" id="shClr">Clear</button><button class="btn primary" id="shOk">Save</button></div>`);
+  $('#shOk').onclick = () => { const v=$('#shT').value; if(!v) return; e[slot]=v; e.edited=true; closeSheet(); afterChange(); showToast(no,date,slot,{updated:true}); };
+  $('#shClr').onclick = () => { e[slot]=null; e.edited=true; closeSheet(); afterChange(); };
+}
+function openRemarkSheet(no, from, to, code, text=''){
+  openSheet(`<h3>Remark</h3>
+    <div class="sub">${emp(no).name}. Printed in the Undertime column of the DTR.</div>
+    <div class="field"><label>Type</label><select id="rCode">
+      <option value="LEAVE"${code==='LEAVE'?' selected':''}>On leave</option>
+      <option value="DAYOFF"${code==='DAYOFF'?' selected':''}>Day-off</option>
+      <option value="OTHER"${code==='OTHER'?' selected':''}>Others (type below)</option></select></div>
+    <div class="field" id="rTxtF"><label>Text to print (max 24)</label><input id="rTxt" maxlength="24" value="${text}" placeholder="e.g. NO TIME-OUT, OB, HOLIDAY"></div>
+    <div class="row2"><div class="field"><label>From</label><input type="date" id="rFrom" value="${from}"></div><div class="field"><label>To</label><input type="date" id="rTo" value="${to}"></div></div>
+    <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="rSkip" checked style="width:auto"> Skip Sundays in the range</label></div>
+    <div class="btns"><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
+  const sync = () => $('#rTxtF').style.display = $('#rCode').value==='OTHER' ? '' : 'none'; sync();
+  $('#rCode').onchange = sync; $('#rCancel').onclick = closeSheet;
+  $('#rOk').onclick = () => {
+    const c = $('#rCode').value, txt = $('#rTxt').value.trim().toUpperCase();
+    if(c==='OTHER' && !txt){ $('#rTxt').focus(); return; }
+    let d = new Date($('#rFrom').value+'T00:00'), end = new Date(($('#rTo').value||$('#rFrom').value)+'T00:00'), n=0;
+    while(d <= end && n < 62){ if(!($('#rSkip').checked && d.getDay()===0)){ ensure(no, ymd(d)).remark = {code:c, text:txt}; n++; } d.setDate(d.getDate()+1); }
+    closeSheet(); selRemark=null; paintToggles(); afterChange();
+    const T=$('#toast'); T.className='toast rem'; toastCtx=null;
+    T.innerHTML=`<div class="t1">Saved · ${emp(no).name}</div><div class="t2">${c==='OTHER'?txt:REMARKS[c]} · ${n} day${n>1?'s':''}</div>`;
+    T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'),5000);
+  };
+}
+
+/* =================== employee: my month =================== */
+let myNo=null, myYM=null;
+$('#toMy').onclick = () => { pendingMy = true; selRemark=null; paintToggles(); $('#modeLabel').textContent='3-digit code — to open My DTR'; document.querySelector('.keys .go').textContent='Open'; $('#empHint').textContent=''; };
+$('#toAdmin').onclick = () => document.querySelector('[data-v="v-admin"]').click();
+function openMy(no){ myNo=no; myYM=now().date.slice(0,7); $('#p-record').style.display='none'; $('#p-my').style.display='flex'; paintMy(); }
+$('#myBack').onclick = () => { $('#p-my').style.display='none'; $('#p-record').style.display='flex'; autoToggle(); };
+$('#mPrev').onclick = () => { myYM = shiftYM(myYM,-1); paintMy(); };
+$('#mNext').onclick = () => { myYM = shiftYM(myYM, 1); paintMy(); };
+$('#myRemark').onclick = () => openRemarkSheet(myNo, now().date, now().date, 'LEAVE');
+$('#myPrint').onclick = () => { document.querySelector('[data-v="v-admin"]').click(); showA('a-print'); $('#pEmp').value=myNo; $('#pMonth').value=myYM; renderPrint(); };
+const shiftYM = (ym,k) => { const d=new Date(ym+'-01T00:00'); d.setMonth(d.getMonth()+k); return ymd(d).slice(0,7); };
+function paintMy(){
+  const p = emp(myNo), sc = schedOf(p), [Y,M] = myYM.split('-').map(Number), n = new Date(Y,M,0).getDate(), st = monthStats(myNo,myYM);
+  $('#myName').textContent = p.name; $('#myNo').textContent = '#'+p.no+' · '+(sc.mode==='flexi'?`Flexi ${t12(sc.flexStart)}–${t12(sc.flexEnd)}`:`Time in ${t12(sc.amIn)}`);
+  $('#mLabel').textContent = MONTHS[M-1]+' '+Y;
+  $('#myStats').innerHTML = `<div class="stat"><div class="n">${st.present}</div><div class="l">Days present</div></div>
+    <div class="stat late"><div class="n">${st.lates}</div><div class="l">Lates${st.lateMin?` · ${st.lateMin}m`:''}</div></div>
+    <div class="stat"><div class="n">${st.remarks}</div><div class="l">Remarks</div></div>`;
+  const today = now().date; let h='';
+  for(let d=1; d<=n; d++){
+    const ds=`${myYM}-${pad(d)}`, wd=new Date(Y,M-1,d).getDay(), e=get(myNo,ds), has=e&&SLOTS.some(s=>e[s]);
+    const late = lateMinutes(e, sc);
+    let right = '';
+    if(e?.remark) right += `<span class="badge leave">${e.remark.code==='OTHER'?e.remark.text:REMARKS[e.remark.code]}</span>`;
+    if(late) right += ` <span class="badge late">Late ${late}m</span>`;
+    if(has && SLOTS.some(s=>!e[s]) && !e.remark && ds<today) right += ` <span class="badge warn">Incomplete</span>`;
+    if(e?.edited) right += ` <span class="badge edit">edited</span>`;
+    const mid = has ? SLOTS.map(s=>e[s]?tPrint(e[s]):'<span>—</span>').join(' · ')
+              : (wd===0||wd===6) ? `<span>${wd===0?'Sunday':'Saturday'}</span>` : '<span>No record</span>';
+    h += `<div class="day ${ds===today?'today':''} ${(wd===0||wd===6)&&!has?'we':''}" data-d="${ds}"><div class="d"><b>${d}</b><span>${DOW[wd]}</span></div><div class="tm">${mid}</div><div>${right}</div></div>`;
+  }
+  $('#myDays').innerHTML = h;
+  document.querySelectorAll('#myDays .day').forEach(r => r.onclick = () => openDaySheet(myNo, r.dataset.d));
+}
+function openDaySheet(no, ds){
+  const e = ensure(no, ds);
+  openSheet(`<h3>${new Date(ds+'T00:00').toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'})}</h3>
+    <div class="sub">${emp(no).name}</div>
+    <div class="row2">${SLOTS.map(s=>`<div class="field"><label>${SLOT_LABEL[s]}</label><input type="time" data-s="${s}" value="${e[s]||''}" style="font-size:18px"></div>`).join('')}</div>
+    <div class="field"><label>Remark</label><select id="dCode"><option value="">None</option><option value="LEAVE">On leave</option><option value="DAYOFF">Day-off</option><option value="OTHER">Others</option></select></div>
+    <div class="field" id="dTxtF"><label>Text to print (max 24)</label><input id="dTxt" maxlength="24" value="${e.remark?.text||''}"></div>
+    <div class="btns"><button class="btn danger" id="dDel">Delete day</button><button class="btn primary" id="dOk">Save</button></div>`);
+  $('#dCode').value = e.remark?.code || '';
+  const sync = () => $('#dTxtF').style.display = $('#dCode').value==='OTHER' ? '' : 'none'; sync(); $('#dCode').onchange = sync;
+  $('#dOk').onclick = () => {
+    document.querySelectorAll('#sheet input[data-s]').forEach(i => { const v=i.value||null; if(v!==e[i.dataset.s]){ e[i.dataset.s]=v; e.edited=true; } });
+    const c=$('#dCode').value; e.remark = c ? {code:c, text:$('#dTxt').value.trim().toUpperCase()} : null;
+    closeSheet(); afterChange();
+  };
+  $('#dDel').onclick = () => { delete S.e[key(no,ds)]; closeSheet(); afterChange(); };
+}
+
+/* =================== admin =================== */
+let adminOk = false;
+document.querySelectorAll('.demo .tabs button').forEach(b => b.onclick = () => {
+  if(b.dataset.v==='v-admin' && !adminOk){ const pin = prompt('Admin PIN (demo: 123456)'); if(pin!=='123456') return; adminOk = true; }
+  document.querySelectorAll('.demo .tabs button').forEach(x=>x.classList.toggle('on', x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id===b.dataset.v));
+  afterChange();
+});
+function showA(id){ document.querySelectorAll('.side a').forEach(a=>a.classList.toggle('on',a.dataset.a===id)); document.querySelectorAll('.apage').forEach(p=>p.style.display=p.id===id?'':'none'); afterChange(); }
+document.querySelectorAll('.side a').forEach(a => a.onclick = () => showA(a.dataset.a));
+
+function paintDash(){
+  const ym = $('#dMonth').value; let tl=0, tp=0, worst=null;
+  const rows = S.emps.map(p => { const st=monthStats(p.no,ym); tl+=st.lates; tp+=st.present; if(!worst||st.lates>worst.st.lates) worst={p,st}; return {p,st}; });
+  $('#dKpis').innerHTML = `<div class="kpi"><div class="n">${S.emps.length}</div><div class="l">Employees</div></div>
+    <div class="kpi"><div class="n">${tp}</div><div class="l">Days present (all)</div></div>
+    <div class="kpi"><div class="n" style="color:var(--late)">${tl}</div><div class="l">Lates this month</div></div>
+    <div class="kpi"><div class="n" style="font-size:16px;padding-top:8px">${worst&&worst.st.lates?worst.p.name+' ('+worst.st.lates+')':'—'}</div><div class="l">Most lates</div></div>`;
+  $('#dTable').innerHTML = `<tr><th>Employee</th><th>Schedule</th><th>Present</th><th>Lates</th><th>Late minutes</th><th>Remarks</th><th></th></tr>` +
+    rows.map(({p,st}) => { const sc=schedOf(p); return `<tr><td><b>${p.name}</b><br><span style="color:var(--muted);font-size:12px">#${p.no} · ${p.pos||''}</span></td>
+      <td>${sc.mode==='flexi'?`Flexi ${t12(sc.flexStart)}–${t12(sc.flexEnd)}`:`Fixed ${t12(sc.amIn)}`}${p.sched?' <span class="badge">custom</span>':''}</td>
+      <td>${st.present}</td><td>${st.lates?`<span class="badge late">${st.lates}</span>`:'<span class="badge ok">0</span>'}</td><td>${st.lateMin||'—'}</td><td>${st.remarks||'—'}</td>
+      <td><button class="btn sm" data-p="${p.no}">Print</button></td></tr>`; }).join('');
+  document.querySelectorAll('#dTable [data-p]').forEach(b => b.onclick = () => { showA('a-print'); $('#pEmp').value=b.dataset.p; $('#pMonth').value=ym; renderPrint(); });
+}
+function paintEmps(){
+  $('#eTable').innerHTML = `<tr><th>Code</th><th>Name (printed)</th><th>Position</th><th>Working hours</th><th></th></tr>` +
+    S.emps.map(p => `<tr><td><b>${p.no}</b></td><td>${p.name}</td><td>${p.pos||'—'}</td><td>${p.sched?(p.sched.mode==='flexi'?'Custom flexi':'Custom fixed'):'Office default'}</td><td><button class="btn sm">Edit</button> <button class="btn sm danger">Deactivate</button></td></tr>`).join('');
+}
+$('#addEmpBtn').onclick = () => $('#empForm').style.display = '';
+$('#fCancel').onclick = () => $('#empForm').style.display = 'none';
+$('#fSave').onclick = () => {
+  const no=$('#fNo').value.trim(), name=$('#fName').value.trim().toUpperCase();
+  if(!/^\d{3}$/.test(no) || emp(no)){ alert('Code must be exactly 3 digits (pad with 0, e.g. 047) and unique.'); return; }
+  if(!name){ alert('Name required'); return; }
+  const md=$('#fSched').value; S.emps.push({no, name, pos:$('#fPos').value.trim(), sched: md?{...S.sched, mode:md}:null});
+  ['#fNo','#fName','#fPos'].forEach(s=>$(s).value=''); $('#empForm').style.display='none'; afterChange();
+};
+
+/* schedule binding */
+const SB = { sAmIn:'amIn', sFlexStart:'flexStart', sFlexEnd:'flexEnd', sReq:'req', sLunchS:'lunchS', sLunchE:'lunchE', sGrace:'grace' };
+function paintSched(){
+  document.querySelectorAll('#schedMode button').forEach(b=>b.classList.toggle('on', b.dataset.m===S.sched.mode));
+  $('#fixedF').style.display = S.sched.mode==='fixed' ? '' : 'none';
+  $('#flexiF').style.display = S.sched.mode==='flexi' ? '' : 'none';
+  for(const [id,k] of Object.entries(SB)) if(document.activeElement.id!==id) $('#'+id).value = S.sched[k];
+  $('#sPmLate').value = S.sched.pmLate ? '1':'0';
+  const s = S.sched, lim = lateLimit(s);
+  $('#schedPreview').innerHTML = s.mode==='flexi'
+    ? `Arrive between <b>${t12(s.flexStart)}</b> and <b>${t12(s.flexEnd)}</b>. Late if AM IN is after <b>${t12(hm(m(lim)+ +s.grace))}</b>. Out time = arrival + ${s.req} h + lunch (e.g. in at 8:30 AM → out at ${t12(hm(m('08:30')+s.req*60+m(s.lunchE)-m(s.lunchS)))}).`
+    : `Late if AM IN is after <b>${t12(hm(m(lim)+ +s.grace))}</b>${s.pmLate?` or PM IN after <b>${t12(hm(m(s.lunchE)+ +s.grace))}</b>`:''}.`;
+}
+document.querySelectorAll('#schedMode button').forEach(b => b.onclick = () => { S.sched.mode=b.dataset.m; afterChange(); });
+for(const [id,k] of Object.entries(SB)) $('#'+id).addEventListener('input', e => { const v=e.target.value; if(!v) return; S.sched[k] = (k==='req'||k==='grace') ? +v : v; afterChange(); });
+$('#sPmLate').onchange = e => { S.sched.pmLate = e.target.value==='1'; afterChange(); };
+
+/* signatory binding */
+[['gName','name'],['gTitle','title'],['gLabel','label']].forEach(([id,k]) => { $('#'+id).value=S.sign[k]; $('#'+id).oninput = e => { S.sign[k]=e.target.value; }; });
+
+/* =================== print =================== */
+function dtrCopy(no, ym){
+  const p = emp(no), [Y,M] = ym.split('-').map(Number), n = new Date(Y,M,0).getDate();
+  let rows = '';
+  for(let d=1; d<=31; d++){
+    if(d>n){ rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; continue; }
+    const ds = `${ym}-${pad(d)}`, wd = new Date(Y,M-1,d).getDay(), e = get(no,ds), has = e && SLOTS.some(s=>e[s]);
+    const rem = e?.remark ? (e.remark.code==='OTHER' ? e.remark.text : REMARKS[e.remark.code]) : '';
+    const ut = rem ? `<td colspan="2" class="rmk">${rem}</td>` : '<td></td><td></td>';
+    if(has)                     rows += `<tr><td class="dn">${d}</td>${SLOTS.map(s=>`<td>${tPrint(e[s])}</td>`).join('')}${ut}</tr>`;
+    else if(rem)                rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td>${ut}</tr>`;
+    else if(wd===0 || wd===6)   rows += `<tr><td class="dn">${d}</td><td colspan="4" class="across">${wd===0?'SUNDAY':'SATURDAY'}</td><td></td><td></td></tr>`;
+    else                        rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
   return `<div class="dtr">
     <div class="formno">Civil Service Form No. 48</div>
     <div class="title">DAILY TIME RECORD</div><div class="ooo">-----o0o-----</div>
-    <div class="name">Juan A. Dela Cruz</div><div class="cap">(Name)</div>
+    <div class="name">${p.name}</div><div class="cap">(Name)</div>
     <table class="meta">
-      <tr><td style="width:34%"><i>For the month of</i></td><td class="u" style="width:46%">OCTOBER</td><td class="u" style="width:20%">${Y}</td></tr>
-      <tr><td rowspan="2"><i>Official hours for arrival<br>and departure</i></td><td><i>Regular days</i> <span class="u" style="display:inline-block;min-width:55%">8:00-12:00 / 1:00-5:00</span></td><td></td></tr>
-      <tr><td><i>Saturdays</i> <span class="u" style="display:inline-block;min-width:55%">&nbsp;</span></td><td></td></tr>
+      <tr><td style="width:34%"><i>For the month of</i></td><td class="u" style="width:46%">${MONTHS[M-1].toUpperCase()}</td><td class="u" style="width:20%">${Y}</td></tr>
+      <tr><td rowspan="2"><i>Official hours for arrival<br>and departure</i></td><td><i>Regular days</i> <span class="blank"></span></td><td></td></tr>
+      <tr><td><i>Saturdays</i> <span class="blank"></span></td><td></td></tr>
     </table>
     <table class="grid">
       <colgroup><col style="width:9%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:17.5%"><col style="width:17.5%"></colgroup>
       <tr><th rowspan="2">Day</th><th colspan="2" class="big">A.M.</th><th colspan="2" class="big">P.M.</th><th colspan="2" class="big">Undertime</th></tr>
       <tr><th>Arrival</th><th>Depar-<br>ture</th><th>Arrival</th><th>Depar-<br>ture</th><th>Hours</th><th>Min-<br>utes</th></tr>
       ${rows}
-      <tr class="tot"><td colspan="5" style="text-align:right;padding-right:1mm">Total</td><td class="b">${Math.floor(tot/60)||''}</td><td class="b">${tot%60||''}</td></tr>
+      <tr class="tot"><td colspan="5" style="text-align:right;padding-right:1mm">Total</td><td class="b"></td><td class="b"></td></tr>
     </table>
     <div class="cert">I certify on my honor that the above is a true and correct report of the hours of work performed, record of which was made daily at the time of arrival and departure from office.</div>
     <div class="sigline"></div>
     <div class="verified">VERIFIED as to the prescribed office hours:</div>
-    <div class="sup"><div class="n">Al Martin A. Menes</div><div class="t">Acting Branch Manager</div><div class="l">In Charge</div></div>
+    <div class="sup"><div class="n">${S.sign.name}</div><div class="t">${S.sign.title}</div><div class="l">${S.sign.label}</div></div>
   </div>`;
 }
-document.getElementById('a4').innerHTML=dtrCopy()+dtrCopy();
+function renderPrint(){ const no=$('#pEmp').value, ym=$('#pMonth').value; if(!no||!ym) return; const c=dtrCopy(no,ym); $('#a4').innerHTML=c+c; }
+$('#pEmp').onchange = renderPrint; $('#pMonth').onchange = renderPrint;
+
+/* =================== refresh =================== */
+function afterChange(){
+  if($('#p-my').style.display!=='none' && myNo) paintMy();
+  const keep = $('#pEmp').value;
+  $('#pEmp').innerHTML = S.emps.map(p=>`<option value="${p.no}">${p.name}</option>`).join('');
+  if(keep) $('#pEmp').value = keep;
+  paintDash(); paintEmps(); paintSched(); renderPrint();
+}
+(function init(){
+  const ym = ymd(new Date()).slice(0,7);
+  $('#dMonth').value = ym; $('#pMonth').value = ym; $('#dMonth').onchange = paintDash;
+  now(); tick(); autoToggle(); paintEmp(); afterChange();
+  setInterval(() => { if($('#simLive').checked) tick(); }, 1000);
+})();
 </script>
 </body>
 </html>

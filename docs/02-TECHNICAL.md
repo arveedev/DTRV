@@ -1,42 +1,39 @@
-# DTRV — Technical Specification
+# DTRV — Technical Specification (v2)
 
-Companion to [`01-PLAN.md`](01-PLAN.md). UI reference: [`../mockup/index.html`](../mockup/index.html) (open in Chrome; screen 10 prints a real A4).
+Companion to [`01-PLAN.md`](01-PLAN.md). Behaviour reference: [`../mockup/index.html`](../mockup/index.html). The prototype runs the real lateness, remark and print logic on in-memory demo data. Port those functions to the server as-is.
 
 ---
 
 ## 1. Architecture
 
 ```
-┌──────────────── Office LAN ────────────────┐
-│  Kiosk PC / phones / admin PC  (Chrome/Edge)│
-│        │  HTTP(S), same-origin cookies      │
-│        ▼                                    │
-│  Node.js 22 + Express  (single process)     │
-│   ├─ /api/*     JSON API                    │
-│   ├─ /print     server-rendered A4 DTR HTML │
-│   └─ /          static SPA (vanilla JS)     │
-│        │                                    │
-│        ▼                                    │
-│  SQLite (better-sqlite3, WAL)  data/dtr.db  │
-│  backups/ dtr-YYYYMMDD.db  (nightly, keep 30)│
-└─────────────────────────────────────────────┘
+ Employees' phones / shared PC         Admin PC
+        (Chrome, Safari, Edge)          (Chrome/Edge)
+                 │  HTTPS, JSON            │
+                 ▼                         ▼
+        ┌────────────────────────────────────────┐
+        │ Node.js 22 + Express 5 (one process)   │
+        │  /api/*   JSON API                     │
+        │  /print   server-rendered A4 HTML      │
+        │  /        static PWA (vanilla JS)      │
+        └───────────────┬────────────────────────┘
+                        ▼
+          SQLite (better-sqlite3, WAL)  data/dtr.db
+          backups/dtr-YYYYMMDD.db  (nightly, keep 30)
 ```
 
-### Stack choice
+Employees record from their **own phones**, so the server must be reachable from outside the office LAN. Recommended: a small VPS (or the office PC behind a Cloudflare Tunnel) with HTTPS.
 
 | Layer | Choice | Reason |
 |-------|--------|--------|
-| Runtime | **Node.js 22 LTS** | Runs on the office Windows PC or a small Linux VPS; one install. |
-| Server | **Express 5** | Small, well known, enough for ~20 endpoints. |
-| DB | **SQLite** via `better-sqlite3`, WAL mode | One file, zero admin, synchronous API, handles a branch office's write volume easily (≤ 100 users × 4 punches/day). |
-| Frontend | **Vanilla HTML/CSS/JS, no build step** | Five screens. A framework adds a build chain the office can't maintain. |
-| Print | **Server-rendered HTML + CSS `@page`**, browser prints/saves PDF | Exact mm layout, no PDF library, works offline. |
-| Sessions | `express-session` + `better-sqlite3-session-store` | Server-side sessions, HttpOnly cookie. |
-| Validation | `zod` | Request schemas in one place. |
-| Tests | `node:test` + `supertest`; Playwright for print snapshot | Built in / already used for PDF. |
-| Process | Windows: NSSM service · Linux: systemd | Auto-start on boot. |
-
-Rejected alternatives: PHP + MySQL (two services to manage); Firebase/Supabase (needs internet, client-side clock risk); React/Vite (build tooling with no benefit at this size).
+| Runtime | Node.js 22 LTS | One install; same language front and back |
+| Server | Express 5 + `zod` validation + `helmet` | ~20 endpoints; small and well known |
+| DB | SQLite via `better-sqlite3`, WAL | Single file; ≤ 1,000 employees × 4 writes/day is trivial |
+| Front-end | Vanilla HTML/CSS/JS, **PWA** (manifest + service worker for the app shell) | "Add to Home Screen" on phones; no build step |
+| Print | HTML + CSS `@page`, browser Print / Save as PDF | Exact mm layout, verified to fit one A4 page |
+| Sessions | `express-session` + SQLite store (admin only) | Employees don't keep sessions — each request carries the code |
+| HTTPS | Caddy (auto TLS) in front of Node | Needed for PWA install and for phones over the internet |
+| Tests | `node:test`, `supertest`, Playwright | Unit, API, print |
 
 ---
 
@@ -45,354 +42,252 @@ Rejected alternatives: PHP + MySQL (two services to manage); Firebase/Supabase (
 ```
 dtrv/
 ├─ package.json
-├─ .env.example              # PORT, SESSION_SECRET, PIN_PEPPER, TZ=Asia/Manila
+├─ .env.example            # PORT, SESSION_SECRET, TZ=Asia/Manila, FIRST_ADMIN_PIN
 ├─ src/
-│  ├─ server.js              # express app, middleware, routes mount
-│  ├─ db.js                  # open DB, pragmas, run migrations
+│  ├─ server.js
+│  ├─ db.js                # open, pragmas, migrations
 │  ├─ migrations/001_init.sql
-│  ├─ auth.js                # pin hashing, login, lockout, requireRole()
-│  ├─ time.js                # now() in Asia/Manila, date helpers
-│  ├─ dtr.js                 # undertime calc, slot suggestion, month builder (PURE)
-│  ├─ audit.js               # writeAudit(actor, entity, before, after, reason)
+│  ├─ time.js              # nowManila() → {date:'YYYY-MM-DD', time:'HH:MM', iso}
+│  ├─ rules.js             # PURE: lateMinutes, expectedOut, suggestSlot, monthStats, buildMonth
+│  ├─ audit.js
 │  ├─ routes/
-│  │  ├─ auth.routes.js
-│  │  ├─ punch.routes.js
-│  │  ├─ entries.routes.js
-│  │  ├─ remarks.routes.js
-│  │  ├─ users.routes.js
-│  │  ├─ settings.routes.js
-│  │  ├─ audit.routes.js
-│  │  └─ print.routes.js     # GET /print → HTML
-│  ├─ views/dtr.html.js      # template function → CS Form 48 markup
-│  └─ jobs/backup.js         # nightly copy via db.backup()
-├─ public/
-│  ├─ index.html             # SPA shell
-│  ├─ app.js                 # router + screens
-│  ├─ app.css
-│  └─ print.css              # A4 rules (shared with /print)
-├─ data/                     # dtr.db (gitignored)
-├─ backups/                  # gitignored
+│  │  ├─ kiosk.routes.js   # record, change, undo, remark, my-month (code-based)
+│  │  ├─ admin.routes.js   # login, employees, schedule, signatory, records, dashboard
+│  │  └─ print.routes.js
+│  ├─ views/dtr.js         # CS Form 48 template (port of dtrCopy() in the prototype)
+│  └─ jobs/backup.js
+├─ public/                 # index.html, app.js, app.css, print.css, manifest.webmanifest, sw.js, icons/
 └─ test/
-   ├─ dtr.test.js            # unit: undertime, slot suggestion, month build
-   ├─ api.test.js            # integration via supertest on in-memory DB
-   └─ print.spec.js          # Playwright: 1 page, A4, snapshot
+   ├─ rules.test.js
+   ├─ api.test.js
+   └─ print.spec.js
 ```
 
 ---
 
-## 3. Data model (SQLite)
-
-`migrations/001_init.sql`
+## 3. Data model
 
 ```sql
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE users (
-  id               INTEGER PRIMARY KEY,
-  full_name        TEXT    NOT NULL,            -- printed on DTR, e.g. 'JUAN A. DELA CRUZ'
-  position         TEXT,
-  role             TEXT    NOT NULL CHECK (role IN ('employee','admin')),
-  pin_lookup       TEXT    NOT NULL UNIQUE,     -- HMAC-SHA256(PIN_PEPPER, role||':'||pin), hex
-  pin_hash         TEXT,                        -- admin only: scrypt hash (defence in depth)
-  incharge_name    TEXT,                        -- optional per-user signatory override
-  incharge_title   TEXT,
-  is_active        INTEGER NOT NULL DEFAULT 1,
-  created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
-  updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+CREATE TABLE schedules (
+  id           INTEGER PRIMARY KEY,
+  mode         TEXT NOT NULL CHECK (mode IN ('fixed','flexi')),
+  am_in        TEXT,               -- fixed: late after this   'HH:MM'
+  flex_start   TEXT,               -- flexi: earliest time in
+  flex_end     TEXT,               -- flexi: latest time in (late after this)
+  required_hours REAL,             -- flexi: hours per day, excl. lunch
+  lunch_start  TEXT NOT NULL DEFAULT '12:00',
+  lunch_end    TEXT NOT NULL DEFAULT '13:00',
+  grace_min    INTEGER NOT NULL DEFAULT 0,
+  count_pm_late INTEGER NOT NULL DEFAULT 0,
+  is_office_default INTEGER NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX one_default ON schedules(is_office_default) WHERE is_office_default = 1;
+
+CREATE TABLE employees (
+  id           INTEGER PRIMARY KEY,
+  code         TEXT NOT NULL UNIQUE CHECK (code GLOB '[0-9][0-9][0-9]'),  -- '047'; TEXT keeps the leading 0
+  full_name    TEXT NOT NULL,      -- printed on DTR, ≤ 40 chars
+  position     TEXT,
+  schedule_id  INTEGER REFERENCES schedules(id),  -- NULL = office default
+  is_active    INTEGER NOT NULL DEFAULT 1,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- One row per employee per calendar day.
-CREATE TABLE dtr_entries (
-  id               INTEGER PRIMARY KEY,
-  user_id          INTEGER NOT NULL REFERENCES users(id),
-  work_date        TEXT    NOT NULL,            -- 'YYYY-MM-DD' (Asia/Manila)
-  am_in            TEXT,                        -- 'HH:MM' 24h
-  am_out           TEXT,
-  pm_in            TEXT,
-  pm_out           TEXT,
-  undertime_override_min INTEGER,               -- admin manual value; NULL = compute
-  remark_code      TEXT REFERENCES remark_types(code),
-  remark_text      TEXT,                        -- note; printed only for OTHER
-  remark_batch_id  TEXT,                        -- uuid shared by a date-range remark
-  created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
-  updated_at       TEXT    NOT NULL DEFAULT (datetime('now')),
-  UNIQUE (user_id, work_date)
+CREATE TABLE dtr_days (
+  id            INTEGER PRIMARY KEY,
+  employee_id   INTEGER NOT NULL REFERENCES employees(id),
+  work_date     TEXT NOT NULL,     -- 'YYYY-MM-DD' Asia/Manila
+  am_in TEXT, am_out TEXT, pm_in TEXT, pm_out TEXT,   -- 'HH:MM' 24h, final values
+  remark_code   TEXT CHECK (remark_code IN ('LEAVE','DAYOFF','OTHER')),
+  remark_text   TEXT,              -- printed for OTHER, ≤ 24 chars, uppercase
+  remark_batch  TEXT,              -- uuid shared by a date-range remark
+  edited        INTEGER NOT NULL DEFAULT 0,   -- any time changed after recording
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (employee_id, work_date)
 );
-CREATE INDEX idx_entries_user_month ON dtr_entries(user_id, work_date);
 
--- Raw, append-only punch log (source of truth for "made daily at time of arrival").
+-- Append-only: every press of Record, with the server time. Never updated.
 CREATE TABLE punches (
-  id               INTEGER PRIMARY KEY,
-  user_id          INTEGER NOT NULL REFERENCES users(id),
-  slot             TEXT    NOT NULL CHECK (slot IN ('am_in','am_out','pm_in','pm_out')),
-  punched_at_utc   TEXT    NOT NULL,            -- ISO 8601 UTC
-  local_date       TEXT    NOT NULL,            -- 'YYYY-MM-DD' Asia/Manila
-  local_time       TEXT    NOT NULL,            -- 'HH:MM'
-  ip               TEXT,
-  user_agent       TEXT
+  id           INTEGER PRIMARY KEY,
+  employee_id  INTEGER NOT NULL REFERENCES employees(id),
+  work_date    TEXT NOT NULL,
+  slot         TEXT NOT NULL CHECK (slot IN ('am_in','am_out','pm_in','pm_out')),
+  server_time  TEXT NOT NULL,      -- 'HH:MM'
+  at_utc       TEXT NOT NULL,
+  undone       INTEGER NOT NULL DEFAULT 0,
+  ip TEXT, user_agent TEXT
 );
 
-CREATE TABLE remark_types (
-  code             TEXT PRIMARY KEY,            -- 'LEAVE','DAYOFF','OB','HOLIDAY','NO_OUT','NO_LUNCH','OTHER'
-  print_text       TEXT NOT NULL,               -- 'ON LEAVE' (max 24 chars)
-  whole_day        INTEGER NOT NULL DEFAULT 0,  -- eligible for "print across row"
-  sort             INTEGER NOT NULL DEFAULT 0,
-  is_active        INTEGER NOT NULL DEFAULT 1
-);
-
-CREATE TABLE settings (
-  key   TEXT PRIMARY KEY,
-  value TEXT NOT NULL                            -- JSON-encoded
-);
+CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- JSON values
+-- signatory_name, signatory_title, signatory_label, admin_pin_hash
 
 CREATE TABLE audit_log (
-  id          INTEGER PRIMARY KEY,
-  at_utc      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  actor_id    INTEGER REFERENCES users(id),
-  action      TEXT NOT NULL,                     -- 'entry.update','entry.delete','remark.create',...
-  entity      TEXT NOT NULL,                     -- 'dtr_entries','users','settings',...
-  entity_id   TEXT,
-  subject_user_id INTEGER,                       -- whose DTR was affected
-  before_json TEXT,
-  after_json  TEXT,
-  reason      TEXT,
-  ip          TEXT
+  id INTEGER PRIMARY KEY,
+  at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  actor TEXT NOT NULL,             -- 'emp:047' | 'admin'
+  action TEXT NOT NULL,            -- 'time.change','time.undo','remark.set','day.delete','employee.create',...
+  employee_id INTEGER, work_date TEXT,
+  before_json TEXT, after_json TEXT, ip TEXT
 );
 
-CREATE TABLE login_attempts (
-  key         TEXT PRIMARY KEY,                  -- client IP (+ device cookie id)
-  failures    INTEGER NOT NULL DEFAULT 0,
-  locked_until_utc TEXT
-);
-
-INSERT INTO remark_types(code,print_text,whole_day,sort) VALUES
- ('LEAVE','ON LEAVE',1,1),('DAYOFF','DAY-OFF',1,2),('OB','OFFICIAL BUSINESS',1,3),
- ('HOLIDAY','HOLIDAY',1,4),('NO_OUT','NO TIME-OUT',0,5),('NO_LUNCH','NO LUNCH PUNCH',0,6),
- ('OTHER','',0,99);
+CREATE TABLE login_attempts (ip TEXT PRIMARY KEY, failures INTEGER NOT NULL DEFAULT 0, locked_until_utc TEXT);
 ```
 
-### Settings keys (defaults)
+Seed: one office-default schedule `fixed 08:00, lunch 12:00–13:00, grace 0`; signatory `AL MARTIN A. MENES / Acting Branch Manager / In Charge`.
 
-| key | default | used by |
-|-----|---------|---------|
-| `incharge_name` | `"AL MARTIN A. MENES"` | print |
-| `incharge_title` | `"Acting Branch Manager"` | print |
-| `incharge_label` | `"In Charge"` | print |
-| `hours_regular` | `{"amIn":"08:00","amOut":"12:00","pmIn":"13:00","pmOut":"17:00"}` | undertime |
-| `hours_regular_text` | `"8:00-12:00 / 1:00-5:00"` | print |
-| `hours_saturday` | `null` | undertime (Sat treated as non-workday when null) |
-| `hours_saturday_text` | `""` | print |
-| `grace_minutes` | `0` | undertime |
-| `noon_cutoff` | `"12:00"` | slot suggestion |
-| `auto_weekend_label` | `true` | print |
-| `remark_across_row` | `false` | print |
-| `allow_self_edit` | `false` | entries API |
-| `punch_ip_allowlist` | `[]` (CIDR strings) | punch API |
-| `lockout` | `{"max":5,"seconds":60}` | auth |
-| `idle_logout_seconds` | `{"employee":30,"admin":900}` | SPA + session |
-
-**Why both `punches` and `dtr_entries`:** `punches` is the append-only proof of when each button was pressed; `dtr_entries` is the editable monthly view that prints. An admin correction changes `dtr_entries` and the audit log, never `punches`. If a printed time doesn't match a raw punch, the audit log explains why.
+**Why `punches` and `dtr_days`:** `dtr_days` holds the final times that print and drive late counts. `punches` keeps the original server time of every Record press, so an admin can always compare an *edited* time with what was actually pressed.
 
 ---
 
-## 4. Authentication & security
+## 4. Identity & security
 
-### PIN storage
-- Employee PIN (2 digits) and admin PIN (6 digits) are both stored as
-  `pin_lookup = HMAC_SHA256(PIN_PEPPER, role + ':' + pin)`. Deterministic → allows a UNIQUE index and O(1) lookup with no username.
-- `PIN_PEPPER` is a 32-byte secret in `.env`, not in the DB. If only the DB file leaks, the PINs can't be brute-forced offline without it. (With only 100 possible employee PINs, plain bcrypt hashing adds nothing; the pepper is what protects them.)
-- Admin additionally stores `pin_hash = scrypt(pin)` and verifies it after the lookup.
-- First run: if no admin exists, the server prints a one-time setup URL to the console where the first admin PIN is set.
-
-### Login
-`POST /api/auth/login { pin, mode: 'employee'|'admin' }`
-1. Check `login_attempts` for client key. If `locked_until_utc > now` → `429 {retryAfter}`.
-2. Validate format: employee `^\d{2}$`, admin `^\d{6}$`.
-3. Look up by `pin_lookup`, `is_active = 1`, matching role.
-4. Fail → `failures++`; on reaching `lockout.max` set `locked_until`. Return `401`.
-5. Success → reset failures, `req.session.regenerate()`, store `{userId, role}`; cookie `HttpOnly; SameSite=Strict; Secure` (when HTTPS).
-
-### Authorization middleware
-- `requireAuth`, `requireRole('admin')`.
-- `ownOrAdmin(req.params.userId)` for read routes.
-- Punch route checks `punch_ip_allowlist` (CIDR match on `req.ip`, with `trust proxy` set only if behind a known proxy).
-
-### Other controls
-- CSRF: `SameSite=Strict` cookie + require `Content-Type: application/json` on mutations (forms cannot send it cross-site without CORS preflight).
-- Helmet default headers; CSP `default-src 'self'`.
-- Server-side idle expiry: `rolling` session with `maxAge` per role.
-- All times from server: `time.now()` uses `Intl.DateTimeFormat('en-PH', {timeZone:'Asia/Manila'})`. Client never sends a timestamp for punches.
+- **Employee code**: exactly 3 digits, `^\d{3}$`, stored as TEXT (`'047'`). The admin form suggests `'0'+n` when given a 2-digit employee number. Codes are **not secret**; the owner accepted this for a personal-record tool.
+- No employee sessions. Each kiosk request carries `{code}` and the server resolves the employee. This suits a shared device: nobody stays logged in.
+- Rate limit on code lookups: 20 failed codes per IP per 5 min → `429`. This stops someone scripting all 1,000 codes, without bothering real users.
+- **Admin**: 6-digit PIN, `scrypt` hash in `settings.admin_pin_hash`. 5 failures → 5-minute lockout per IP. Session cookie `HttpOnly; Secure; SameSite=Strict`, 15-min rolling expiry. First run takes `FIRST_ADMIN_PIN` from `.env`, then forces a change.
+- All mutations require `Content-Type: application/json` (blocks cross-site form posts). `helmet` with CSP `default-src 'self'`.
+- **Time source = server** (`Asia/Manila` via `Intl`). The client never sends the time for a new record, only for an explicit change.
 
 ---
 
-## 5. Business logic (`src/dtr.js`, pure functions)
+## 5. Rules (`src/rules.js`, pure — ported from the prototype)
 
-### 5.1 Slot suggestion
 ```js
-// entry: {am_in, am_out, pm_in, pm_out}, now: 'HH:MM', cutoff: '12:00'
-function suggestSlot(e, now, cutoff) {
-  if (now < cutoff) {
-    if (!e.am_in)  return 'am_in';
-    if (!e.am_out) return 'am_out';
-  } else {
-    // came in this morning, still on AM, within 90 min after cutoff → this is the lunch-out
-    if (e.am_in && !e.am_out && m(now) - m(cutoff) <= 90) return 'am_out';
-    if (!e.pm_in)  return 'pm_in';               // also covers afternoon-only half day
-    if (!e.pm_out) return 'pm_out';
+const m = t => { const [h, mi] = t.split(':'); return +h * 60 + +mi; };
+
+// Pre-select toggle by time of day (UI only).
+const suggestSlot = now =>
+  m(now) < m('11:00') ? 'am_in' : m(now) < m('12:30') ? 'am_out' : m(now) < m('14:00') ? 'pm_in' : 'pm_out';
+
+const lateLimit = sc => sc.mode === 'flexi' ? sc.flex_end : sc.am_in;
+
+// Minutes late for a day (0 = on time). Counted from the limit once past limit + grace.
+function lateMinutes(day, sc) {
+  let late = 0;
+  if (day.am_in) { const over = m(day.am_in) - m(lateLimit(sc)); if (over > sc.grace_min) late += over; }
+  if (sc.count_pm_late && day.pm_in) { const over = m(day.pm_in) - m(sc.lunch_end); if (over > sc.grace_min) late += over; }
+  return late;
+}
+
+// Flexi only: when the employee may leave.
+function expectedOut(day, sc) {
+  if (sc.mode !== 'flexi' || !day.am_in) return null;
+  const start = Math.max(m(day.am_in), m(sc.flex_start));
+  return toHHMM(start + sc.required_hours * 60 + (m(sc.lunch_end) - m(sc.lunch_start)));
+}
+
+// Month summary used by notification, My DTR and dashboard.
+function monthStats(days, sc) {   // days: dtr_days rows for the month
+  let present = 0, lates = 0, lateMin = 0, remarks = 0;
+  for (const d of days) {
+    if (d.am_in || d.am_out || d.pm_in || d.pm_out) present++;
+    if (d.remark_code) remarks++;
+    const l = lateMinutes(d, sc); if (l) { lates++; lateMin += l; }
   }
-  return ['am_in','am_out','pm_in','pm_out'].find(s => !e[s]) ?? null;
+  return { present, lates, lateMin, remarks };
 }
 ```
-The suggestion only highlights a button; the user can still tap any empty slot.
 
-### 5.2 Punch rules (`POST /api/punch {slot}`)
-1. Slot must be empty for today's entry → else `409 already_recorded`.
-2. Last punch by this user < 120 s ago → `409 too_soon`.
-3. Ordering sanity: the new time must be ≥ any filled earlier slot (`am_in ≤ am_out ≤ pm_in ≤ pm_out`) → else `422 out_of_order` (admin can still fix it).
-4. In one transaction: insert into `punches`, upsert `dtr_entries` slot.
-
-### 5.3 Undertime
-```js
-function undertimeMinutes(entry, hours, graceMin, isWorkday) {
-  if (entry.undertime_override_min != null) return entry.undertime_override_min;
-  if (entry.remark_code) return null;                 // remark replaces undertime
-  if (!isWorkday) return null;
-  const s = ['am_in','am_out','pm_in','pm_out'];
-  if (s.some(k => !entry[k])) return null;            // incomplete → blank + flagged
-  const late = (actual, sched) => Math.max(0, m(actual) - m(sched) - graceMin);
-  const early = (actual, sched) => Math.max(0, m(sched) - m(actual));
-  return late(entry.am_in, hours.amIn) + early(entry.am_out, hours.amOut)
-       + late(entry.pm_in, hours.pmIn) + early(entry.pm_out, hours.pmOut);
-}
-```
-- Grace applies to arrivals only. If your agency applies it differently, change it here.
-- Printed as `Hours = floor(u/60)` (blank if 0), `Minutes = u % 60` (blank if 0).
-- **Total** = sum of non-null values for the month.
-- Workday = Mon–Fri, plus Saturday if `hours_saturday` is set, and the day has no `HOLIDAY` remark.
-
-### 5.4 Month builder (used by screen and print)
-`buildMonth(userId, 'YYYY-MM') → { user, monthName, year, days:[31 rows], totalMin, settings }`
-Each row: `{ day, inMonth, weekday, am_in, am_out, pm_in, pm_out, undertime:{h,m}|null, remark:{code,text}|null, render: 'times'|'weekend'|'remark'|'remark_across'|'blank'|'incomplete' }`.
-Days 29–31 that don't exist in the month are `inMonth:false` and printed as empty rows (as the paper form does).
-
-### 5.5 Time display
-Stored as 24h `HH:MM`; printed as 12h without AM/PM (`13:05 → 1:05`), because the column header already says A.M./P.M.
+The schedule used is the one in force **now** (`employee.schedule_id ?? office default`). Changing a schedule recalculates past lates too. That keeps things simple; schedules can be versioned later if that's ever a problem.
 
 ---
 
-## 6. REST API
+## 6. API
 
-All JSON. `E` = employee (self), `A` = admin. Errors: `{ error: 'code', message }`.
+`K` = kiosk (code in body), `A` = admin session. Errors: `{error, message}`.
 
-| Method | Path | Who | Body / Query | Result |
-|--------|------|-----|--------------|--------|
-| POST | `/api/auth/login` | — | `{pin, mode}` | `{user:{id,full_name,role}}` |
-| POST | `/api/auth/logout` | E A | — | `204` |
-| GET  | `/api/me` | E A | — | current user + server time |
-| GET  | `/api/time` | — | — | `{now:'2026-10-07T07:58:12+08:00'}` (kiosk clock sync) |
-| GET  | `/api/punch/today` | E | — | today's entry + `suggested` slot |
-| POST | `/api/punch` | E | `{slot}` | updated entry |
-| GET  | `/api/users/:id/month` | E(self) A | `?month=2026-10` | month builder output |
-| PATCH| `/api/entries/:userId/:date` | A (E if `allow_self_edit`) | `{am_in?,am_out?,pm_in?,pm_out?,undertime_override_min?, reason}` | entry |
-| DELETE| `/api/entries/:userId/:date` | A | `{reason}` | `204` |
-| POST | `/api/remarks` | E(self) A | `{userId, from, to?, code, text?, skipWeekends}` | `{batchId, dates:[...]}` |
-| DELETE| `/api/remarks/:userId/:date` | E(self) A | `?batch=1` removes whole range | `204` |
-| GET  | `/api/remark-types` | E A | — | list |
-| PUT  | `/api/remark-types` | A | list | list |
-| GET  | `/api/users` | A | `?active=1` | list (no PIN data) |
-| POST | `/api/users` | A | `{full_name, position?, pin, incharge_name?, incharge_title?}` | user |
-| PATCH| `/api/users/:id` | A | fields, `pin?`, `is_active?` | user |
-| GET  | `/api/users/pin-suggest` | A | — | `{pin:'47'}` (random unused) |
-| GET  | `/api/settings` | A | — | all settings |
-| PUT  | `/api/settings` | A | partial settings | all settings |
+| Method | Path | Who | Body / query | Response |
+|--------|------|-----|--------------|----------|
+| GET  | `/api/time` | — | — | `{date, time, iso}`; phone clock syncs to this |
+| POST | `/api/record` | K | `{code, slot}` | `201 {employee:{code,name}, day, slot, time, late:{minutes, countThisMonth}, expectedOut, punchId}` · `200 {already:true, ...}` if slot filled · `404 code_not_found` |
+| POST | `/api/record/:punchId/undo` | K | `{code}` | `204`; only within **60 s** and if that slot still holds the punch's time; marks `punches.undone=1` and clears the slot |
+| PATCH| `/api/day` | K | `{code, date, slot, time|null}` | updated day + late info; sets `edited=1`; audit |
+| PUT  | `/api/day` | K | `{code, date, am_in, am_out, pm_in, pm_out, remark_code, remark_text}` | full-day edit from My DTR |
+| DELETE| `/api/day` | K | `{code, date}` | `204` |
+| POST | `/api/remarks` | K | `{code, from, to, remark_code, remark_text?, skipSundays}` | `{batch, dates[]}`; max 62 days |
+| DELETE| `/api/remarks/:batch` | K | `{code}` | `204` |
+| POST | `/api/my-month` | K | `{code, month:'YYYY-MM'}` | `{employee, schedule, stats, days[]}` (POST so the code isn't in URLs or logs) |
+| POST | `/api/admin/login` | — | `{pin}` | `204` + cookie |
+| POST | `/api/admin/logout` | A | — | `204` |
+| GET  | `/api/admin/dashboard` | A | `?month=` | per-employee stats + totals + most lates |
+| GET/POST/PATCH | `/api/admin/employees[/:id]` | A | `{code, full_name, position, schedule}` | `409 code_taken` |
+| GET/PUT | `/api/admin/schedule` | A | office default schedule | |
+| GET/PUT | `/api/admin/signatory` | A | `{name,title,label}` | |
 | PUT  | `/api/admin/pin` | A | `{current, next}` | `204` |
-| GET  | `/api/audit` | A | `?user=&from=&to=&page=` | paged list |
-| GET  | `/api/backup` | A | — | `dtr-YYYYMMDD.db` download |
-| GET  | `/print` | E(self) A | `?user=ID|all&month=YYYY-MM` | HTML page (A4) |
+| PUT/DELETE | `/api/admin/day` | A | same as kiosk, by `employee_id` | |
+| GET  | `/api/admin/audit` | A | `?employee=&from=&to=` | paged |
+| GET  | `/api/admin/backup` | A | — | SQLite file |
+| POST | `/print` | K or A | form `{code}` or admin session; `month`, `employee=ID|all` | A4 HTML |
 
-Validation highlights: `pin` unique per role (`409 pin_taken`); employee PIN `^\d{2}$`; time `^([01]\d|2[0-3]):[0-5]\d$`; remark range ≤ 31 days; `reason` required (min 3 chars) on admin edits/deletes; `full_name` ≤ 40 chars (fits the name line).
+Validation: time `^([01]\d|2[0-3]):[0-5]\d$`; date within ±400 days of today; remark text ≤ 24 chars, uppercased; full name ≤ 40 chars.
+
+**Record flow (server, one transaction):**
+1. Resolve `code` → active employee, else 404 (+ rate-limit counter).
+2. `now = nowManila()`; upsert `dtr_days(employee, now.date)`.
+3. If `slot` is already set → return `{already:true}` with the existing time.
+4. Set slot = `now.time`; insert `punches`.
+5. Compute `lateMinutes` (for `am_in`, or `pm_in` when PM lates count), `monthStats` and `expectedOut`; return them for the notification.
 
 ---
 
-## 7. Print specification (CS Form 48 on A4)
+## 7. Front-end behaviour
 
-Implemented and verified in `mockup/index.html` (screen 10): renders as **exactly one A4 page** in Chromium.
+- **Record screen**: 4 toggles, pre-selected by `suggestSlot(serverNow)`. Chips *On leave / Day-off / Others…* switch the keypad into remark mode. The 3-digit field **auto-submits on the 3rd digit**. Physical keyboard digits, Backspace and Enter work too.
+- **Notification** (top, 9 s): name, slot + time, badges (*Late N min*, *Nth late this Month*, *On time · N lates this month*, *Flexi · out at …*, *edited*), **Tap to change the time**, **Not you? Undo**.
+- **Change time sheet**: native `<input type=time>`, Save / Clear → `PATCH /api/day`.
+- **My DTR**: code → month list, stats cards, day editor sheet, Print.
+- Clock: fetch `/api/time` on load and every 5 min; tick locally in between.
+- PWA: app shell cached; recording needs the network. If offline, show "No connection — not recorded" (no silent queueing, so records never arrive with the wrong time).
+- Accessibility: keys ≥ 48 px, `aria-live` on the notification, visible focus.
+
+---
+
+## 8. Print specification (CS Form 48, A4)
+
+Verified in the prototype with Chromium `page.pdf()`: **one A4 page**.
 
 | Item | Value |
 |------|-------|
-| Page | `@page { size: A4 portrait; margin: 0 }` — 210 × 297 mm |
-| Sheet padding | 8 mm top/bottom, 7 mm left/right |
-| Copies | 2 identical copies side by side, `gap: 8 mm` → each ≈ 94 mm wide |
-| Font | Arial/Helvetica; title 11 pt bold; body 7–7.5 pt; certification 6.3 pt italic |
-| Grid rows | 31 day rows × 5 mm, header 2 rows, Total row |
-| Column widths | Day 9% · AM Arr 14% · AM Dep 14% · PM Arr 14% · PM Dep 14% · UT Hrs 17.5% · UT Min 17.5% |
-| Name | uppercase, bold, centred on underline, `(Name)` caption |
-| Month / Year | month name uppercase in the long cell; year in the short cell (both from `?month=`) |
-| Official hours | `hours_regular_text`, `hours_saturday_text` |
-| Remark cell | `colspan=2` over Hours+Minutes, 5.2 pt, wraps ≤ 2 lines |
-| Remark across | (setting) `colspan=4` over AM/PM columns, undertime cells blank |
-| Weekend label | `colspan=4` "SATURDAY"/"SUNDAY" on empty weekend rows |
-| Signatory | per-user override → else settings; name bold uppercase over underline, title, italic label |
-| Batch | `?user=all` → one `.a4` per active employee with `page-break-after: always` |
-| Browsers | Chrome / Edge (tested). Users print with "Margins: None", "Scale: 100%"; the page shows a reminder banner (hidden in print). |
-
----
-
-## 8. Frontend (SPA)
-
-- `public/app.js`: hash router `#/login`, `#/admin-login`, `#/clock`, `#/my?month=`, `#/admin/users`, `#/admin/records`, `#/admin/settings`, `#/admin/audit`, `#/admin/print`.
-- On load: `GET /api/me` → route by role, else login.
-- Kiosk clock: `GET /api/time` once and then ticks locally, re-syncing every 5 min, so the displayed time matches the server.
-- Idle timer resets on pointer/key events; calls `/api/auth/logout` at timeout.
-- Print buttons open `/print?...` in a new tab and call `window.print()` after load.
-- Accessibility: keypad buttons ≥ 56 px, physical keyboard digits supported, focus states visible, toast messages in an `aria-live` region.
-- Responsive: the clock and pad work on a phone; admin screens collapse the side menu under 700 px.
+| Page | `@page { size: A4; margin: 0 }`, sheet padding 8 mm × 7 mm |
+| Copies | 2 identical, side by side, gap 8 mm |
+| Name | full name, uppercase, bold, on underline |
+| Month / Year | from selected month (default current) |
+| Regular days / Saturdays | **blank underlines** |
+| Rows (31) | times present → 4 times as `h:mm` (13:05 → `1:05`); else remark only; else Sat/Sun label across time cells; else blank |
+| Undertime | remark text only (`colspan=2`, 5.4 pt, wraps 2 lines); **never numbers** |
+| Total | blank cells |
+| Signatory | name bold uppercase, title, italic label |
+| Batch | `employee=all` → one page per active employee (`page-break-after`) |
 
 ---
 
 ## 9. Deployment
 
-**Option A — Office Windows PC (recommended for one branch)**
-1. Install Node 22 LTS.
-2. Copy app folder → `npm ci --omit=dev`.
-3. Copy `.env.example` → `.env`, set `SESSION_SECRET`, `PIN_PEPPER` (`node -e "console.log(crypto.randomBytes(32).toString('hex'))"`), `PORT=8080`.
-4. `nssm install DTRV "C:\Program Files\nodejs\node.exe" "C:\dtrv\src\server.js"` → start service.
-5. Give the PC a fixed LAN IP; open firewall for 8080 on the private network only. Bookmark `http://<ip>:8080` on the kiosk.
-6. Set Windows time sync on (NTP).
+**Recommended — small VPS (₱300–500/month)**: Ubuntu, Node 22, app under systemd, **Caddy** for HTTPS on a domain. Phones reach it from anywhere.
 
-**Option B — Linux VPS** (if staff must clock in from outside the LAN): systemd unit + Caddy for automatic HTTPS. Turn on the IP allowlist or remove it on purpose.
+**Alternative — office PC**: Node service (NSSM on Windows) + **Cloudflare Tunnel** for HTTPS without opening ports. Downside: the PC must stay on.
 
-**Backups:** `jobs/backup.js` runs at 23:30 Asia/Manila using `db.backup()` (safe while running), keeps 30 days. Copy `backups/` to a USB/cloud folder weekly. Restore = stop service, replace `data/dtr.db`, start.
+Backups: nightly `db.backup()` at 23:30 Manila, keep 30; admin can download anytime. Restore = stop, replace `data/dtr.db`, start.
 
 ---
 
-## 10. Testing
+## 10. Tests
 
-| Level | What | Tool |
-|-------|------|------|
-| Unit | `undertimeMinutes` (on time, late, early out, grace, override, remark, incomplete, Saturday), `suggestSlot` (morning, lunch, afternoon, half-day), month builder (Feb 28/29, 30/31-day months, weekends) | `node:test` |
-| API | login success/fail/lockout; PIN uniqueness; punch twice → 409; punch too soon; employee can't PATCH another user; admin edit writes audit row; range remark skips weekends; batch delete | `supertest` + `:memory:` DB |
-| Print | `/print` renders exactly 1 PDF page at A4; visual snapshot vs approved PNG; long name (40 chars) doesn't wrap; `?user=all` → N pages | Playwright `page.pdf()` |
-| Manual UAT | One full month with real staff on a test DB; compare totals with hand computation for 3 employees | checklist |
-
-Acceptance for go-live: all of the above green + BM signs off one printed month against paper.
+| Level | Cases |
+|-------|-------|
+| Unit (`rules.js`) | fixed on time / late / exactly at limit / within grace / past grace (minutes from limit); flexi late after `flex_end`; flexi expected out (early arrival clamps to `flex_start`); PM late on/off; one late day with AM+PM counted once; monthStats; suggestSlot boundaries 10:59/11:00/12:29/12:30/13:59/14:00 |
+| API | code `'047'` round-trips with leading 0; `47` and `0470` rejected; record twice → `already`; undo within 60 s ok, after → 409, after a manual change → 409; remark range skips Sundays; admin endpoints 401 without session; admin lockout |
+| Print | 1 page A4; Regular days/Saturdays blank; worked Saturday shows times; leave day shows remark in Undertime and no times; Total blank; 40-char name fits one line |
 
 ---
 
-## 11. Build order (maps to plan phases)
+## 11. Build order
 
-1. **P1**: `db.js` + migration → `auth.js` (login/lockout/first-admin) → `punch.routes` → `users.routes` → `settings.routes` → `dtr.js` month builder (times only) → `/print` → SPA login/clock/admin users/settings/print.
-2. **P2**: remarks API + UI → undertime in builder/print → admin records grid + edits → audit log + viewer.
-3. **P3**: batch print, backup job + download, IP allowlist, idle-logout polish, Playwright print test in CI.
+1. **P1** — schema, `time.js`, `rules.js` + unit tests, `/api/time`, `/api/record`, undo, change time, Record screen + notification, print single.
+2. **P2** — remarks, My DTR, schedules (fixed/flexi + per-employee), late badges, admin login/employees/schedule/signatory/dashboard.
+3. **P3** — print all, backup, PWA manifest/service worker, deploy guide.
 
-Rough effort for one developer: P1 ≈ 3–4 days, P2 ≈ 2–3 days, P3 ≈ 1–2 days.
-
----
-
-## 12. Open questions for the owner
-
-1. Does your agency use a **grace period** for late arrival, and does undertime include lunch overstay (late PM in)? (Current spec: yes, lunch overstay counts.)
-2. Are **Saturdays** ever workdays?
-3. Should leave/holiday print **in the Undertime column** (your request) or **across the row** (common practice)? Both supported; default follows your request.
-4. Will staff clock in **only from the office**? If yes, turn on the IP allowlist. It's the most effective protection against the 2‑digit PIN weakness.
+Estimate for one developer: P1 3 days · P2 3 days · P3 1–2 days.
