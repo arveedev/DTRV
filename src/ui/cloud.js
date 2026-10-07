@@ -3,8 +3,11 @@
    the single admin user, guarded by a shared sync key that the admin types once per phone (Settings). */
 import { store } from '../lib/util.js';
 
-export const cloudUrl = import.meta.env?.VITE_DEXIE_CLOUD_DB_URL || '';
-export const cloudInfo = () => ({ on: !!cloudUrl, hasKey: !!store.get('dtrv.syncKey') });
+const rawUrl = String(import.meta.env?.VITE_DEXIE_CLOUD_DB_URL || '').trim().replace(/^["']|["']$/g, '');
+const validUrl = u => { try { return new URL(u).protocol === 'https:'; } catch { return false; } };
+/** '' when sync is off, or when the configured address is not a valid https URL (the app then stays local-only). */
+export const cloudUrl = validUrl(rawUrl) ? rawUrl.replace(/\/$/, '') : '';
+export const cloudInfo = () => ({ on: !!cloudUrl, bad: !!rawUrl && !cloudUrl, hasKey: !!store.get('dtrv.syncKey') });
 export const setSyncKey = k => store.set('dtrv.syncKey', k || null);
 
 /** A setup link looks like https://app/#key=SECRET. Save the key and remove it from the address bar. Call before opening the database. */

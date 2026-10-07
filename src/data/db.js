@@ -23,8 +23,8 @@ export async function openDatabase({ name = 'dtrv', cloudUrl = import.meta.env?.
   db = new Dexie(name, { addons });
   db.version(1).stores(SCHEMA);
   if (cloudUrl) {
-    db.cloud.configure({ databaseUrl: cloudUrl, requireAuth: true, customLoginGui: true, fetchTokens });
-    cloudEnabled = true;
+    try { db.cloud.configure({ databaseUrl: cloudUrl, requireAuth: true, customLoginGui: true, fetchTokens }); cloudEnabled = true; }
+    catch (e) { console.error('Dexie Cloud could not start; running local-only', e); }
   }
   await db.open();
   return db;
