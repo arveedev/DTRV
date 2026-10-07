@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8ef">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <title>DTRV Prototype</title>
 <style>
 :root{
-  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#14213d; --muted:#64708a; --line:#dde3ec;
-  --brand:#0f5c8c; --brand-2:#0b4870; --brand-soft:#e3f0f8;
+  --bg:#f4eee7; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#14213d; --muted:#64708a; --line:#dde3ec;
+  --brand:#e0592a; --brand-2:#2b1d12; --brand-soft:#fff1e6;
   --ok:#1b8a5a; --ok-soft:#e2f4ea; --late:#c2410c; --late-soft:#fdeee4; --warn:#a16207; --warn-soft:#fdf6dc;
   --leave:#6d28d9; --leave-soft:#efe8fd;
   --r:14px; --shadow:0 8px 30px rgba(20,33,61,.12);
@@ -28,72 +31,16 @@ input,select{font:inherit;color:var(--ink)}
 .demo .hint{opacity:.7}
 .view{display:none}.view.on{display:block}
 
-/* ---------- employee app (phone) ---------- */
-.stage{display:flex;justify-content:center;gap:32px;padding:24px 16px 48px;flex-wrap:wrap}
-.phone{width:390px;max-width:100%;min-height:780px;background:var(--surface);border-radius:32px;box-shadow:var(--shadow);overflow:hidden;position:relative;display:flex;flex-direction:column;border:8px solid #0d1626}
-.explain{max-width:360px;font-size:14px;line-height:1.55;color:var(--muted)}
-.explain h3{color:var(--ink);margin:0 0 8px}
-.explain ol{padding-left:18px}
-.explain code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 4px}
-
-.hero{background:linear-gradient(160deg,var(--brand),var(--brand-2));color:#fff;padding:22px 22px 26px}
-.hero .date{opacity:.85;font-size:14px}
-.hero .time{font-size:46px;font-weight:750;letter-spacing:-1px;line-height:1.1;font-variant-numeric:tabular-nums}
-.hero .time small{font-size:18px;font-weight:600;margin-left:4px;opacity:.85}
-.body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:14px}
-.label{font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-
-.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:-34px}
-.tg{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;box-shadow:0 2px 6px rgba(20,33,61,.06);transition:.15s}
-.tg .k{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em}
-.tg .v{font-size:18px;font-weight:750}
-.tg.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
-.tg.on .k{color:var(--brand)}
-.chips{display:flex;gap:8px}
-.chip{flex:1;border:1.5px dashed var(--line);background:var(--surface-2);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
-.chip.on{border-style:solid;border-color:var(--leave);background:var(--leave-soft);color:var(--leave)}
-
-.empno{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--line);border-radius:12px;padding:10px 14px;min-height:56px}
-.empno .val{font-size:28px;font-weight:700;letter-spacing:4px;font-variant-numeric:tabular-nums}
-.empno .ph{color:#a6b0c2;font-size:16px;font-weight:500;letter-spacing:0}
-.empno.err{border-color:var(--late);animation:shake .35s}
-@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.keys button{background:var(--surface-2);border:0;border-radius:12px;font-size:24px;font-weight:600;padding:12px 0;cursor:pointer}
-.keys button:active{background:var(--brand-soft)}
-.keys .go{background:var(--brand);color:#fff;font-size:16px}
-.keys .muted{font-size:15px;color:var(--muted)}
-.foot{display:flex;justify-content:space-between;font-size:13px}
-.foot a{color:var(--brand);text-decoration:none;font-weight:600;cursor:pointer}
-
-/* toast */
-.toast{position:absolute;left:12px;right:12px;top:12px;background:var(--surface);border-radius:16px;box-shadow:0 12px 34px rgba(20,33,61,.28);padding:14px 16px;transform:translateY(-140%);transition:transform .3s cubic-bezier(.2,.9,.3,1.2);z-index:10;cursor:pointer;border-left:6px solid var(--ok)}
-.toast.show{transform:none}
-.toast.late{border-left-color:var(--late)}
-.toast.rem{border-left-color:var(--leave)}
-.toast .t1{font-size:13px;color:var(--muted)}
-.toast .t2{font-size:17px;font-weight:700;margin:2px 0}
-.toast .t3{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.toast .tap{font-size:12px;color:var(--brand);font-weight:650;margin-top:8px}
+/* ---------- shared (admin forms, badges) ---------- */
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:650;border-radius:99px;padding:3px 9px;background:var(--surface-2);color:var(--muted)}
 .badge.late{background:var(--late-soft);color:var(--late)}
 .badge.ok{background:var(--ok-soft);color:var(--ok)}
 .badge.leave{background:var(--leave-soft);color:var(--leave)}
 .badge.warn{background:var(--warn-soft);color:var(--warn)}
 .badge.edit{background:#eef2ff;color:#4338ca}
-
-/* bottom sheet */
-.scrim{position:absolute;inset:0;background:rgba(13,22,38,.45);opacity:0;pointer-events:none;transition:.2s;z-index:20}
-.scrim.show{opacity:1;pointer-events:auto}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;padding:10px 20px 22px;transform:translateY(105%);transition:transform .28s ease;z-index:21;max-height:88%;overflow:auto}
-.sheet.show{transform:none}
-.sheet .grab{width:40px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 12px}
-.sheet h3{margin:0 0 4px}
-.sheet .sub{color:var(--muted);font-size:14px;margin-bottom:14px}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600}
 .field input,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
-.sheet .field input[type=time]{font-size:26px;font-weight:700;text-align:center}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .btns{display:flex;gap:10px;margin-top:6px}
 .btn{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-weight:650;cursor:pointer}
@@ -101,23 +48,145 @@ input,select{font:inherit;color:var(--ink)}
 .btn.danger{color:var(--late)}
 .btn.sm{flex:0 0 auto;padding:7px 12px;font-size:13px;border-radius:9px}
 
-/* my month */
-.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.mhead button{background:var(--surface-2);border:0;border-radius:10px;width:36px;height:36px;font-size:18px;cursor:pointer}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:var(--surface-2);border-radius:12px;padding:10px;text-align:center}
-.stat .n{font-size:24px;font-weight:800}
-.stat .l{font-size:11px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.05em}
-.stat.late .n{color:var(--late)}
-.days{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:420px;padding-right:2px}
-.day{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;background:var(--surface-2);border-radius:12px;padding:8px 10px;cursor:pointer}
-.day .d{text-align:center;line-height:1.05}
-.day .d b{font-size:18px;display:block}
-.day .d span{font-size:11px;color:var(--muted);text-transform:uppercase}
-.day .tm{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
-.day .tm span{color:var(--muted)}
-.day.today{outline:2px solid var(--brand)}
-.day.we{opacity:.65}
+/* ---------- employee app (style C · Sunrise) ---------- */
+.stage{display:flex;justify-content:center;gap:32px;padding:24px 16px 48px;flex-wrap:wrap;align-items:flex-start}
+.phone{
+  --sat:47px; --sab:34px;                     /* simulated iPhone safe areas (top notch / bottom home bar) */
+  --cbg:#fff8ef; --csurf:#fff; --cline:#f1dfcb; --cline2:#f6e8d8; --cink:#2b1d12; --cmuted:#8a6d55; --cdark:#2b1d12; --cgold:#ffd38a;
+  width:390px;max-width:100%;height:844px;background:var(--cbg);color:var(--cink);border-radius:46px;border:10px solid #10151f;
+  box-shadow:0 18px 44px rgba(16,21,31,.25);overflow:hidden;position:relative;display:flex;flex-direction:column;font-family:Poppins,system-ui,sans-serif}
+.sbar{position:absolute;top:0;left:0;right:0;height:var(--sat);display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font:600 14px "Space Grotesk",sans-serif;z-index:30;pointer-events:none}
+.sbar .isl{width:118px;height:32px;background:#10151f;border-radius:20px}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#2b1d12;opacity:.85;z-index:30;pointer-events:none}
+.scr{flex:1;display:flex;flex-direction:column;min-height:0;padding:calc(var(--sat) + 12px) 18px calc(var(--sab) + 14px)}
+
+.g1{background:linear-gradient(140deg,#ff9a3c,#ff6a3d)}
+.g2{background:linear-gradient(140deg,#f6c445,#f39c12)}
+.g3{background:linear-gradient(140deg,#2ec4b6,#1a9c8f)}
+.g4{background:linear-gradient(140deg,#6d6df0,#3d3db8)}
+
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+.top .date{font-size:13px;color:var(--cmuted);font-weight:500}
+.top .clock{font:600 44px/1 "Space Grotesk",sans-serif;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+.top .clock small{font-size:16px;color:#ff6a3d;margin-left:3px;letter-spacing:0}
+.logo{width:44px;height:44px;border-radius:14px;border:0;background:var(--cdark);color:var(--cgold);font-weight:800;font-size:12px;cursor:pointer;font-family:Poppins}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tg{border:0;border-radius:20px;padding:12px 13px;color:#fff;position:relative;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;opacity:.45;cursor:pointer;transition:transform .15s,opacity .15s,box-shadow .15s;font-family:Poppins}
+.tg b{font-size:18px;font-weight:800;line-height:1}
+.tg small{font-size:11px;font-weight:500;opacity:.92}
+.tg.on{opacity:1;transform:scale(1.02);box-shadow:0 10px 22px rgba(255,106,61,.3)}
+.tg.on::after{content:"✓";position:absolute;top:10px;right:12px;width:22px;height:22px;border-radius:50%;background:#fff;color:#ff6a3d;font-size:12px;font-weight:800;display:grid;place-items:center}
+
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.chip{border:1.5px solid var(--cline);background:var(--csurf);border-radius:14px;padding:7px 2px;font:600 11.5px Poppins,sans-serif;color:var(--cmuted);cursor:pointer;line-height:1.2}
+.chip i{display:block;font-style:normal;font-size:16px;margin-bottom:1px}
+.chip.on{border-color:#5b5bd6;background:#ececfd;color:#3d3db8}
+.chip[data-r=HOLIDAY].on{border-color:#e11d48;background:#ffe4e9;color:#be123c}
+
+.codebox{margin-top:12px;background:var(--csurf);border-radius:18px;border:1.5px solid var(--cline);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;min-height:62px}
+.codebox .l{font-size:10.5px;color:var(--cmuted);font-weight:700;letter-spacing:.06em;line-height:1.25;max-width:90px}
+.codebox .v{font:700 32px "Space Grotesk",sans-serif;letter-spacing:12px;margin-right:-12px}
+.codebox .v i{color:#e7d3bd;font-style:normal}
+.codebox .hint{font-size:11px;color:var(--cmuted);width:70px;text-align:right;line-height:1.2}
+.codebox.err{border-color:#e11d48;animation:shake .35s}
+.codebox.err .hint{color:#e11d48;font-weight:700}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:auto;padding-top:12px}
+.keys button{background:var(--csurf);border:1.5px solid var(--cline2);border-radius:16px;height:54px;font:600 24px "Space Grotesk",sans-serif;color:var(--cink);cursor:pointer}
+.keys button:active{background:#fff1e6}
+.keys .m{background:none;border:0;font:600 13px Poppins,sans-serif;color:var(--cmuted)}
+
+/* toast (small info) */
+.toast{position:absolute;left:14px;right:14px;top:calc(var(--sat) + 6px);background:var(--cdark);color:#fff;border-radius:16px;padding:12px 16px;transform:translateY(calc(-100% - var(--sat) - 24px));transition:transform .3s cubic-bezier(.2,.9,.3,1.2);z-index:25;font-size:14px;cursor:pointer}
+.toast.show{transform:none}
+.toast b{color:var(--cgold)}
+
+/* bottom sheet */
+.scrim{position:absolute;inset:0;background:rgba(43,29,18,.38);opacity:0;pointer-events:none;transition:.2s;z-index:20}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--csurf);border-radius:30px 30px 0 0;padding:12px 20px calc(var(--sab) + 16px);transform:translateY(105%);transition:transform .3s ease;z-index:21;max-height:calc(100% - var(--sat) - 8px);overflow:auto;box-shadow:0 -12px 30px rgba(43,29,18,.18)}
+.sheet.show{transform:none}
+.sheet:not(.show){box-shadow:none;visibility:hidden;transition:transform .3s ease,visibility 0s .3s}
+.sheet .grab{width:40px;height:5px;background:var(--cline);border-radius:3px;margin:0 auto 14px}
+.sheet h3{margin:0 0 2px;font-size:19px}
+.sheet .sub{color:var(--cmuted);font-size:13px;margin-bottom:14px}
+.sheet .field{margin-bottom:11px}
+.sheet .field label{display:block;font-size:12px;color:var(--cmuted);margin-bottom:4px;font-weight:600}
+.sheet .field input,.sheet .field select{width:100%;border:1.5px solid var(--cline);border-radius:12px;padding:10px 12px;background:#fff;font:500 15px Poppins,sans-serif;color:var(--cink)}
+.sheet .field input[type=time].big{font:600 30px "Space Grotesk",sans-serif;text-align:center}
+.sheet .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.sheet .field input{min-width:0;max-width:100%}
+.sheet .btns,.sheet .act{display:flex;gap:8px;margin-top:8px}
+.sheet .btn,.sheet .act button{flex:1;border:1.5px solid var(--cline);background:var(--cbg);border-radius:14px;padding:12px 4px;font:600 13.5px Poppins,sans-serif;color:var(--cink);cursor:pointer;white-space:nowrap}
+.sheet .btn.primary,.sheet .act .p{background:var(--cdark);border-color:var(--cdark);color:var(--cgold)}
+.sheet .btn.danger{color:#be123c}
+.res .hd{display:flex;align-items:center;gap:12px}
+.res .ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;flex:none}
+.res .hd b{font-size:19px;display:block;line-height:1.15}
+.res .hd small{color:var(--cmuted);font-size:12px}
+.res .bigt{font:600 54px/1 "Space Grotesk",sans-serif;text-align:center;margin:14px 0 10px;letter-spacing:-1.5px}
+.res .late{background:#fff1e6;color:#c2410c;border-radius:14px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.res .late b{font-size:19px}
+.res .ok{background:#dcf5f2;color:#138a7e;border-radius:14px;padding:10px 12px;font-size:13px;text-align:center;font-weight:600}
+.res .note{font-size:12.5px;color:var(--cmuted);text-align:center;margin-top:8px}
+.res .note b{color:var(--cink)}
+.res .auto{font-size:11px;color:var(--cmuted);text-align:center;margin-top:10px}
+.tagE{display:inline-block;font-size:10px;font-weight:700;background:#eef2ff;color:#4338ca;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+
+/* My DTR */
+.mtop{display:flex;justify-content:space-between;align-items:center}
+.mtop a{font-weight:600;font-size:14px;color:var(--cink);cursor:pointer}
+.mtop .sw{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
+.mtop .sw button{width:32px;height:32px;border-radius:10px;border:1.5px solid var(--cline);background:var(--csurf);cursor:pointer;font-size:15px}
+.mname{margin-top:10px}
+.mname .sub{font-size:12px;color:var(--cmuted)}
+.mname .nm{font-size:21px;font-weight:800;line-height:1.2}
+.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.mstats div{border-radius:18px;padding:10px;color:#fff}
+.mstats b{font:700 26px/1.1 "Space Grotesk",sans-serif;display:block}
+.mstats span{font-size:10px;font-weight:600;opacity:.92}
+.mdays{position:relative;flex:1;overflow:auto;margin:12px -4px 0;padding:0 4px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.dcard{background:var(--csurf);border-radius:16px;padding:8px 10px;display:flex;align-items:center;gap:10px;border:1.5px solid var(--cline2);cursor:pointer}
+.dcard.today{border-color:#ff9a3c}
+.dcard.we{background:transparent;border-style:dashed}
+.dcard .d{width:38px;height:38px;border-radius:12px;background:var(--cbg);display:grid;place-items:center;text-align:center;font:700 15px/1 "Space Grotesk",sans-serif;flex:none}
+.dcard .d small{display:block;font:600 8px Poppins,sans-serif;color:var(--cmuted);margin-top:2px}
+.dcard .t{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;flex:1}
+.dcard .t span{text-align:center;font:600 11.5px "Space Grotesk",sans-serif;border-radius:8px;padding:5px 0;background:var(--cbg)}
+.dcard .t span.l{background:#ffe7d6;color:#c2410c}
+.dcard .t span.e{color:#d9c3ad}
+.dcard .rm{flex:1;text-align:center;font-size:11.5px;font-weight:700;border-radius:8px;padding:6px;background:#ececfd;color:#3d3db8}
+.dcard .rm.hol{background:#ffe4e9;color:#be123c}
+.dcard .rm.inc{background:#fdf6dc;color:#a16207}
+.dcard .muted{flex:1;font-size:12px;color:var(--cmuted)}
+.dcard .flag{font-size:9px;font-weight:700;color:#4338ca}
+.mbtn{display:flex;gap:8px;padding-top:12px}
+.mbtn button{flex:1;border-radius:16px;padding:13px;font:600 14px Poppins,sans-serif;border:1.5px solid var(--cline);background:var(--csurf);color:var(--cink);cursor:pointer}
+.mbtn .p{background:var(--cdark);color:var(--cgold);border-color:var(--cdark)}
+
+.explain{max-width:360px;font-size:14px;line-height:1.55;color:var(--muted)}
+.explain h3{color:var(--ink);margin:0 0 8px}
+.explain ol{padding-left:18px}
+.explain code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.explain .sa{display:flex;gap:10px;margin-top:12px;background:#fff;border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
+
+/* shorter phones (iPhone SE etc.) */
+@media (max-height:780px){ .tg{min-height:76px} .keys button{height:48px} .top .clock{font-size:38px} .top{margin-bottom:10px} }
+@media (max-height:720px){
+  .tg{min-height:60px;padding:9px 11px} .tg small{display:none} .tg b{font-size:16px}
+  .chip i{display:none} .chips{margin-top:8px} .chip{padding:8px 2px}
+  .codebox{min-height:48px;margin-top:8px;padding:4px 12px} .codebox .v{font-size:26px}
+  .keys{gap:6px;padding-top:8px} .keys button{height:42px;font-size:21px}
+  .top .clock{font-size:32px} .top .date{font-size:12px} .logo{width:38px;height:38px}
+}
+/* real phone: go full screen and use the device's real safe areas */
+@media (max-width:520px){
+  .demo,.explain,.sbar,.homebar{display:none!important}
+  .stage{padding:0}
+  .phone{--sat:max(env(safe-area-inset-top),16px);--sab:max(env(safe-area-inset-bottom),16px);width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none}
+}
 
 /* ---------- admin (desktop) ---------- */
 .admin{max-width:1180px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:220px 1fr;gap:20px}
@@ -147,6 +216,10 @@ table.t tr:hover td{background:var(--surface-2)}
 .preview{background:var(--brand-soft);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--brand-2);margin-top:12px}
 select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff}
 
+#pBack{display:none}
+.print-only #pBack{display:inline-block}
+.print-only .side{display:none}
+.print-only .admin{grid-template-columns:1fr}
 /* ---------- DTR print (CS Form 48) ---------- */
 .paper-wrap{overflow:auto;background:#8d96a3;padding:18px;border-radius:12px}
 .a4{width:210mm;height:297mm;background:#fff;margin:0 auto;padding:8mm 7mm;display:flex;gap:8mm;color:#000;font-family:Arial,Helvetica,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.3)}
@@ -210,74 +283,61 @@ select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padd
 <section class="view on" id="v-emp">
   <div class="stage">
     <div class="phone" id="phone">
+      <div class="sbar"><span>9:41</span><span class="isl"></span><span>▮▮▮ 100%</span></div>
       <div class="toast" id="toast"></div>
       <div class="scrim" id="scrim"></div>
       <div class="sheet" id="sheet"></div>
 
       <!-- Record screen -->
-      <div id="p-record" style="display:flex;flex-direction:column;flex:1">
-        <div class="hero">
-          <div class="date" id="hDate"></div>
-          <div class="time" id="hTime"></div>
+      <div class="scr" id="p-record">
+        <header class="top">
+          <div><div class="date" id="hDate"></div><div class="clock" id="hTime"></div></div>
+          <button class="logo" id="toAdmin" title="Admin">DTR</button>
+        </header>
+        <div class="tiles" id="toggles">
+          <button class="tg g1" data-s="am_in"><span data-ic="sun"></span><span><b>AM IN</b><br><small>Good morning</small></span></button>
+          <button class="tg g2" data-s="am_out"><span data-ic="fork"></span><span><b>AM OUT</b><br><small>Lunch break</small></span></button>
+          <button class="tg g3" data-s="pm_in"><span data-ic="cup"></span><span><b>PM IN</b><br><small>Back to work</small></span></button>
+          <button class="tg g4" data-s="pm_out"><span data-ic="home"></span><span><b>PM OUT</b><br><small>Going home</small></span></button>
         </div>
-        <div class="body">
-          <div class="toggles" id="toggles">
-            <button class="tg" data-s="am_in"><div class="k">MORNING</div><div class="v">AM IN</div></button>
-            <button class="tg" data-s="am_out"><div class="k">LUNCH</div><div class="v">AM OUT</div></button>
-            <button class="tg" data-s="pm_in"><div class="k">AFTER LUNCH</div><div class="v">PM IN</div></button>
-            <button class="tg" data-s="pm_out"><div class="k">GOING HOME</div><div class="v">PM OUT</div></button>
-          </div>
-          <div>
-            <div class="label" style="margin-bottom:6px">Not working today?</div>
-            <div class="chips" id="chips">
-              <button class="chip" data-r="LEAVE">On leave</button>
-              <button class="chip" data-r="DAYOFF">Day-off</button>
-              <button class="chip" data-r="OTHER">Others…</button>
-            </div>
-          </div>
-          <div>
-            <div class="label" style="margin-bottom:6px" id="modeLabel">3-digit employee code</div>
-            <div class="empno" id="empno"><span class="val" id="empVal"></span><span style="color:var(--muted);font-size:13px" id="empHint">records instantly</span></div>
-          </div>
-          <div class="keys" id="keys">
-            <button>1</button><button>2</button><button>3</button>
-            <button>4</button><button>5</button><button>6</button>
-            <button>7</button><button>8</button><button>9</button>
-            <button class="muted" data-k="del">⌫</button><button>0</button><button class="go" data-k="go">Record</button>
-          </div>
-          <div class="foot"><a id="toMy">📅 My DTR & lates</a><a id="toAdmin">Admin ›</a></div>
+        <div class="chips" id="chips">
+          <button class="chip" data-r="LEAVE"><i>🌴</i>Leave</button>
+          <button class="chip" data-r="DAYOFF"><i>🏠</i>Day-off</button>
+          <button class="chip" data-r="HOLIDAY"><i>🎌</i>Holiday</button>
+          <button class="chip" data-r="OTHER"><i>✏️</i>Others</button>
+        </div>
+        <div class="codebox" id="empno"><span class="l" id="modeLabel"></span><span class="v" id="empVal"></span><span class="hint" id="empHint"></span></div>
+        <div class="keys" id="keys">
+          <button>1</button><button>2</button><button>3</button>
+          <button>4</button><button>5</button><button>6</button>
+          <button>7</button><button>8</button><button>9</button>
+          <button class="m" data-k="my" id="toMy">My DTR</button><button>0</button><button class="m" data-k="del">⌫</button>
         </div>
       </div>
 
-      <!-- My month screen -->
-      <div id="p-my" style="display:none;flex-direction:column;flex:1">
-        <div class="hero" style="padding-bottom:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <a id="myBack" style="color:#fff;cursor:pointer;font-weight:650">‹ Back</a>
-            <span class="date" id="myNo"></span>
-          </div>
-          <div style="font-size:22px;font-weight:750;margin-top:8px" id="myName"></div>
-        </div>
-        <div class="body">
-          <div class="mhead"><button id="mPrev">‹</button><b id="mLabel"></b><button id="mNext">›</button></div>
-          <div class="stats" id="myStats"></div>
-          <div class="days" id="myDays"></div>
-          <div class="btns"><button class="btn" id="myRemark">+ Remark / leave</button><button class="btn primary" id="myPrint">Print DTR</button></div>
-        </div>
+      <!-- My DTR screen -->
+      <div class="scr" id="p-my" style="display:none">
+        <div class="mtop"><a id="myBack">‹ Back</a><div class="sw"><button id="mPrev">‹</button><span id="mLabel"></span><button id="mNext">›</button></div></div>
+        <div class="mname"><div class="sub" id="myNo"></div><div class="nm" id="myName"></div></div>
+        <div class="mstats" id="myStats"></div>
+        <div class="mdays" id="myDays"></div>
+        <div class="mbtn"><button id="myRemark">+ Remark</button><button class="p" id="myPrint">Print DTR</button></div>
       </div>
+      <div class="homebar"></div>
     </div>
 
     <div class="explain">
-      <h3>How the employee screen works</h3>
+      <h3>How it works</h3>
       <ol>
-        <li>The app <b>pre-selects a toggle</b> from the time of day. Tap another toggle if needed.</li>
-        <li>Type your <b>3-digit code</b> (2-digit employee numbers start with 0, e.g. <code>024</code>). It records <b>on the 3rd digit</b>, no button needed.</li>
-        <li>A <b>notification</b> drops down with your name, the time, and a <span class="badge late">Late</span> badge plus <b>how many lates this month</b>. Flexi employees also see their expected out time.</li>
-        <li><b>Tap the notification</b> to change the time, e.g. to match the office biometric.</li>
-        <li>For a day off, tap <b>On leave / Day-off / Others</b>, type your code, then pick the dates.</li>
-        <li><b>My DTR</b> shows your month, late count, and lets you edit any day or print.</li>
+        <li>A tile is <b>pre-selected</b> by the time of day. Tap another tile if needed.</li>
+        <li>Type your <b>3-digit code</b> (e.g. <code>024</code>). It records <b>on the 3rd digit</b>.</li>
+        <li>A sheet slides up with the time in large digits, and a <b>Late</b> warning plus your <b>late count this month</b>. Flexi employees also see their time out.</li>
+        <li><b>Change time</b> to match the biometric, <b>Undo</b> if you mistyped, or <b>Done</b>. It closes by itself after 8 s.</li>
+        <li><b>Leave · Day-off · Holiday · Others</b>: tap one, type your code, pick the dates.</li>
+        <li><b>My DTR</b>: tap it, type your code. You'll see your month, lates, edits and Print.</li>
       </ol>
-      <p>Change the <b>Demo clock</b> above to test, e.g. set 8:20 AM and type <code>024</code>.</p>
+      <div class="sa"><span>📱</span><span><b>Safe spacing:</b> content starts below the notch/status bar and ends above the home bar. On a real phone it uses the phone's own safe-area values, so nothing hides under the notch or the gesture bar.</span></div>
+      <p>Tip: open this file on your phone. It switches to full screen automatically.</p>
     </div>
   </div>
 </section>
@@ -357,7 +417,7 @@ select.inline,input.inline{border:1.5px solid var(--line);border-radius:9px;padd
 
       <!-- Print -->
       <div class="apage" id="a-print" style="display:none">
-        <div class="ptop noprint"><h2>Print DTR</h2>
+        <div class="ptop noprint"><h2><button class="btn sm" id="pBack" style="margin-right:8px">‹ Back</button>Print DTR</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <select class="inline" id="pEmp"></select>
             <input type="month" class="inline" id="pMonth">
@@ -384,7 +444,8 @@ const S = {
   ],
   e: {} // key "no|YYYY-MM-DD" -> {am_in,am_out,pm_in,pm_out,remark:{code,text}|null, edited:bool}
 };
-const REMARKS = { LEAVE:'ON LEAVE', DAYOFF:'DAY-OFF', OTHER:'' };
+const REMARKS = { LEAVE:'ON LEAVE', DAYOFF:'DAY-OFF', HOLIDAY:'HOLIDAY', OTHER:'' };
+const REMARK_LABEL = { LEAVE:'On leave', DAYOFF:'Day-off', HOLIDAY:'Holiday', OTHER:'Others' };
 const SLOTS = ['am_in','am_out','pm_in','pm_out'];
 const SLOT_LABEL = { am_in:'AM IN', am_out:'AM OUT', pm_in:'PM IN', pm_out:'PM OUT' };
 
@@ -455,178 +516,203 @@ function now(){
       e.pm_out = jitter(p.no==='205'?'17:15':'17:03', i+3, 10);
     });
   }
+  if(today > 9){ for(const no of ['024','205','331']){ const ds=`${ym}-${pad(today-8)}`; const x=ensure(no,ds); if(new Date(Y,M,today-8).getDay()%6){ x.am_in=x.am_out=x.pm_in=x.pm_out=null; x.remark={code:'HOLIDAY',text:''}; } } }
   if(today > 3){ const e = ensure('024', `${ym}-${pad(today-1)}`); e.pm_out=null; e.remark={code:'OTHER', text:'NO TIME-OUT'}; }
   if(today > 6){ for(const d of [today-4]){ const ds=`${ym}-${pad(d)}`; if(new Date(Y,M,d).getDay()%6){ S.e[key('205',ds)]={am_in:null,am_out:null,pm_in:null,pm_out:null,remark:{code:'LEAVE',text:''},edited:false}; } } }
 })();
 
 /* =================== employee: record screen =================== */
-let selSlot = 'am_in', selRemark = null, typed = '';
+const ICONS = {
+  sun:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  fork:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M7 2v8a2 2 0 0 0 4 0V2M9 10v12M17 2c-2 2-2 6 0 8v12"/></svg>',
+  cup:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM17 10h2a2 2 0 0 1 0 4h-2M8 2v3M12 2v3"/></svg>',
+  home:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
+};
+document.querySelectorAll('[data-ic]').forEach(el => el.innerHTML = ICONS[el.dataset.ic]);
+const SLOT_UI = {
+  am_in:  { g:'g1', ic:'sun',  greet:'Good morning' },
+  am_out: { g:'g2', ic:'fork', greet:'Enjoy your lunch' },
+  pm_in:  { g:'g3', ic:'cup',  greet:'Welcome back' },
+  pm_out: { g:'g4', ic:'home', greet:'Ingat pauwi' },
+};
+const firstName = n => { const f = n.split(' ')[0]; return f.charAt(0) + f.slice(1).toLowerCase(); };
+const remarkText = r => r ? (r.code==='OTHER' ? r.text : REMARKS[r.code]) : '';
+
+let selSlot = 'am_in', selRemark = null, typed = '', pendingMy = false;
 function tick(){
   const {date,time} = now(); const d = new Date(date+'T'+time);
-  $('#hDate').textContent = d.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  $('#hDate').textContent = d.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'});
   const [h,mi] = time.split(':'); $('#hTime').innerHTML = `${(+h%12||12)}:${mi}<small>${+h<12?'AM':'PM'}</small>`;
 }
 function autoToggle(){
   const t = m(now().time);
   selSlot = t < m('11:00') ? 'am_in' : t < m('12:30') ? 'am_out' : t < m('14:00') ? 'pm_in' : 'pm_out';
-  selRemark = null; paintToggles();
+  selRemark = null; pendingMy = false; paintToggles();
 }
 function paintToggles(){
-  document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', !selRemark && b.dataset.s===selSlot));
+  document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', !selRemark && !pendingMy && b.dataset.s===selSlot));
   document.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.r===selRemark));
-  $('#modeLabel').textContent = selRemark ? '3-digit code — then choose dates' : '3-digit employee code';
-  document.querySelector('.keys .go').textContent = selRemark ? 'Next' : 'Record';
-  $('#empHint').textContent = selRemark ? '' : 'records '+SLOT_LABEL[selSlot]+' instantly';
+  $('#modeLabel').innerHTML = pendingMy ? 'CODE TO OPEN<br>MY DTR' : selRemark ? `CODE FOR<br>${REMARK_LABEL[selRemark].toUpperCase()}` : `YOUR CODE<br><span style="color:#ff6a3d">${SLOT_LABEL[selSlot]}</span>`;
+  $('#empHint').textContent = pendingMy ? '' : selRemark ? 'then pick dates' : 'records on 3rd digit';
+  $('#empno').classList.remove('err');
 }
-function paintEmp(){ $('#empVal').innerHTML = typed ? typed.padEnd(3,'·') : '<span class="ph">· · ·</span>'; }
-document.querySelectorAll('.tg').forEach(b => b.onclick = () => { selSlot=b.dataset.s; selRemark=null; paintToggles(); });
-document.querySelectorAll('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; paintToggles(); });
+function paintEmp(){ $('#empVal').innerHTML = typed + '<i>' + '_'.repeat(3-typed.length) + '</i>'; }
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { selSlot=b.dataset.s; selRemark=null; pendingMy=false; paintToggles(); });
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => { selRemark = selRemark===b.dataset.r ? null : b.dataset.r; pendingMy=false; paintToggles(); });
+function pressDigit(d){ if(typed.length >= 3) return; typed += d; paintEmp(); if(typed.length === 3) setTimeout(submit, 150); }
 $('#keys').onclick = ev => {
   const b = ev.target.closest('button'); if(!b) return;
-  if(b.dataset.k==='del'){ typed = typed.slice(0,-1); }
-  else if(b.dataset.k==='go'){ submit(); return; }
-  else if(typed.length < 3){ typed += b.textContent; }
-  paintEmp();
-  if(typed.length === 3) setTimeout(submit, 150);
+  if(b.dataset.k==='my'){ pendingMy = !pendingMy; selRemark = null; paintToggles(); return; }
+  if(b.dataset.k==='del'){ typed = typed.slice(0,-1); paintEmp(); return; }
+  pressDigit(b.textContent);
 };
 document.addEventListener('keydown', ev => {
   if(!$('#v-emp').classList.contains('on') || $('#sheet').classList.contains('show') || $('#p-record').style.display==='none') return;
-  if(/^\d$/.test(ev.key) && typed.length<3){ typed+=ev.key; paintEmp(); if(typed.length===3) setTimeout(submit,150); }
+  if(/^\d$/.test(ev.key)) pressDigit(ev.key);
   if(ev.key==='Backspace'){ typed=typed.slice(0,-1); paintEmp(); }
-  if(ev.key==='Enter') submit();
 });
-function bad(){ typed=''; paintEmp(); const el=$('#empno'); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); $('#empHint').textContent='Not found'; }
+function bad(){ typed=''; paintEmp(); const el=$('#empno'); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); $('#empHint').textContent='Code not found'; }
 
-let pendingMy = false;
 function submit(){
   const p = emp(typed); if(!p){ bad(); return; }
-  if(pendingMy){ pendingMy=false; typed=''; paintEmp(); openMy(p.no); return; }
-  if(selRemark){ typed=''; paintEmp(); openRemarkSheet(p.no, now().date, now().date, selRemark); return; }
-  const {date,time} = now(); const e = ensure(p.no, date);
-  if(e[selSlot]){ showToast(p.no, date, selSlot, {already:true}); typed=''; paintEmp(); return; }
-  e[selSlot] = time;
   typed=''; paintEmp();
-  showToast(p.no, date, selSlot, {fresh:true});
+  if(pendingMy){ pendingMy=false; paintToggles(); openMy(p.no); return; }
+  if(selRemark){ const c = selRemark; openRemarkSheet(p.no, now().date, now().date, c); return; }
+  const {date,time} = now(); const e = ensure(p.no, date);
+  if(e[selSlot]){ showResult(p.no, date, selSlot, {already:true}); return; }
+  e[selSlot] = time;
+  afterChange();
+  showResult(p.no, date, selSlot, {fresh:true});
 }
 
-/* toast */
-let toastTimer, toastCtx;
-function showToast(no, date, slot, opt){
-  const p = emp(no), e = get(no,date), sc = schedOf(p), ym = date.slice(0,7);
-  const late = slot==='am_in' ? lateMinutes({am_in:e.am_in}, {...sc, pmLate:false})
-             : (slot==='pm_in' && sc.pmLate) ? lateMinutes({pm_in:e.pm_in}, sc) : 0;
-  const st = monthStats(no, ym);
-  const exp = slot==='am_in' ? expectedOut(e, sc) : null;
-  const T = $('#toast');
-  T.className = 'toast ' + (late ? 'late' : '');
-  T.innerHTML = `
-    <div class="t1">${opt.already ? 'Already recorded' : opt.updated ? 'Time updated' : 'Recorded ✓'} · ${p.name}</div>
-    <div class="t2">${SLOT_LABEL[slot]} · ${t12(e[slot])}</div>
-    <div class="t3">
-      ${late ? `<span class="badge late">⚠ Late ${late} min</span><span class="badge late">${ordinal(st.lates)} late this ${MONTHS[+ym.slice(5)-1]}</span>`
-             : (slot==='am_in' ? `<span class="badge ok">On time</span><span class="badge">${st.lates} late${st.lates===1?'':'s'} this month</span>` : '')}
-      ${exp ? `<span class="badge">Flexi · out at ${t12(exp)}</span>` : ''}
-      ${e.edited ? '<span class="badge edit">edited</span>' : ''}
-    </div>
-    <div class="tap" style="display:flex;justify-content:space-between"><span>Tap to change the time ›</span>${opt.fresh?'<span id="undo" style="color:var(--late)">Not you? Undo</span>':''}</div>`;
-  toastCtx = {no,date,slot};
-  T.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => T.classList.remove('show'), 9000);
-}
-const ordinal = n => n + ((n%100>=11 && n%100<=13) ? 'th' : ({1:'st',2:'nd',3:'rd'}[n%10] || 'th'));
-$('#toast').onclick = ev => {
-  if(ev.target.id==='undo' && toastCtx){ const e=get(toastCtx.no,toastCtx.date); e[toastCtx.slot]=null; if(!SLOTS.some(s=>e[s])&&!e.remark) delete S.e[key(toastCtx.no,toastCtx.date)]; $('#toast').classList.remove('show'); afterChange(); return; }
-  $('#toast').classList.remove('show'); if(toastCtx?.slot) openTimeSheet(toastCtx.no, toastCtx.date, toastCtx.slot); };
+/* small toast */
+let toastTimer;
+function toast(html){ const T=$('#toast'); T.innerHTML=html; T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'),3500); }
+$('#toast').onclick = () => $('#toast').classList.remove('show');
 
 /* sheets */
-function openSheet(html){ $('#sheet').innerHTML = '<div class="grab"></div>'+html; $('#sheet').classList.add('show'); $('#scrim').classList.add('show'); }
-function closeSheet(){ $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
+let autoTimer;
+function openSheet(html, cls=''){ clearInterval(autoTimer); $('#sheet').className='sheet '+cls; $('#sheet').innerHTML = '<div class="grab"></div>'+html; requestAnimationFrame(()=>$('#sheet').classList.add('show')); $('#scrim').classList.add('show'); }
+function closeSheet(){ clearInterval(autoTimer); $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
 $('#scrim').onclick = closeSheet;
 
-function openTimeSheet(no, date, slot){
-  const e = get(no,date);
-  openSheet(`<h3>Change ${SLOT_LABEL[slot]}</h3>
-    <div class="sub">${emp(no).name} · ${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}<br>Use this if the office biometric shows a different time.</div>
-    <div class="field"><input type="time" id="shT" value="${e[slot]||''}"></div>
-    <div class="btns"><button class="btn danger" id="shClr">Clear</button><button class="btn primary" id="shOk">Save</button></div>`);
-  $('#shOk').onclick = () => { const v=$('#shT').value; if(!v) return; e[slot]=v; e.edited=true; closeSheet(); afterChange(); showToast(no,date,slot,{updated:true}); };
-  $('#shClr').onclick = () => { e[slot]=null; e.edited=true; closeSheet(); afterChange(); };
+/* result sheet after recording */
+const ordinal = n => n + ((n%100>=11 && n%100<=13) ? 'th' : ({1:'st',2:'nd',3:'rd'}[n%10] || 'th'));
+function showResult(no, date, slot, opt){
+  const p = emp(no), e = get(no,date), sc = schedOf(p), ym = date.slice(0,7), u = SLOT_UI[slot];
+  const late = slot==='am_in' ? lateMinutes({am_in:e.am_in}, {...sc, pmLate:false})
+             : (slot==='pm_in' && sc.pmLate) ? lateMinutes({pm_in:e.pm_in}, sc) : 0;
+  const st = monthStats(no, ym), exp = slot==='am_in' ? expectedOut(e, sc) : null;
+  const status = opt.already ? 'already recorded' : opt.updated ? 'time updated' : 'recorded';
+  openSheet(`
+    <div class="hd"><div class="ic ${u.g}">${ICONS[u.ic]}</div><div><b>${opt.already?'Already done':u.greet}, ${firstName(p.name)}!</b><small>${SLOT_LABEL[slot]} ${status} · #${p.no}${e.edited?'<span class="tagE">edited</span>':''}</small></div></div>
+    <div class="bigt">${t12(e[slot])}</div>
+    ${late ? `<div class="late"><span>⚠ Late by <b>${late}</b> min</span><span><b>${ordinal(st.lates)}</b> late this ${MONTHS[+ym.slice(5)-1]}</span></div>`
+           : slot==='am_in' ? `<div class="ok">✓ On time · ${st.lates} late${st.lates===1?'':'s'} this month</div>` : ''}
+    ${exp ? `<div class="note">Your time out today: <b>${t12(exp)}</b> (flexi)</div>` : ''}
+    <div class="act">${opt.fresh?'<button id="rsUndo">Undo</button>':''}<button id="rsChange">Change time</button><button class="p" id="rsDone">Done</button></div>
+    <div class="auto" id="rsAuto"></div>`, 'res');
+  $('#rsDone').onclick = closeSheet;
+  $('#rsChange').onclick = () => openTimeSheet(no, date, slot);
+  if(opt.fresh) $('#rsUndo').onclick = () => {
+    e[slot] = null; if(!SLOTS.some(s=>e[s]) && !e.remark) delete S.e[key(no,date)];
+    closeSheet(); afterChange(); toast(`Undone · <b>${SLOT_LABEL[slot]}</b> removed for ${p.name}`);
+  };
+  let left = 8; const tickAuto = () => { $('#rsAuto') && ($('#rsAuto').textContent = `Closes in ${left} s · tap anywhere here to keep it open`); if(left-- <= 0) closeSheet(); };
+  tickAuto(); autoTimer = setInterval(tickAuto, 1000);
+  $('#sheet').addEventListener('pointerdown', () => { clearInterval(autoTimer); const a=$('#rsAuto'); if(a) a.textContent=''; }, {once:true});
 }
+
+function openTimeSheet(no, date, slot){
+  const e = get(no,date) || ensure(no,date);
+  openSheet(`<h3>Change ${SLOT_LABEL[slot]}</h3>
+    <div class="sub">${emp(no).name} · ${new Date(date+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})}<br>Use this to match the office biometric.</div>
+    <div class="field"><input type="time" class="big" id="shT" value="${e[slot]||''}"></div>
+    <div class="btns"><button class="btn danger" id="shClr">Clear</button><button class="btn primary" id="shOk">Save</button></div>`);
+  $('#shOk').onclick = () => { const v=$('#shT').value; if(!v) return; e[slot]=v; e.edited=true; afterChange(); showResult(no,date,slot,{updated:true}); };
+  $('#shClr').onclick = () => { e[slot]=null; e.edited=true; closeSheet(); afterChange(); toast(`${SLOT_LABEL[slot]} cleared`); };
+}
+
+const remarkOptions = sel => Object.keys(REMARK_LABEL).map(k=>`<option value="${k}"${k===sel?' selected':''}>${REMARK_LABEL[k]}${k==='OTHER'?' (type below)':''}</option>`).join('');
 function openRemarkSheet(no, from, to, code, text=''){
-  openSheet(`<h3>Remark</h3>
-    <div class="sub">${emp(no).name}. Printed in the Undertime column of the DTR.</div>
-    <div class="field"><label>Type</label><select id="rCode">
-      <option value="LEAVE"${code==='LEAVE'?' selected':''}>On leave</option>
-      <option value="DAYOFF"${code==='DAYOFF'?' selected':''}>Day-off</option>
-      <option value="OTHER"${code==='OTHER'?' selected':''}>Others (type below)</option></select></div>
-    <div class="field" id="rTxtF"><label>Text to print (max 24)</label><input id="rTxt" maxlength="24" value="${text}" placeholder="e.g. NO TIME-OUT, OB, HOLIDAY"></div>
+  openSheet(`<h3>${REMARK_LABEL[code]}</h3>
+    <div class="sub">${emp(no).name} · printed in the Undertime column</div>
+    <div class="field"><label>Type</label><select id="rCode">${remarkOptions(code)}</select></div>
+    <div class="field" id="rTxtF"><label>Text to print (max 24)</label><input id="rTxt" maxlength="24" value="${text}" placeholder="e.g. NO TIME-OUT, OB, SICK LEAVE"></div>
     <div class="row2"><div class="field"><label>From</label><input type="date" id="rFrom" value="${from}"></div><div class="field"><label>To</label><input type="date" id="rTo" value="${to}"></div></div>
-    <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="rSkip" checked style="width:auto"> Skip Sundays in the range</label></div>
+    <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--cink)"><input type="checkbox" id="rSkip" checked style="width:auto"> Skip Sundays in the range</label></div>
     <div class="btns"><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
   const sync = () => $('#rTxtF').style.display = $('#rCode').value==='OTHER' ? '' : 'none'; sync();
-  $('#rCode').onchange = sync; $('#rCancel').onclick = closeSheet;
+  $('#rCode').onchange = sync; $('#rCancel').onclick = () => { closeSheet(); selRemark=null; paintToggles(); };
   $('#rOk').onclick = () => {
     const c = $('#rCode').value, txt = $('#rTxt').value.trim().toUpperCase();
     if(c==='OTHER' && !txt){ $('#rTxt').focus(); return; }
     let d = new Date($('#rFrom').value+'T00:00'), end = new Date(($('#rTo').value||$('#rFrom').value)+'T00:00'), n=0;
     while(d <= end && n < 62){ if(!($('#rSkip').checked && d.getDay()===0)){ ensure(no, ymd(d)).remark = {code:c, text:txt}; n++; } d.setDate(d.getDate()+1); }
     closeSheet(); selRemark=null; paintToggles(); afterChange();
-    const T=$('#toast'); T.className='toast rem'; toastCtx=null;
-    T.innerHTML=`<div class="t1">Saved · ${emp(no).name}</div><div class="t2">${c==='OTHER'?txt:REMARKS[c]} · ${n} day${n>1?'s':''}</div>`;
-    T.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>T.classList.remove('show'),5000);
+    toast(`Saved · <b>${c==='OTHER'?txt:REMARKS[c]}</b> · ${n} day${n>1?'s':''} · ${emp(no).name}`);
   };
 }
 
-/* =================== employee: my month =================== */
+/* =================== employee: my DTR =================== */
 let myNo=null, myYM=null;
-$('#toMy').onclick = () => { pendingMy = true; selRemark=null; paintToggles(); $('#modeLabel').textContent='3-digit code — to open My DTR'; document.querySelector('.keys .go').textContent='Open'; $('#empHint').textContent=''; };
 $('#toAdmin').onclick = () => document.querySelector('[data-v="v-admin"]').click();
 function openMy(no){ myNo=no; myYM=now().date.slice(0,7); $('#p-record').style.display='none'; $('#p-my').style.display='flex'; paintMy(); }
 $('#myBack').onclick = () => { $('#p-my').style.display='none'; $('#p-record').style.display='flex'; autoToggle(); };
 $('#mPrev').onclick = () => { myYM = shiftYM(myYM,-1); paintMy(); };
 $('#mNext').onclick = () => { myYM = shiftYM(myYM, 1); paintMy(); };
 $('#myRemark').onclick = () => openRemarkSheet(myNo, now().date, now().date, 'LEAVE');
-$('#myPrint').onclick = () => { document.querySelector('[data-v="v-admin"]').click(); showA('a-print'); $('#pEmp').value=myNo; $('#pMonth').value=myYM; renderPrint(); };
+$('#myPrint').onclick = () => {           // employees print their own DTR without the admin PIN
+  document.body.classList.add('print-only');
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-admin'));
+  showA('a-print'); $('#pEmp').value=myNo; $('#pEmp').disabled=true; $('#pMonth').value=myYM; renderPrint(); scrollTo(0,0);
+};
+$('#pBack').onclick = () => {
+  document.body.classList.remove('print-only'); $('#pEmp').disabled=false;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-emp'));
+};
 const shiftYM = (ym,k) => { const d=new Date(ym+'-01T00:00'); d.setMonth(d.getMonth()+k); return ymd(d).slice(0,7); };
 function paintMy(){
   const p = emp(myNo), sc = schedOf(p), [Y,M] = myYM.split('-').map(Number), n = new Date(Y,M,0).getDate(), st = monthStats(myNo,myYM);
   $('#myName').textContent = p.name; $('#myNo').textContent = '#'+p.no+' · '+(sc.mode==='flexi'?`Flexi ${t12(sc.flexStart)}–${t12(sc.flexEnd)}`:`Time in ${t12(sc.amIn)}`);
-  $('#mLabel').textContent = MONTHS[M-1]+' '+Y;
-  $('#myStats').innerHTML = `<div class="stat"><div class="n">${st.present}</div><div class="l">Days present</div></div>
-    <div class="stat late"><div class="n">${st.lates}</div><div class="l">Lates${st.lateMin?` · ${st.lateMin}m`:''}</div></div>
-    <div class="stat"><div class="n">${st.remarks}</div><div class="l">Remarks</div></div>`;
+  $('#mLabel').textContent = MONTHS[M-1].slice(0,3)+' '+Y;
+  $('#myStats').innerHTML = `<div class="g3"><b>${st.present}</b><span>Present</span></div><div class="g1"><b>${st.lates}</b><span>Lates${st.lateMin?` · ${st.lateMin}m`:''}</span></div><div class="g4"><b>${st.remarks}</b><span>Remarks</span></div>`;
   const today = now().date; let h='';
   for(let d=1; d<=n; d++){
     const ds=`${myYM}-${pad(d)}`, wd=new Date(Y,M-1,d).getDay(), e=get(myNo,ds), has=e&&SLOTS.some(s=>e[s]);
-    const late = lateMinutes(e, sc);
-    let right = '';
-    if(e?.remark) right += `<span class="badge leave">${e.remark.code==='OTHER'?e.remark.text:REMARKS[e.remark.code]}</span>`;
-    if(late) right += ` <span class="badge late">Late ${late}m</span>`;
-    if(has && SLOTS.some(s=>!e[s]) && !e.remark && ds<today) right += ` <span class="badge warn">Incomplete</span>`;
-    if(e?.edited) right += ` <span class="badge edit">edited</span>`;
-    const mid = has ? SLOTS.map(s=>e[s]?tPrint(e[s]):'<span>—</span>').join(' · ')
-              : (wd===0||wd===6) ? `<span>${wd===0?'Sunday':'Saturday'}</span>` : '<span>No record</span>';
-    h += `<div class="day ${ds===today?'today':''} ${(wd===0||wd===6)&&!has?'we':''}" data-d="${ds}"><div class="d"><b>${d}</b><span>${DOW[wd]}</span></div><div class="tm">${mid}</div><div>${right}</div></div>`;
+    const lateAm = e?.am_in && lateMinutes({am_in:e.am_in},{...sc,pmLate:false});
+    const latePm = sc.pmLate && e?.pm_in && lateMinutes({pm_in:e.pm_in},sc);
+    let mid;
+    if(has) mid = `<div class="t">${SLOTS.map(s=>`<span class="${!e[s]?'e':((s==='am_in'&&lateAm)||(s==='pm_in'&&latePm))?'l':''}">${e[s]?tPrint(e[s]):'—'}</span>`).join('')}</div>`;
+    else if(e?.remark) mid = `<div class="rm ${e.remark.code==='HOLIDAY'?'hol':''}">${remarkText(e.remark)}</div>`;
+    else mid = `<div class="muted">${(wd===0||wd===6)?(wd===0?'Sunday':'Saturday'):(ds<today?'No record':'')}</div>`;
+    let extra = '';
+    if(has && e.remark) extra = `<div class="rm ${e.remark.code==='HOLIDAY'?'hol':''}" style="flex:0 0 auto;max-width:76px;font-size:9.5px">${remarkText(e.remark)}</div>`;
+    else if(has && SLOTS.some(s=>!e[s]) && ds<today) extra = `<div class="rm inc" style="flex:0 0 auto;font-size:9.5px">Incomplete</div>`;
+    h += `<div class="dcard ${ds===today?'today':''} ${(wd===0||wd===6)&&!has&&!e?.remark?'we':''}" data-d="${ds}"><div class="d">${d}<small>${DOW[wd].toUpperCase()}${e?.edited?' ✎':''}</small></div>${mid}${extra}</div>`;
   }
   $('#myDays').innerHTML = h;
-  document.querySelectorAll('#myDays .day').forEach(r => r.onclick = () => openDaySheet(myNo, r.dataset.d));
+  document.querySelectorAll('#myDays .dcard').forEach(r => r.onclick = () => openDaySheet(myNo, r.dataset.d));
+  const t = $('#myDays .dcard.today'), box = $('#myDays'); if(t) box.scrollTop = t.offsetTop - box.clientHeight/2;   // scroll only the list, never the page
 }
 function openDaySheet(no, ds){
-  const e = ensure(no, ds);
+  const e = get(no, ds) || { am_in:null, am_out:null, pm_in:null, pm_out:null, remark:null, edited:false };
   openSheet(`<h3>${new Date(ds+'T00:00').toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'})}</h3>
     <div class="sub">${emp(no).name}</div>
-    <div class="row2">${SLOTS.map(s=>`<div class="field"><label>${SLOT_LABEL[s]}</label><input type="time" data-s="${s}" value="${e[s]||''}" style="font-size:18px"></div>`).join('')}</div>
-    <div class="field"><label>Remark</label><select id="dCode"><option value="">None</option><option value="LEAVE">On leave</option><option value="DAYOFF">Day-off</option><option value="OTHER">Others</option></select></div>
+    <div class="row2">${SLOTS.map(s=>`<div class="field"><label>${SLOT_LABEL[s]}</label><input type="time" data-s="${s}" value="${e[s]||''}"></div>`).join('')}</div>
+    <div class="field"><label>Remark</label><select id="dCode"><option value="">None</option>${remarkOptions(e.remark?.code)}</select></div>
     <div class="field" id="dTxtF"><label>Text to print (max 24)</label><input id="dTxt" maxlength="24" value="${e.remark?.text||''}"></div>
     <div class="btns"><button class="btn danger" id="dDel">Delete day</button><button class="btn primary" id="dOk">Save</button></div>`);
   $('#dCode').value = e.remark?.code || '';
   const sync = () => $('#dTxtF').style.display = $('#dCode').value==='OTHER' ? '' : 'none'; sync(); $('#dCode').onchange = sync;
   $('#dOk').onclick = () => {
-    document.querySelectorAll('#sheet input[data-s]').forEach(i => { const v=i.value||null; if(v!==e[i.dataset.s]){ e[i.dataset.s]=v; e.edited=true; } });
-    const c=$('#dCode').value; e.remark = c ? {code:c, text:$('#dTxt').value.trim().toUpperCase()} : null;
-    closeSheet(); afterChange();
+    const t = ensure(no, ds);
+    document.querySelectorAll('#sheet input[data-s]').forEach(i => { const v=i.value||null; if(v!==t[i.dataset.s]){ t[i.dataset.s]=v; t.edited=true; } });
+    const c=$('#dCode').value; t.remark = c ? {code:c, text:$('#dTxt').value.trim().toUpperCase()} : null;
+    if(!SLOTS.some(s=>t[s]) && !t.remark) delete S.e[key(no,ds)];
+    closeSheet(); afterChange(); toast('Saved');
   };
-  $('#dDel').onclick = () => { delete S.e[key(no,ds)]; closeSheet(); afterChange(); };
+  $('#dDel').onclick = () => { delete S.e[key(no,ds)]; closeSheet(); afterChange(); toast('Day deleted'); };
 }
 
 /* =================== admin =================== */

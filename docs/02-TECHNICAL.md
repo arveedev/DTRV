@@ -1,10 +1,10 @@
-# DTRV — Technical Specification (v3: Vercel + Dexie Cloud)
+# DTRV — Technical Specification (v3.1: Vercel + Dexie Cloud, single user)
 
 Companion to [`01-PLAN.md`](01-PLAN.md).
 Behaviour reference: [`../mockup/index.html`](../mockup/index.html) (working prototype).
-Visual direction: [`../mockup/ui-bc-variations.html`](../mockup/ui-bc-variations.html) (B + C combined; variation still to be picked).
+Visual direction: **C · Sunrise**, implemented in the prototype (`mockup/index.html`). Earlier explorations: `ui-options.html`, `ui-bc-variations.html`.
 
-> Owner decision (2026-10-07): **Vercel** hosts the app, **Dexie Cloud** is the database.
+> Owner decisions (2026-10-07): **Vercel** hosts the app, **Dexie Cloud** is the database, **personal use only** (the office biometric stays official), **one Dexie Cloud user** (the admin). Employees are records, not accounts.
 > Items marked **[verify]** depend on Dexie Cloud or Vercel plan details to confirm before building.
 
 ---
@@ -24,7 +24,7 @@ Visual direction: [`../mockup/ui-bc-variations.html`](../mockup/ui-bc-variations
   ┌────────────────────┐   ┌────────────────────────────┐
   │ Vercel             │   │ Dexie Cloud                │
   │  static files      │   │  stores + syncs all tables │
-  │  /api/time         │   │  realms / roles = access   │
+  │  /api/time         │   │  1 user: the admin         │
   │  /api/token  ──────┼──►│  /token (client secret)    │
   └────────────────────┘   └────────────────────────────┘
 ```
@@ -36,14 +36,14 @@ What changes compared with a normal server app:
 | Data | Dexie Cloud, plus a full local copy in each device's IndexedDB (synced) |
 | Business rules (late, stats, print) | **In the browser** (`rules.js`, `print.js`) |
 | Server time | Vercel function `/api/time`; the client keeps an offset |
-| Who can sync | Vercel function `/api/token` exchanges a setup code / admin PIN for a Dexie Cloud token |
+| Who can sync | Devices signed in as the **single** Dexie Cloud user; `/api/token` exchanges a one-time device setup code for that user's token |
 | Offline | Works: records save locally and sync when back online |
 
 ### Trade-offs of this choice (accepted)
 1. **The time is written by the browser.** The app uses server time (via the offset) when it has it, but a determined user could change it. The app already lets employees edit their times, so this adds no new weakness. Each record stores `timeSource: 'server'|'device'`.
-2. **Every logged-in device holds a copy of all employees' records.** That's how a shared office realm works. Fine for this use (codes aren't secret anyway); not fine if records ever become confidential.
-3. **No server-side validation.** Uniqueness and correctness rely on deterministic IDs and Dexie Cloud role permissions, not server code.
-4. **Vercel Hobby plan is for non-commercial use.** An office staff tool may need Pro. **[verify]**
+2. **Every signed-in device holds a copy of all employees' records**, because every device signs in as the same single user. Fine for personal records (codes aren't secret anyway).
+3. **No server-side validation, and no role separation.** Uniqueness relies on deterministic IDs. With one user, the admin PIN is an **app lock**, not a security boundary: someone who opens dev tools on a signed-in device could change any data. Accepted for personal use.
+4. **Vercel Hobby (free)** fits, because this is personal, non-commercial use.
 
 ---
 
@@ -55,10 +55,10 @@ dtrv/
 ├─ vercel.json
 ├─ dexie-cloud.json        # created by `npx dexie-cloud create` (DB URL) — not secret
 ├─ .env.example            # DEXIE_CLOUD_DB_URL, DEXIE_CLIENT_ID, DEXIE_CLIENT_SECRET,
-│                          # OFFICE_SETUP_CODE, ADMIN_PIN_HASH (scrypt)
+│                          # DEVICE_SETUP_CODE, ADMIN_EMAIL, ADMIN_PIN_HASH (scrypt)
 ├─ api/
 │  ├─ time.js              # GET  → { iso } (server UTC)
-│  └─ token.js             # POST → Dexie Cloud tokens for 'office' or 'admin'
+│  └─ token.js             # POST setup code → Dexie Cloud token for the single user
 ├─ src/
 │  ├─ db.js                # Dexie schema + cloud.configure
 │  ├─ clock.js             # server offset, nowManila()
@@ -86,7 +86,7 @@ export const db = new Dexie('dtrv', { addons: [dexieCloud] });
 
 db.version(1).stores({
   employees: 'id, code, isActive',               // id = 'emp:024'
-  schedules: 'id',                                // id = 'sch:office' | 'sch:<uuid>'
+  schedules: 'id',                                // id = 'sch:default' | 'sch:<uuid>'
   days:      'id, [employeeId+date], date',       // id = 'day:024:2026-10-07'
   punches:   '@id, [employeeId+date], at',        // append-only log; auto id
   settings:  'id',                                // id = 'set:signatory'
@@ -98,7 +98,7 @@ db.cloud.configure({
   requireAuth: true,
   fetchTokens: (req) => fetch('/api/token', {           // custom auth via our Vercel function
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...req, grant: sessionGrant() })   // setup code or admin PIN
+    body: JSON.stringify({ ...req, setupCode: storedSetupCode() })   // entered once per device
   }).then(r => r.json()),
 });
 ```
@@ -106,60 +106,55 @@ db.cloud.configure({
 ### Why deterministic IDs
 Dexie Cloud has no server code to enforce `UNIQUE`. So uniqueness comes from the **primary key**:
 - `employees.id = 'emp:' + code` → two employees can't share `024`. Creating one checks `db.employees.get('emp:024')` first; if two admins race, the second write updates the same object instead of creating a duplicate.
-- `days.id = 'day:' + code + ':' + date` → exactly one row per employee per day, even when two devices record the same day offline. Updates are written with `db.days.update(id, { amIn })` (property-level), which Dexie Cloud merges per property **[verify]**, so AM IN from a phone and PM OUT from the office PC both survive.
+- `days.id = 'day:' + code + ':' + date` → exactly one row per employee per day, even when two devices record the same day offline. Updates are written with `db.days.update(id, { amIn })` (property-level), which Dexie Cloud merges per property **[verify]**, so AM IN from one device and PM OUT from another both survive.
 
 ### Objects
 
 ```ts
 Employee { id:'emp:024', code:'024', fullName:'JUAN A. DELA CRUZ', position?, scheduleId?:string|null,
-           isActive:true, realmId }
+           isActive:true }
 Schedule { id, mode:'fixed'|'flexi', amIn?, flexStart?, flexEnd?, requiredHours?, lunchStart:'12:00',
-           lunchEnd:'13:00', graceMin:0, countPmLate:false, realmId }
+           lunchEnd:'13:00', graceMin:0, countPmLate:false }
 Day      { id:'day:024:2026-10-07', employeeId:'emp:024', date:'2026-10-07',
            amIn?:'08:20', amOut?, pmIn?, pmOut?,                  // 'HH:MM' 24h, final values
-           remark?: { code:'LEAVE'|'DAYOFF'|'OTHER', text?:string, batch?:string },
-           edited:boolean, timeSource:'server'|'device', realmId }
+           remark?: { code:'LEAVE'|'DAYOFF'|'HOLIDAY'|'OTHER', text?:string, batch?:string },
+           edited:boolean, timeSource:'server'|'device' }
 Punch    { id, employeeId, date, slot:'amIn'|'amOut'|'pmIn'|'pmOut', time:'08:20', at:ISO,
-           timeSource, undone:false, deviceId, realmId }
-Settings { id:'set:signatory', name, title, label, realmId }
-Audit    { id, at, actor:'emp:024'|'admin', action, employeeId?, date?, before?, after?, realmId }
+           timeSource, undone:false, deviceId }
+Settings { id:'set:signatory', name, title, label }
+Audit    { id, at, actor:'emp:024'|'admin', action, employeeId?, date?, before?, after? }
 ```
 
-Every object carries `realmId = 'rlm-dtrv-office'` (see §4) so all devices in the office see it.
+No `realmId` is needed: with one user, everything lives in that user's private realm and syncs to every device signed in as them.
+
+Printed remark text: `LEAVE` → `ON LEAVE`, `DAYOFF` → `DAY-OFF`, `HOLIDAY` → `HOLIDAY`, `OTHER` → the typed text (≤ 24 chars).
 
 ---
 
-## 4. Access control (Dexie Cloud realms + roles)
+## 4. Access: one Dexie Cloud user
 
-**One shared realm** `rlm-dtrv-office`, created once by the admin on first run.
+There is **exactly one Dexie Cloud user**: the admin (e.g. `ADMIN_EMAIL`). Every device that uses the app signs in **as that user**. Employees are only `employees` rows; they never have accounts.
 
-| Identity (token `sub`) | Who | Role in realm | Table permissions |
-|------------------------|-----|---------------|-------------------|
-| `office` | Every employee device and shared PC | `recorder` | add/update: `days`, `punches`, `audit` · read: all |
-| `admin` | Admin PC after entering the 6-digit PIN | owner | everything incl. `employees`, `schedules`, `settings`, delete |
+| Layer | What protects it |
+|-------|------------------|
+| Who can sync data at all | Signing in as the single user (once per device, see below) |
+| Employee actions (record, remarks, own month, print) | Nothing more: the 3-digit code picks the record |
+| Admin screens (employees, schedules, signatory, dashboard, print all) | **6-digit admin PIN**, checked in the app (scrypt hash stored in `settings`). An app lock, not a security boundary |
 
-Roles are defined in the realm's `roles` table, e.g. `{ name:'recorder', permissions:{ add:['days','punches','audit'], update:{ days:'*', punches:['undone'] } } }` **[verify exact syntax]**.
-
-Result: an employee device **cannot** add employees, change schedules or change the signatory, even by editing the JavaScript, because Dexie Cloud rejects the sync.
-
-### Token endpoint (`api/token.js`)
-
+### Signing a device in (once per device)
+**Recommended — setup code via Vercel** (no email needed on each phone):
 ```
-POST /api/token
-  body: { public_key, hints, grant: { type:'office', setupCode } | { type:'admin', pin } }
-  1. office: compare setupCode with OFFICE_SETUP_CODE (constant-time)    → sub='office'
-     admin:  scrypt-verify pin against ADMIN_PIN_HASH                     → sub='admin'
-  2. rate-limit: 10 failures / IP / 10 min → 429
-  3. POST {DEXIE_CLOUD_DB_URL}/token with client_id/secret,
-     claims:{ sub, name }, public_key  → returns Dexie Cloud tokens
-  4. respond with those tokens (the client_secret never leaves Vercel)
+POST /api/token   { public_key, hints, setupCode }
+  1. compare setupCode with DEVICE_SETUP_CODE (constant-time); 10 failures / IP / 10 min → 429
+  2. POST {DEXIE_CLOUD_DB_URL}/token with client_id/secret,
+     claims: { sub: ADMIN_EMAIL, email: ADMIN_EMAIL, name: 'DTRV' }, public_key
+  3. return the Dexie Cloud tokens (client_secret never leaves Vercel)
 ```
+The first open on a new phone shows "Device setup code". After that the device stays signed in, and day-to-day use is just the 3-digit code.
 
-The rate limit needs shared state across function calls. Use Vercel KV / Upstash (free tier), or accept per-instance memory as best-effort.
+**Alternative — Dexie Cloud's built-in email OTP**: no Vercel token function at all, but each new device needs the one-time code sent to the admin's email. That's fine if only a few devices will ever be used.
 
-**Device setup (once per phone):** the first open shows "Office setup code". The admin shares it with staff (e.g. posted in the office). After that the device stays signed in as `office`, and only the 3-digit code is used day to day. Without the setup code, a stranger who finds the URL can't read or write anything.
-
-**Licensing:** this uses **2 Dexie Cloud users** (`office`, `admin`) regardless of headcount. Check that Dexie Cloud's terms allow one user signed in on many devices, and which plan covers it. **[verify]**
+**Licensing:** 1 Dexie Cloud user signed in on several devices. That's the normal "one person, many devices" case. Confirm the current free-plan limits on dexie.org. **[verify]**
 
 ---
 
@@ -236,8 +231,8 @@ All run locally against Dexie and sync automatically.
 | `setRemark(code, from, to, {code,text}, skipSundays)` | one `days` row per date, shared `batch` uuid | ≤ 62 days; OTHER text ≤ 24 chars, uppercased |
 | `clearRemarkBatch(batch)` | removes the remark from those days | — |
 | `month(code, 'YYYY-MM')` | `days.where('[employeeId+date]').between(...)` + `monthStats` | — |
-| `dashboard('YYYY-MM')` *(admin)* | stats per active employee | admin token |
-| `upsertEmployee`, `saveSchedule`, `saveSignatory` *(admin)* | — | enforced by realm role; code `^\d{3}$` |
+| `dashboard('YYYY-MM')` *(admin)* | stats per active employee | admin PIN |
+| `upsertEmployee`, `saveSchedule`, `saveSignatory` *(admin)* | — | admin PIN in the app; code `^\d{3}$` |
 
 Late notification data comes straight from `lateMinutes` + `monthStats` on the local copy. It's instant and works offline.
 
@@ -263,15 +258,25 @@ Sync status is shown subtly (a dot in the header: green synced / amber pending /
 
 ---
 
-## 9. UI implementation notes
+## 9. UI implementation notes (style C · Sunrise)
 
-Visual direction is **B + C combined** (pick one of the three variations in `ui-bc-variations.html`). Shared building blocks:
-- Slot tiles: gradients orange `#ff9a3c→#ff6a3d`, yellow `#f6c445→#f39c12`, teal `#2ec4b6→#1a9c8f`, indigo `#6d6df0→#3d3db8`; text labels always shown (colour is never the only cue).
-- Round dialer keys ≥ 58 px; 3 dots fill as digits are typed; auto-submit on the 3rd digit.
-- Bottom sheet after recording: greeting, big time, late box (+ bar), flexi out time, Undo / Change time / Done; auto-closes after 5–9 s.
-- My DTR: colour stat cards, calendar (green on time / orange late / purple remark), tap a day → 4 colour time chips, edit sheet.
-- The record screen never shows personal data (late counts etc.) until a code is entered.
-- Fonts: Poppins (UI) and Space Grotesk (clock and digits), self-hosted in `/public/fonts` so they work offline.
+The prototype `mockup/index.html` is the reference: port its CSS and markup.
+- **Palette**: background `#fff8ef`, surface `#fff`, lines `#f1dfcb`, ink `#2b1d12`, muted `#8a6d55`, dark buttons `#2b1d12` with gold text `#ffd38a`.
+- **Slot tiles** (2×2): AM IN orange `#ff9a3c→#ff6a3d`, AM OUT yellow `#f6c445→#f39c12`, PM IN teal `#2ec4b6→#1a9c8f`, PM OUT indigo `#6d6df0→#3d3db8`; labels always shown (colour is never the only cue).
+- **Quick buttons**: Leave 🌴 · Day-off 🏠 · **Holiday 🎌** · Others ✏️ (4-column row).
+- **Code box** shows `0 2 _`; auto-submits on the 3rd digit. Keypad pinned to the bottom for thumb reach; **My DTR** and ⌫ sit beside 0.
+- **Confirmation** = bottom sheet: slot icon, greeting, 54 px time, late/on-time box, flexi time out, Undo / Change time / Done, auto-close 8 s (cancelled on touch).
+- **Safe areas**:
+  ```css
+  /* <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> */
+  :root { --sat: max(env(safe-area-inset-top), 16px); --sab: max(env(safe-area-inset-bottom), 16px); }
+  .scr   { min-height: 100dvh; padding: calc(var(--sat) + 12px) 18px calc(var(--sab) + 14px); }
+  .sheet { padding-bottom: calc(var(--sab) + 16px); max-height: calc(100dvh - var(--sat) - 8px); }
+  .toast { top: calc(var(--sat) + 6px); }
+  ```
+- **Height steps**: ≤ 780 px slightly smaller; ≤ 720 px compact (tile subtitles and chip icons hidden, 42 px keys). Verified from 568 px (iPhone SE) to 932 px (Pro Max).
+- Scroll only inside the day list (`.mdays`), never the page (a `scrollIntoView` there would also scroll the page and expose hidden sheets).
+- Fonts: Poppins (UI) and Space Grotesk (clock and digits), self-hosted in `/public/fonts` so they work offline. `theme-color` `#fff8ef`.
 
 ---
 
@@ -280,8 +285,8 @@ Visual direction is **B + C combined** (pick one of the three variations in `ui-
 1. `npx dexie-cloud create` → creates the DB and `dexie-cloud.json`; `npx dexie-cloud whitelist https://<app>.vercel.app` (and `http://localhost:5173`).
 2. Create an API client in Dexie Cloud and copy its client_id/secret into Vercel env vars **[verify CLI steps]**.
 3. Vercel project linked to the GitHub repo: build `vite build`, output `dist`, functions in `/api` (Node runtime).
-4. Env vars: `DEXIE_CLOUD_DB_URL`, `DEXIE_CLIENT_ID`, `DEXIE_CLIENT_SECRET`, `OFFICE_SETUP_CODE`, `ADMIN_PIN_HASH`, `VITE_DEXIE_CLOUD_DB_URL`.
-5. First run: admin opens `/admin`, enters PIN → app creates realm `rlm-dtrv-office`, the `recorder` role, the `office` member, the office schedule and the signatory.
+4. Env vars: `DEXIE_CLOUD_DB_URL`, `DEXIE_CLIENT_ID`, `DEXIE_CLIENT_SECRET`, `DEVICE_SETUP_CODE`, `ADMIN_EMAIL`, `VITE_DEXIE_CLOUD_DB_URL`.
+5. First run: on the first device, enter the setup code, then set the 6-digit admin PIN → the app creates the default schedule and the signatory.
 6. Backups: `npx dexie-cloud export` weekly **[verify command]**; the admin page also offers "Download JSON" from the local copy.
 
 ---
@@ -293,7 +298,8 @@ Visual direction is **B + C combined** (pick one of the three variations in `ui-
 | Unit (`rules.js`) | fixed/flexi late, grace boundary, minutes from limit, PM late on/off, expectedOut clamp, monthStats, suggestSlot boundaries |
 | Repo (`fake-indexeddb`) | code `'024'` keeps leading 0; `record` twice → `already`; undo window 60 s; undo after change → rejected; remark range skips Sundays; same day recorded on two "devices" → one `days` row |
 | Clock | offset maths; `source:'device'` when `/api/time` fails |
-| Token function | wrong setup code → 401; rate limit; admin PIN; client secret never in the response |
+| Token function | wrong setup code → 401; rate limit; client secret never in the response |
+| Layout | Playwright at 390×568/664/844/932: keypad bottom ≤ viewport − 30 px; no horizontal scroll; sheets' buttons above the bottom safe area |
 | E2E (Playwright) | record → sheet → change time; My DTR edit; print = 1 A4 page, blank Regular days, remark in Undertime, worked Saturday shows times |
 
 ---
@@ -301,7 +307,7 @@ Visual direction is **B + C combined** (pick one of the three variations in `ui-
 ## 12. Build order
 
 1. **P1** — Vite + Dexie schema (local only, no cloud yet), `rules.js`, `repo.js`, clock, Record screen + sheet, print. *Usable offline on one device.*
-2. **P2** — Dexie Cloud: `/api/token`, realm + roles, device setup screen, sync indicator; My DTR; admin (employees, schedules, signatory, dashboard).
+2. **P2** — Dexie Cloud: `/api/token` (single user), device setup screen, sync indicator; My DTR; admin (employees, schedules, signatory, dashboard).
 3. **P3** — PWA install, batch print, backups, Vercel production deploy.
 
 Estimate: P1 3 days · P2 3–4 days · P3 1–2 days.

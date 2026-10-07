@@ -1,9 +1,20 @@
-# DTRV — Daily Time Record Web App: Product Plan (v2)
+# DTRV — Daily Time Record Web App: Product Plan (v3)
 
 Output: **Civil Service Form No. 48 (Daily Time Record)** on **A4**, two copies side by side.
-Purpose: **employees' personal time recording**. The office biometric stays the official record. This app is each employee's own copy, which they can match to the biometric.
+Purpose: **personal records only.** It does **not** replace the office biometric, which stays the official record. Each employee keeps their own copy of their times here, matches it to the biometric when needed, and prints their DTR.
 
-Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, runs in the browser with demo data.
+Scale: **one Dexie Cloud user (the admin)**. Employees are **records** in the database, not accounts.
+
+Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, style **C · Sunrise**, runs in the browser with demo data. On a phone it opens full screen.
+
+### v3 decisions (2026-10-07)
+| Topic | Decision |
+|-------|----------|
+| Visual style | **C · Sunrise**: warm cream background, 4 coloured slot tiles, bottom-sheet confirmation |
+| Mobile spacing | Content respects the phone's **safe areas**: nothing under the notch/status bar or the home/gesture bar. Layout steps down for short phones (iPhone SE) so the keypad never gets cut off |
+| Holiday | **Quick button** on the main screen next to Leave / Day-off / Others |
+| Users | **1 Dexie Cloud user** (admin). No per-employee or per-office accounts |
+| Hosting | Vercel (personal use, so the free Hobby plan is fine) + Dexie Cloud |
 
 ---
 
@@ -33,59 +44,60 @@ Prototype: [`../mockup/index.html`](../mockup/index.html) — fully clickable, r
 
 ---
 
-## 3. Employee app (phone-first, works on a shared PC too)
+## 3. Employee app (style C · Sunrise, phone-first)
 
-### 3.1 Record screen — the whole app for 95% of uses
+### 3.1 Record screen
 ```
-┌────────────────────────────┐
-│ Wednesday, October 7, 2026 │
-│ 7:58 AM          (big)     │
-├─────────────┬──────────────┤
-│  AM IN  ●   │   AM OUT     │   ← 4 toggles; one pre-selected by time of day
-│  PM IN      │   PM OUT     │
-├────────────────────────────┤
-│ Not working today?         │
-│ [On leave] [Day-off] [Others…]
-├────────────────────────────┤
-│ 3-digit employee code [0 2 4]│
-│  1  2  3                   │
-│  4  5  6                   │
-│  7  8  9                   │
-│  ⌫  0  [Record]            │
-│ My DTR & lates     Admin › │
-└────────────────────────────┘
+┌──────────────────────────────┐
+│ ░░ status bar / notch ░░     │  ← safe area top (never used for content)
+│ Wednesday, October 7    [DTR]│  ← DTR = admin
+│ 8:20 AM                      │
+│ ┌────────────┐┌────────────┐ │
+│ │☀ AM IN   ✓ ││🍴 AM OUT   │ │  ← orange / yellow
+│ │Good morning││Lunch break │ │
+│ └────────────┘└────────────┘ │
+│ ┌────────────┐┌────────────┐ │
+│ │☕ PM IN     ││⌂ PM OUT    │ │  ← teal / indigo
+│ └────────────┘└────────────┘ │
+│ [🌴Leave][🏠Day-off][🎌Holiday][✏️Others]
+│ YOUR CODE · AM IN    0 2 _   │
+│                              │
+│    1      2      3           │  ← keypad pinned to the bottom (thumb reach)
+│    4      5      6           │
+│    7      8      9           │
+│  My DTR   0      ⌫           │
+│ ░░ home / gesture bar ░░     │  ← safe area bottom
+└──────────────────────────────┘
 ```
-- **Pre-selected toggle** by time of day: before 11:00 → AM IN, 11:00–12:29 → AM OUT, 12:30–13:59 → PM IN, from 14:00 → PM OUT. One tap changes it.
-- **Record**: type the 3-digit code. On the **3rd digit** it saves immediately with the server time (no button needed), then the field clears for the next person.
-- Unknown code → field shakes, "Not found", clears.
-- Mistyped someone else's code → the notification shows *their* name; tap **Not you? Undo** (9 s) to remove the record.
-- Slot already filled today → notification "Already recorded 7:58 AM — tap to change". The time is **not** overwritten.
+- One tile is **pre-selected by time of day** (before 11:00 AM IN · to 12:29 AM OUT · to 1:59 PM IN · after PM OUT). Tap another tile to change it.
+- Type the **3-digit code**; it records **on the 3rd digit**. Unknown code → the box shakes, "Code not found".
+- Already recorded today → the sheet says "Already done" with the existing time; nothing is overwritten.
+- No personal data (lates etc.) is shown until a code is entered.
 
-### 3.2 Notification (drops from the top, stays 9 s)
-- Line 1: `Recorded ✓ · JUAN A. DELA CRUZ`
-- Line 2: `AM IN · 8:20 AM`
-- Badges:
-  - AM IN late → **⚠ Late 20 min** · **3rd late this October**
-  - AM IN on time → **On time** · `2 lates this month`
-  - Flexi employee on AM IN → **Flexi · out at 5:20 PM** (expected time out)
-  - Previously edited → **edited**
-- **"Not you? Undo"** removes the record just made.
-- **"Tap to change the time ›"** opens a time picker (bottom sheet) with Save / Clear. Saving re-checks lateness and re-shows the notification.
+### 3.2 Confirmation sheet (slides up from the bottom)
+- Coloured icon of the slot + greeting: *Good morning, Juan!* / *Enjoy your lunch* / *Welcome back* / *Ingat pauwi*
+- The time in large digits (54 px)
+- AM IN late → **⚠ Late by 20 min · 3rd late this October**; on time → **✓ On time · 2 lates this month**
+- Flexi → **Your time out today: 5:20 PM**
+- Buttons: **Undo** (only right after recording) · **Change time** (time picker, to match the biometric) · **Done**
+- Closes by itself after **8 s**; touching the sheet keeps it open.
 
-### 3.3 Remarks from the main screen
-Tap **On leave**, **Day-off** or **Others…** → type the 3-digit code → sheet:
-- Type (pre-filled from the chip), text to print (Others only, max 24 chars, e.g. `NO TIME-OUT`, `OB`, `HOLIDAY`, `SICK LEAVE`)
-- From / To dates (default today), "Skip Sundays in the range" (on by default)
-- Save → notification "ON LEAVE · 3 days"
+### 3.3 Quick buttons: Leave · Day-off · Holiday · Others
+Tap one → type the code → sheet with type (pre-filled), From/To dates (default today), "Skip Sundays", and for **Others** the text to print (max 24 chars, e.g. `NO TIME-OUT`, `OB`, `SICK LEAVE`). Save → small top message "Saved · HOLIDAY · 1 day".
+Printed text: Leave → `ON LEAVE`, Day-off → `DAY-OFF`, **Holiday → `HOLIDAY`**, Others → the typed text.
 
-### 3.4 My DTR & lates
-Tap **My DTR & lates** → type the 3-digit code:
-- Header: name, employee no., schedule (e.g. "Flexi 7:00–9:00").
-- Month switcher.
-- 3 stat cards: **Days present**, **Lates (count · total minutes)**, **Remarks**.
-- Day list: times, badges *Late 12m*, remark, *Incomplete* (past day with a missing time and no remark), *edited*.
-- Tap a day → edit all 4 times + remark, or **Delete day**.
-- **Print DTR** → print preview for that month.
+### 3.4 My DTR
+Tap **My DTR** on the keypad → type the code:
+- Month switcher, name, code and schedule.
+- 3 colour cards: **Present** (teal), **Lates · minutes** (orange), **Remarks** (indigo).
+- Day cards: the 4 times as chips (a late AM IN chip is orange), remark badge (holiday in red, others in indigo), *Incomplete* for a past day with a missing time, ✎ for edited days. The list opens centred on today.
+- Tap a day → edit the 4 times + remark, or delete the day.
+- **Print DTR** → print preview for that month. **No admin PIN needed** to print your own DTR.
+
+### 3.5 Mobile spacing rules
+- `viewport-fit=cover`; top padding = `safe-area-inset-top + 12px`, bottom = `safe-area-inset-bottom + 14px` (min 16px each when the phone reports 0).
+- Sheets add the bottom safe area to their padding, so their buttons sit above the home bar.
+- Height steps: > 780 px full size · ≤ 780 px slightly smaller · ≤ 720 px compact (tile subtitles and chip icons hidden, keys 42 px). Tested at 568, 640, 664, 701, 740, 780, 844 and 932 px heights: the keypad always ends ≥ 30 px above the bottom edge.
 
 ---
 
@@ -143,7 +155,8 @@ Tap **My DTR & lates** → type the 3-digit code:
 
 | Risk | Effect | Handling |
 |------|--------|----------|
-| 3-digit codes aren't secret → anyone can record or edit for another person | Wrong entries | **Accepted.** Personal-use tool; the biometric is the official record. Every change keeps the original time and marks the day *edited*. |
+| 3-digit codes aren't secret → anyone can record or edit for another person | Wrong entries | **Accepted.** Personal records only; the biometric is the official record. Every change keeps the original time and marks the day *edited*. |
+| One shared Dexie Cloud user on every device | Admin PIN is an app lock, not real security | **Accepted** for personal use. Admin screens ask for the 6-digit PIN. |
 | Phone clock vs server clock | Different times | Time always comes from the **server**; employee can correct it via the notification. |
 | Employees edit times to avoid lates | Late count understates | Edited days are visible to admin (badge + original time kept). |
 | Printed form says "made daily at the time of arrival" | Edited times are certified as daily | The employee signs it; that's their responsibility. Out of app scope. |
