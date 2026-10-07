@@ -8,7 +8,8 @@ const rawUrl = rawUrl0 && !/^https?:\/\//i.test(rawUrl0) ? 'https://' + rawUrl0 
 const validUrl = u => { try { return new URL(u).protocol === 'https:'; } catch { return false; } };
 /** '' when sync is off, or when the configured address is not a valid https URL (the app then stays local-only). */
 export const cloudUrl = validUrl(rawUrl) ? rawUrl.replace(/\/$/, '') : '';
-export const cloudInfo = () => ({ on: !!cloudUrl, bad: !!rawUrl && !cloudUrl, hasKey: !!store.get('dtrv.syncKey') });
+export const cloudInfo = () => ({ on: !!cloudUrl, bad: !!rawUrl && !cloudUrl, hasKey: !!store.get('dtrv.syncKey'), error: lastError });
+let lastError = '';
 export const setSyncKey = k => store.set('dtrv.syncKey', k || null);
 
 /** A setup link looks like https://app/#key=SECRET. Save the key and remove it from the address bar. Call before opening the database. */
@@ -26,6 +27,9 @@ export async function fetchTokens(tokenParams) {
     headers: { 'content-type': 'application/json', 'x-sync-key': store.get('dtrv.syncKey') || '' },
     body: JSON.stringify(tokenParams),
   });
-  if (!res.ok) throw new Error('Sync sign-in failed (' + res.status + ')');
-  return res.json();
+  if (!res.ok) {
+    let why = ''; try { why = (await res.json()).error || ''; } catch {}
+    lastError = `Sync sign-in failed (${res.status})${why ? ': ' + why : ''}`; throw new Error(lastError);
+  }
+  lastError = ''; return res.json();
 }
