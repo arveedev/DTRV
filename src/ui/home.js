@@ -22,6 +22,9 @@ export const SLOT_G = k => SLOT_UI[k].g;
 const AWAY_MSG = { LEAVE: ['🌴', 'Enjoy your leave'], DAYOFF: ['🏠', 'Enjoy your day-off'], HOLIDAY: [phFlag(92), 'Enjoy the holiday'] };
 const DEFAULT_SUB = { am_in: 'Arrive', am_out: 'Lunch', pm_in: 'Back', pm_out: 'Home' };
 
+const KEY_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h2M12 14h2M8 17h2" /></svg>';
+const KEY_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+let keysWerePin = null, swapT = 0;
 let selSlot = 'am_in', selRemark = null, typed = '', pendingMy = false;
 let lastCode = store.get('dtrv.lastCode');
 let lastH = '', lastM = '', lastDate = '';
@@ -53,7 +56,7 @@ const WICONS = {
   sync: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 0-14-5.3L4 9"/><path d="M4 4v5h5"/><path d="M4 12a8 8 0 0 0 14 5.3L20 15"/><path d="M20 20v-5h-5"/></svg>',
   user: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>',
 };
-let wState = '', connecting = false;
+let wState = '', wSig = '', connecting = false;
 function welcomeState() {
   if (S.emps.length) return '';
   const ci = cloudInfo();
@@ -66,7 +69,8 @@ function welcomeState() {
 export function paintWelcome() {
   const st = welcomeState(), w = $('#welcome'), scr = $('#p-record');
   scr.classList.toggle('setup', !!st); w.hidden = !st;
-  if (!st) { if (wState) { wState = ''; stagger(scr, 40); } return; }
+  if (!st) { if (wState) { wState = ''; wSig = ''; stagger(scr, 40); } return; }
+  const sig = [st, sync.phase, cloudInfo().error].join('|'); if (sig === wSig) return; wSig = sig;
   const set = (icon, title, text, btn, opts = {}) => {
     $('#wIc').innerHTML = icon; $('#welcome b').textContent = title; $('#welcome p').textContent = text;
     $('#keyIn').hidden = !opts.input; const b = $('#startSetup'); b.hidden = !btn; b.textContent = btn || '';
@@ -101,10 +105,16 @@ export function paintToggles() {
     const want = away ? '—' : t ? tPrint(t) : DEFAULT_SUB[k];
     if (st.textContent !== want) { st.textContent = want; st.className = 'st' + (t && !away ? ' tm chipin' : ''); }
   });
-  $$('.chip').forEach(b => { b.classList.toggle('on', b.dataset.r === selRemark); b.classList.toggle('off', AWAY.includes(b.dataset.r) && hasTimes); });
+  $('#remarkBtn').classList.toggle('on', !!selRemark);
   const pin = pendingMy || !!selRemark;       // My DTR or an armed pill: ask for the PIN again
   $('#keys').classList.toggle('pin', pin); $('#empno').classList.toggle('pin', pin);
-  const L = $('#keys [data-k="L"]'); L.textContent = pin ? 'Cancel' : 'My DTR'; L.classList.toggle('on', pin);
+  const L = $('#keys [data-k="L"]');
+  if (L.dataset.mode !== (pin ? 'x' : 'cal')) {
+    L.dataset.mode = pin ? 'x' : 'cal'; L.innerHTML = pin ? KEY_X : KEY_CAL; L.classList.toggle('on', pin);
+    L.setAttribute('aria-label', pin ? 'Cancel' : 'My DTR');
+    if (keysWerePin !== null && keysWerePin !== pin) { const k = $('#keys'); k.classList.remove('swap'); void k.offsetWidth; k.classList.add('swap'); clearTimeout(swapT); swapT = setTimeout(() => k.classList.remove('swap'), 900); }
+    keysWerePin = pin;
+  }
 }
 function paintDots(n = typed.length) { $$('#empno div').forEach((d, i) => d.classList.toggle('f', i < n)); }
 function dotsFlash(box, kind) {
@@ -166,10 +176,8 @@ async function submit() {
   const switched = p.no !== lastCode; lastCode = p.no; store.set('dtrv.lastCode', p.no);
   const st = stateOf(p.no);
   if (switched || !selSlot) selSlot = st.away ? null : suggest(st.e, now().time);       // a different person: pick *their* next slot
-  if (selRemark) {
-    const c = selRemark;
-    if (AWAY.includes(c) && st.hasTimes) { toast(`You've already clocked in today, so <b>${REMARK_LABEL[c]}</b> isn't available. Use <b>Others</b> for a reason.`, 'err'); selRemark = null; paintToggles(); return; }
-    setTimeout(() => openRemarkSheet(p.no, c, now().date), 420); return;
+  if (selRemark) {                              // Remark button was armed: show the remark sheet (Leave/Day-off/Holiday only if nothing is clocked yet)
+    setTimeout(() => openRemarkSheet(p.no, st.hasTimes ? 'OTHER' : 'LEAVE', now().date, { lockAway: st.hasTimes }), 420); return;
   }
   if (st.away) { enjoy(p, st.away); autoToggle(); return; }
   const { date, time } = now();
@@ -183,7 +191,6 @@ async function submit() {
 /* ---------- wiring ---------- */
 export function initHome() {
   $$('[data-ic]').forEach(el => { el.innerHTML = ICONS[el.dataset.ic]; });
-  $$('.phf').forEach(el => { el.innerHTML = phFlag(18); });
   if (lastCode && !emp(lastCode)) lastCode = null;
   $$('.tg').forEach(b => b.onclick = () => {
     const k = b.dataset.s, st = stateOf(lastCode), p = lastCode && emp(lastCode);
@@ -192,12 +199,8 @@ export function initHome() {
     if (lastCode && (st.e?.[k] || !chk.ok)) { openTimeSheet(lastCode, now().date, k, 'tile'); return; }     // recorded, or blocked: edit the time
     selSlot = k; selRemark = null; pendingMy = false; paintToggles();
   });
-  $$('.chip').forEach(b => b.onclick = () => {
-    const r = b.dataset.r;
-    if (AWAY.includes(r) && stateOf(lastCode).hasTimes) { toast(`You've already clocked in today, so <b>${REMARK_LABEL[r]}</b> isn't available. Use <b>Others</b> for a reason.`, 'err'); shake(b); return; }
-    selRemark = selRemark === r ? null : r; pendingMy = false; paintToggles();
-  });
-  buildKeys($('#keys'), 'My DTR', () => { if (pendingMy || selRemark) { pendingMy = false; selRemark = null; } else pendingMy = true; typed = ''; paintDots(); paintToggles(); },
+  $('#remarkBtn').onclick = () => { selRemark = selRemark ? null : 'ASK'; pendingMy = false; typed = ''; paintDots(); paintToggles(); };
+  buildKeys($('#keys'), KEY_CAL, () => { if (pendingMy || selRemark) { pendingMy = false; selRemark = null; } else pendingMy = true; typed = ''; paintDots(); paintToggles(); },
     pressDigit, () => { typed = typed.slice(0, -1); paintDots(); });
   document.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') { $('#picker').classList.contains('show') ? $('#pkScrim').click() : closeSheet(); }
@@ -211,8 +214,9 @@ export function initHome() {
   $('#startSetup').onclick = () => {
     if (!$('#keyIn').hidden) {
       if (!saveKeyFrom($('#keyIn').value)) { shake($('#keyIn')); return; }
+      document.activeElement?.blur();              // close the keyboard first: iOS keeps a shrunken screen after a reload otherwise
       connecting = true; paintWelcome();
-      setTimeout(() => { $('#app').classList.add('fading'); setTimeout(() => location.reload(), 300); }, 900);   // fade out, then restart cleanly with the key
+      setTimeout(() => { $('#app').classList.add('fading'); setTimeout(() => location.replace(location.pathname), 300); }, 900);   // fade out, then restart cleanly with the key
       return;
     }
     openGate();

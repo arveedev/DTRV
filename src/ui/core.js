@@ -123,19 +123,18 @@ export const SLOT_PRESETS = { am_in:['07:30','07:45','08:00','08:15'], am_out:['
 
 /* =================== keypad =================== */
 export function buildKeys(el, leftLabel, leftFn, digitFn, delFn){
-  el.innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button data-st data-d="${n}">${n}</button>`).join('')
-    + `<button class="m" data-st data-k="L">${leftLabel}</button><button data-st data-d="0">0</button><button class="m del" data-st data-k="D" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M13 9.5l5 5M18 9.5l-5 5"/></svg></button>`;
+  el.innerHTML = [1,2,3,4,5,6,7,8,9].map((n,i)=>`<button data-st style="--k:${i}" data-d="${n}">${n}</button>`).join('')
+    + `<button class="m" data-st style="--k:9" data-k="L">${leftLabel}</button><button data-st style="--k:10" data-d="0">0</button><button class="m del" data-st style="--k:11" data-k="D" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M13 9.5l5 5M18 9.5l-5 5"/></svg></button>`;
   const press = b => { if(b.dataset.d !== undefined) digitFn(b.dataset.d); else if(b.dataset.k==='D') delFn(); else leftFn(); };
-  el.onclick = ev => { const b = ev.target.closest('button'); if(b) press(b); };
-  /* Touch: act on the tap ourselves and cancel the browser's click, so two quick taps are two key presses and never a double-tap zoom. */
-  let t0 = null;
-  el.addEventListener('touchstart', ev => { const t = ev.touches[0]; t0 = ev.touches.length === 1 ? { x:t.clientX, y:t.clientY } : null; }, { passive:true });
-  el.addEventListener('touchend', ev => {
-    const b = ev.target.closest('button'); if(!b || !t0) return;
-    const t = ev.changedTouches[0], moved = Math.hypot(t.clientX - t0.x, t.clientY - t0.y) > 12; t0 = null;
-    ev.preventDefault();                       // no synthesized click, no zoom
-    if(!moved) press(b);
-  }, { passive:false });
+  /* Act the moment a finger goes down (every finger counts, however fast), never wait for the click: no lag, no lost taps, no double-tap zoom. */
+  let lastDown = 0;
+  el.addEventListener('pointerdown', ev => {
+    const b = ev.target.closest('button'); if(!b || !el.contains(b)) return;
+    ev.preventDefault(); lastDown = Date.now(); b.classList.add('down'); press(b);
+    const up = () => { b.classList.remove('down'); b.removeEventListener('pointerup', up); b.removeEventListener('pointercancel', up); b.removeEventListener('pointerleave', up); };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
+  });
+  el.onclick = ev => { if(Date.now() - lastDown < 900) return; const b = ev.target.closest('button'); if(b) press(b); };   // keyboard / assistive "click" only; a real tap was already handled on pointerdown
 }
 
 

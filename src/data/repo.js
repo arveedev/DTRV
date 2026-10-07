@@ -46,7 +46,8 @@ const strip = r => { if (!r) return {}; const { id, ...rest } = r; return rest; 
 const listeners = new Set();
 /** Called when data changed from *outside* this tab's own actions (other tab / other phone). */
 export const onExternalChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
-const notify = () => listeners.forEach(f => { try { f(); } catch (e) { console.error(e); } });
+let notifyT = 0;   // sync can deliver many small changes in a row: repaint once per burst, not once per change
+const notify = () => { clearTimeout(notifyT); notifyT = setTimeout(() => listeners.forEach(f => { try { f(); } catch (e) { console.error(e); } }), 150); };
 
 const timers = {};        // settings id -> debounce timer
 const dirty = new Set();  // settings ids edited but not yet written (their in-memory value is the newest)

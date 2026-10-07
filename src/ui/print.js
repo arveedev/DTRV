@@ -1,4 +1,4 @@
-/* Print preview (one person from My DTR, or many from the admin list) and the real-size pages for window.print(). */
+/* Print preview (one person from My DTR, or many from the admin list) and the real-size pages for printing. */
 import { $, shiftYM, MONTHS, esc } from '../lib/util.js';
 import { nickOf } from '../lib/rules.js';
 import { S, get, emp, ensureMonth } from '../data/repo.js';
@@ -6,25 +6,45 @@ import { dtrCopy } from '../print/dtr.js';
 import { go, stagger, toast } from './core.js';
 import { renderAdmin } from './admin.js';
 
-let zoomPrev = false, curPrintSt = null, printFrom = 'my', printReady = false;
+let curPrintSt = null, printFrom = 'my', printReady = false;
 const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign);
 const pages = st => st.nos.map(no => { const c = copy(no, st.ym); return `<div class="a4">${c}${c}</div>`; }).join('');
 
 /** The admin list keeps this up to date so Ctrl+P prints exactly what is selected. */
 export const setPrintSel = st => { curPrintSt = st; };
 
-/* Real-size pages are only built when needed (preview open, Print), so 50+ people stay fast. */
+/* Phones (and installed apps) cannot reliably print the app screen itself, so the pages open as a plain document
+   in their own tab, where the system Print sheet works. Desktops print in place. */
+const needsWindow = () => matchMedia('(pointer: coarse)').matches || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const allCss = () => [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join('\n'); } catch { return ''; } }).join('\n');
+
+function writeWindow(w, html) {
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=794"><title>DTR</title><style>${allCss()}
+@media screen{html,body{height:auto;background:#59647a}body{margin:0;padding:64px 0 24px}#printRoot{display:block!important}
+#printRoot .a4{margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.pbar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:center;padding:10px;background:rgba(10,15,28,.92)}
+.pbar button{font:700 18px system-ui,sans-serif;border:0;border-radius:12px;padding:12px 40px;background:#5eead4;color:#062a26}}
+@media print{.pbar{display:none!important}}</style></head><body><div class="pbar"><button onclick="print()">Print</button></div><div id="printRoot">${html}</div>
+<script>setTimeout(function(){try{print()}catch(e){}},500)<\/script></body></html>`);
+  w.document.close();
+}
+
 export async function doPrint(st) {
   if (!st.nos.length) return;
-  curPrintSt = st; await ensureMonth(st.ym);
-  $('#printRoot').innerHTML = pages(st); printReady = true; window.print();
+  const w = needsWindow() ? window.open('', '_blank') : null;   // must open inside the tap, before any waiting
+  curPrintSt = st;
+  try { await ensureMonth(st.ym); } catch (e) { w?.close(); throw e; }
+  const html = pages(st);
+  if (w) { writeWindow(w, html); return; }
+  $('#printRoot').innerHTML = html; printReady = true; window.print();
 }
 
 export function initPrint() {
   /* Ctrl+P / browser menu: rebuild from the current selection right before printing, so it is never stale. */
   window.addEventListener('beforeprint', () => { if (!printReady && curPrintSt?.nos.length) $('#printRoot').innerHTML = pages(curPrintSt); });
-  window.addEventListener('afterprint', () => { printReady = false; $('#printRoot').innerHTML = ''; });
-  $('#printBack').onclick = () => { if (printFrom === 'admin') { go('p-admin', 'l'); renderAdmin(); } else go('p-my', 'l'); };
+  window.addEventListener('afterprint', () => { printReady = false; });      // pages stay in the (hidden) root: some phones fire this before the sheet has rendered
+  $('#printBack').onclick = () => { $('#printRoot').innerHTML = ''; if (printFrom === 'admin') { go('p-admin', 'l'); renderAdmin(); } else go('p-my', 'l'); };
 }
 
 export async function openPreview(st, from) {
@@ -39,22 +59,61 @@ function renderPreview(st) {
   host.innerHTML = `<div class="pctl" data-st><div class="pname">${st.nos.length > 1 ? st.nos.length + ' people' : esc(emp(st.nos[0]).name)}</div>
     <div class="mnav"><button class="pPrev">‹</button><span class="pLbl">${label()}</span><button class="pNext">›</button></div></div>
     <div class="pager"><button class="pgPrev">‹</button><span class="pgLbl"></span><button class="pgNext">›</button></div>
-    <div class="prev"></div><div class="tap">Tap the paper to zoom</div>
+    <div class="prev"><div class="zbar"><button class="zOut" aria-label="Zoom out">−</button><button class="zFit">Fit</button><button class="zIn" aria-label="Zoom in">+</button></div></div>
+    <div class="tap">Pinch to zoom · drag to move · double-tap to zoom in</div>
     <button class="bigbtn"></button>`;
-  const draw = () => {
+  const box = q('.prev');
+  const view = { k: 1, tx: 0, ty: 0, pw: 0, ph: 0 };      // k: 1 = whole page fits the box
+  const bounds = () => ({ w: box.clientWidth, h: box.clientHeight });
+  const clamp = () => {
+    const { w, h } = bounds(), W = view.pw * view.k, H = view.ph * view.k;
+    view.tx = W <= w ? (w - W) / 2 : Math.min(0, Math.max(w - W, view.tx));
+    view.ty = H <= h ? (h - H) / 2 : Math.min(0, Math.max(h - H, view.ty));
+  };
+  const apply = () => { clamp(); const p = box.querySelector('.paper'); if (p) p.style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.k})`; };
+  const zoomAt = (px, py, k2) => {                         // keep the point under the finger fixed
+    k2 = Math.max(1, Math.min(6, k2)); const r = k2 / view.k;
+    view.tx = px - (px - view.tx) * r; view.ty = py - (py - view.ty) * r; view.k = k2; apply();
+  };
+  const centre = () => { const { w, h } = bounds(); return [w / 2, h / 2]; };
+
+  const draw = (reset = true) => {
     try {
       const n = st.nos.length; st.page = Math.max(0, Math.min(st.page || 0, n - 1));
       q('.pLbl').textContent = label();
       q('.pager').style.display = n > 1 ? 'flex' : 'none';
       if (n > 1) q('.pgLbl').textContent = `${nickOf(emp(st.nos[st.page]))} · ${st.page + 1} of ${n}`;
-      q('.bigbtn').textContent = n > 1 ? `Print ${n} DTRs (${n} pages)` : 'Print / Save as PDF';
-      const box = q('.prev'), w = (box.clientWidth || 340) - 20, h = (box.clientHeight || 0) - 20;
-      const sc = zoomPrev ? 1.1 : Math.min(w / 793.7, h > 60 ? h / 1122.5 : 9), c = copy(st.nos[st.page], st.ym);
-      box.classList.toggle('zoom', zoomPrev);
-      box.innerHTML = `<div class="paper" style="width:${793.7 * sc}px;height:${1122.5 * sc}px"><div class="a4" style="transform:scale(${sc})">${c}${c}</div></div>`;
-      box.querySelector('.paper').onclick = () => { zoomPrev = !zoomPrev; draw(); };
-    } catch (err) { q('.prev').innerHTML = `<div class="emptyprev">Couldn't build the preview<br><small>${esc(err.message)}</small></div>`; }
+      q('.bigbtn').textContent = n > 1 ? `Print ${n} DTRs` : 'Print';
+      const { w, h } = bounds(), m = 12, sc = Math.min((w - 2 * m) / 793.7, h > 60 ? (h - 2 * m) / 1122.5 : 9), c = copy(st.nos[st.page], st.ym);
+      view.pw = 793.7 * sc; view.ph = 1122.5 * sc; if (reset) { view.k = 1; view.tx = view.ty = 0; }
+      box.querySelector('.paper')?.remove();
+      box.insertAdjacentHTML('afterbegin', `<div class="paper" style="width:${view.pw}px;height:${view.ph}px"><div class="a4" style="transform:scale(${sc})">${c}${c}</div></div>`);
+      apply();
+    } catch (err) { box.insertAdjacentHTML('afterbegin', `<div class="emptyprev">Couldn't build the preview<br><small>${esc(err.message)}</small></div>`); }
   };
+
+  /* touch / mouse: one pointer drags, two pointers pinch */
+  const ptrs = new Map(); let last = null;
+  const local = e => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const gesture = () => {
+    const pts = [...ptrs.values()]; if (pts.length === 1) return { x: pts[0][0], y: pts[0][1], d: 0 };
+    return { x: (pts[0][0] + pts[1][0]) / 2, y: (pts[0][1] + pts[1][1]) / 2, d: Math.hypot(pts[0][0] - pts[1][0], pts[0][1] - pts[1][1]) };
+  };
+  box.addEventListener('pointerdown', e => { if (e.target.closest('.zbar')) return; box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, local(e)); last = gesture(); box.classList.add('grab'); });
+  box.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, local(e)); const g = gesture();
+    if (last && g.d && last.d) { view.tx += g.x - last.x; view.ty += g.y - last.y; zoomAt(g.x, g.y, view.k * g.d / last.d); }
+    else if (last) { view.tx += g.x - last.x; view.ty += g.y - last.y; apply(); }
+    last = g;
+  });
+  const end = e => { ptrs.delete(e.pointerId); last = ptrs.size ? gesture() : null; if (!ptrs.size) box.classList.remove('grab'); };
+  box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+  box.addEventListener('wheel', e => { e.preventDefault(); const [x, y] = local(e); zoomAt(x, y, view.k * Math.exp(-e.deltaY * 0.0022)); }, { passive: false });
+  box.addEventListener('dblclick', e => { if (e.target.closest('.zbar')) return; const [x, y] = local(e); view.k > 1.05 ? (view.k = 1, view.tx = view.ty = 0, apply()) : zoomAt(x, y, 2.6); });
+  q('.zIn').onclick = () => zoomAt(...centre(), view.k * 1.5);
+  q('.zOut').onclick = () => zoomAt(...centre(), view.k / 1.5);
+  q('.zFit').onclick = () => { view.k = 1; view.tx = view.ty = 0; apply(); };
+
   const month = async n => { st.ym = shiftYM(st.ym, n); await ensureMonth(st.ym); draw(); };
   q('.pgPrev').onclick = () => { st.page = (st.page - 1 + st.nos.length) % st.nos.length; draw(); };
   q('.pgNext').onclick = () => { st.page = (st.page + 1) % st.nos.length; draw(); };

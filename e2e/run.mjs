@@ -49,11 +49,13 @@ try {
   ok(!(await pg.$eval('#toggles', e => e.classList.contains('away'))), 'tiles not locked after My DTR');
   const doneAm = await pg.$eval('.tg[data-s="am_in"]', e => e.classList.contains('done'));
   ok(doneAm, 'Maria\'s AM IN tile shows done');
-  await pg.click('.chip[data-r="LEAVE"]'); await wait(pg, 300);
-  ok((await pg.textContent('#toast')).includes('already clocked in'), 'Leave refused after clocking in');
+  await pg.click('#remarkBtn'); await keys(pg, '205'); await wait(pg, 1000);
+  ok(await pg.isVisible('.chooser button[data-c="OTHER"].on') && await pg.isVisible('.chooser button[data-c="LEAVE"].off'), 'after clocking in, the remark sheet opens on Others with Leave locked');
+  await pg.click('#rCancel'); await wait(pg, 500);
   /* day-off locks the day (a phone that has not clocked in today) */
   const p2 = await fresh('2026-10-07T09:00:00', '?demo=1');
-  await p2.click('.chip[data-r="DAYOFF"]'); await keys(p2, '331'); await wait(p2, 1000);
+  await p2.click('#remarkBtn'); await keys(p2, '331'); await wait(p2, 1000);
+  await p2.click('.chooser button[data-c="DAYOFF"]'); await wait(p2, 300);
   await p2.click('#rOk'); await wait(p2, 900);
   ok((await p2.textContent('#sheet')).includes('Enjoy your day-off, Pedro'), 'day-off shows the Enjoy sheet right away');
   await p2.click('#joyDone'); await wait(p2, 500);
@@ -69,8 +71,11 @@ try {
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);
-  await pg.click('#aTabs button[data-t="3"]'); await wait(pg, 700); await pg.click('#pAll'); await pg.click('#pGo'); await wait(pg, 600);
-  ok(await pg.evaluate(() => window.__printed) === 3, 'multi print builds 3 A4 pages');
+  await pg.click('#aTabs button[data-t="3"]'); await wait(pg, 700); await pg.click('#pAll');
+  const [popup] = await Promise.all([pg.context().waitForEvent('page'), pg.click('#pGo')]);      // touch devices print from their own tab
+  await popup.waitForSelector('#printRoot .a4'); await popup.waitForTimeout(300);
+  ok(await popup.$$eval('#printRoot .a4', a => a.length) === 3 && await popup.isVisible('.pbar button'), 'multi print opens a tab with 3 A4 pages and a Print button');
+  await popup.close();
   await pg.click('#pView'); await wait(pg, 900);
   ok(await pg.isVisible('#printBody .paper'), 'preview shows the paper');
   ok(pg.errs.length === 0, 'no console errors (demo) ' + pg.errs.join('|'));
