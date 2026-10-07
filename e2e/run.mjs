@@ -61,6 +61,11 @@ try {
   await p2.click('.tg[data-s="am_in"]'); await wait(p2, 600);
   ok((await p2.textContent('#sheet')).includes('Enjoy'), 'tapping a locked tile says enjoy again');
   ok(p2.errs.length === 0, 'no console errors (day-off) ' + p2.errs.join('|'));
+  /* two quick touch taps on the keypad are two digits (no double-tap zoom) */
+  const p3 = await fresh('2026-10-07T09:00:00', '?demo=1');
+  const k1 = await p3.$('#keys [data-d="1"]'), bx = await k1.boundingBox();
+  await p3.touchscreen.tap(bx.x + bx.width / 2, bx.y + bx.height / 2); await p3.touchscreen.tap(bx.x + bx.width / 2, bx.y + bx.height / 2);
+  ok(await p3.$$eval('#empno div.f', d => d.length) === 2, 'two fast touch taps register as two digits');
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

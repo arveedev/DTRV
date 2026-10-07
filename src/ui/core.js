@@ -125,8 +125,17 @@ export const SLOT_PRESETS = { am_in:['07:30','07:45','08:00','08:15'], am_out:['
 export function buildKeys(el, leftLabel, leftFn, digitFn, delFn){
   el.innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button data-st data-d="${n}">${n}</button>`).join('')
     + `<button class="m" data-st data-k="L">${leftLabel}</button><button data-st data-d="0">0</button><button class="m" data-st data-k="D" aria-label="Delete">⌫</button>`;
-  el.onclick = ev => { const b = ev.target.closest('button'); if(!b) return;
-    if(b.dataset.d !== undefined) digitFn(b.dataset.d); else if(b.dataset.k==='D') delFn(); else leftFn(); };
+  const press = b => { if(b.dataset.d !== undefined) digitFn(b.dataset.d); else if(b.dataset.k==='D') delFn(); else leftFn(); };
+  el.onclick = ev => { const b = ev.target.closest('button'); if(b) press(b); };
+  /* Touch: act on the tap ourselves and cancel the browser's click, so two quick taps are two key presses and never a double-tap zoom. */
+  let t0 = null;
+  el.addEventListener('touchstart', ev => { const t = ev.touches[0]; t0 = ev.touches.length === 1 ? { x:t.clientX, y:t.clientY } : null; }, { passive:true });
+  el.addEventListener('touchend', ev => {
+    const b = ev.target.closest('button'); if(!b || !t0) return;
+    const t = ev.changedTouches[0], moved = Math.hypot(t.clientX - t0.x, t.clientY - t0.y) > 12; t0 = null;
+    ev.preventDefault();                       // no synthesized click, no zoom
+    if(!moved) press(b);
+  }, { passive:false });
 }
 
 
