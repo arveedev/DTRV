@@ -3,11 +3,12 @@
 import { $, $$, isOn, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { SLOT_LABEL, REMARK_LABEL, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
-import { S, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
+import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
 import { ICONS, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
+import { cloudInfo } from './cloud.js';
 import { afterChange } from './app.js';
 
 const SLOT_UI = {
@@ -52,7 +53,14 @@ export function autoToggle() {
 }
 export function paintToggles() {
   const { e, hasTimes, away } = stateOf(lastCode);
-  $('#welcome').hidden = S.emps.length > 0; $('#toggles').hidden = $('#chips').hidden = S.emps.length === 0;
+  $('#welcome').hidden = S.emps.length > 0;
+  if (!$('#welcome').hidden) {
+    const pin = hasAdminPin(), cloud = cloudInfo().on;
+    $('#welcome p').textContent = pin
+      ? `No people on this phone yet. ${cloud ? 'If you already added people on another device, wait a few seconds for sync, or reload. ' : ''}Otherwise tap the button and enter your PIN to add the first person.`
+      : `Create your admin PIN, then add the first person. ${cloud ? 'Set up on one device only; the others will receive it by sync.' : 'Everything stays on this phone.'}`;
+    $('#startSetup').textContent = pin ? 'Open admin' : 'Set up';
+  } $('#toggles').hidden = $('#chips').hidden = S.emps.length === 0;
   $('#toggles').classList.toggle('away', !!away);
   $$('.tg').forEach(b => {
     const k = b.dataset.s, t = e?.[k], chk = canRecord(e, k), st = b.querySelector('.st');

@@ -1,3 +1,4 @@
+*{touch-action:manipulation}
 /* DTRV — styles. Theme: "Rail · dark". Mobile-first; on a desktop it is a centred column. */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
