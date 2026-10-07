@@ -22,7 +22,7 @@ Companion to [`01-PLAN.md`](01-PLAN.md). Behaviour reference: [`../mockup/index.
           backups/dtr-YYYYMMDD.db  (nightly, keep 30)
 ```
 
-Employees record from their **own phones**, so the server must be reachable from outside the office LAN. Recommended: a small VPS (or the office PC behind a Cloudflare Tunnel) with HTTPS.
+Employees record from their **own phones**, so the server must be reachable from the internet over HTTPS. **Recommended host: Cloudflare Pages + Workers + D1** (see §9). The diagram shows the Node/Express variant; on Cloudflare, Express → Hono and SQLite file → D1, with the same SQL and rules.
 
 | Layer | Choice | Reason |
 |-------|--------|--------|
@@ -264,15 +264,36 @@ Verified in the prototype with Chromium `page.pdf()`: **one A4 page**.
 
 ---
 
-## 9. Deployment
+## 9. Hosting
 
-**Recommended — small VPS (₱300–500/month)**: Ubuntu, Node 22, app under systemd, **Caddy** for HTTPS on a domain. Phones reach it from anywhere.
+**GitHub Pages cannot run this app alone.** It only serves static files: no server code and no database. Every employee's records would stay on their own phone, the admin couldn't see anyone, and the time would come from the phone's clock.
 
-**Alternative — office PC**: Node service (NSSM on Windows) + **Cloudflare Tunnel** for HTTPS without opening ports. Downside: the PC must stay on.
+**Vercel can**, but not with SQLite. Vercel functions have a temporary, read-only filesystem, so a SQLite file is lost between requests. Vercel needs an external database.
 
-Backups: nightly `db.backup()` at 23:30 Manila, keep 30; admin can download anytime. Restore = stop, replace `data/dtr.db`, start.
+| Option | App | Database | Cost | Verdict |
+|--------|-----|----------|------|---------|
+| **Cloudflare Pages + Workers + D1** | Static front-end on Pages, API as Pages Functions | **D1 = SQLite** (same schema as §3) | Free tier: 100k requests/day, 5 GB DB | **Recommended.** Free, allows commercial use, keeps SQLite, server time from the Worker |
+| Vercel + Turso (libSQL) or Neon (Postgres) | Static + `/api` serverless functions | Turso (SQLite-compatible) or Neon | Free tiers | Works. **Vercel Hobby is for personal, non-commercial use**, and an office's staff tool likely needs Pro ($20/mo) |
+| GitHub Pages + Supabase | Static front-end | Supabase Postgres; API as Postgres functions (`now()` for time) | Free tier (project pauses after 7 days idle) | Possible, but the logic moves into SQL functions and the public anon key is in the page. More fragile. |
+| Small VPS / office PC | Node + Express (§1) | SQLite file | ₱300–500/mo, or free on an office PC with Cloudflare Tunnel | Most control; you maintain the server |
 
----
+**Recommendation: Cloudflare Pages + D1** (pending owner approval). Effect on the code:
+- Express is replaced by **Hono** (same routing style, runs on Workers). `routes/*.js` keep their shape.
+- `better-sqlite3` is replaced by the D1 binding (`env.DB.prepare(...).bind(...).run()`, async). The SQL in §3 runs on D1 unchanged.
+- Admin sessions: signed cookie (HMAC with a Worker secret) instead of `express-session`.
+- Time: `new Date()` in the Worker is server UTC, converted with `Intl` to `Asia/Manila`. Same as before.
+- Backups: D1 Time Travel (30-day point-in-time restore) plus `wrangler d1 export` for a downloadable `.sql` backup.
+- Deploy: push to GitHub → Cloudflare Pages builds automatically. Free `*.pages.dev` HTTPS URL, or your own domain.
+
+Repository layout under Cloudflare:
+```
+functions/api/[[route]].js   # Hono app (all /api/* routes)
+functions/print.js           # A4 DTR HTML
+src/rules.js                 # pure rules, shared by functions and front-end
+migrations/0001_init.sql     # wrangler d1 migrations apply
+public/                      # index.html, app.js, css, manifest, sw.js
+wrangler.toml                # D1 binding "DB"
+```
 
 ## 10. Tests
 
