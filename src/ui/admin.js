@@ -3,13 +3,14 @@ import { $, $$, hm, m, t12, fmtDate, fmtRange, spanDays, addDays, shiftYM, MONTH
 import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
 import { S, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
-  hasAdminPin, setAdminPin, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
+  hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
 import { openPreview, printWith, setPrintSel } from './print.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
+import { holidaysOn, upcoming, repeatOptions, ruleId, describeRule, KIND_LABEL } from '../lib/holidays.js';
 
 let adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
 const TABICONS = [
@@ -83,9 +84,10 @@ export function refreshAdmin() {
 function aOver(b) {
   const act = S.emps.filter(p => p.active !== false), all = act.map(p => ({ p, st: monthStats(p.no, aYM) }));
   const tl = all.reduce((a, r) => a + r.st.lates, 0), tp = all.reduce((a, r) => a + r.st.present, 0);
+  const nextHol = upcoming(now().date, S.holidayRules, { n: 1, within: 14, skip: new Set(S.holidays.map(h => h.date)) })[0];
   b.innerHTML = `<div class="pctl" data-st><span style="font-weight:700">${MONTHS[+aYM.slice(5) - 1]} ${aYM.slice(0, 4)}</span><div class="mnav"><button id="oPrev">‹</button><button id="oNext">›</button></div></div>
     <div class="hero ${tl ? 'g1' : 'calm'}" style="margin-top:0" data-st><div class="n" id="oTot">0</div><div class="t"><b>late${tl === 1 ? '' : 's'} this month</b><br>${act.length} people · ${tp} days present</div></div>
-    <button class="holbtn" id="holBtn" data-st>${phFlag(18)} Holidays · mark a day for everyone${S.holidays.length ? ` (${S.holidays.length})` : ''}</button>
+    <button class="holbtn" id="holBtn" data-st>${phFlag(18)} ${nextHol ? `${esc(titleCase(nextHol.name))} · ${fmtDate(nextHol.date)}: mark it` : `Holidays · mark a day for everyone${S.holidays.length ? ` (${S.holidays.length})` : ''}`}</button>
     <div style="height:10px"></div>
     <div class="searchrow" data-st><input id="oq" type="search" placeholder="Search ${act.length} people" value="${attr(aQ)}" autocomplete="off"><button class="mini ${aSort === 'lates' ? 'on' : ''}" data-s="lates">Most lates</button><button class="mini ${aSort === 'az' ? 'on' : ''}" data-s="az">A–Z</button></div>
     <div class="plist" id="plist"></div>`;
@@ -107,38 +109,74 @@ function aOver(b) {
 }
 
 /* ---------- holidays for everyone ---------- */
+const kindDot = k => `<i class="kd ${k}"></i>`;
 function openHolidays() {
-  const list = [...S.holidays].sort((a, b) => b.date.localeCompare(a.date));
+  const list = [...S.holidays].sort((a, b) => b.date.localeCompare(a.date)), rules = S.holidayRules;
   openSheet(`<h3 data-st>${phFlag(22)} Holidays</h3>
     <div class="hlist" data-st style="margin-top:10px">${list.length ? list.map(h => `<div class="hrow"><div><b>${fmtDate(h.date)}</b><small>${esc(h.name || 'Holiday')}</small></div><button class="x" data-d="${h.date}" aria-label="Remove">✕</button></div>`).join('') : '<div class="emptyl">No holidays marked yet</div>'}</div>
+    ${rules.length ? `<div class="hsub" data-st>Remembered every year</div><div class="hlist" data-st>${rules.map(r => `<div class="hrow"><div><b>${esc(r.name)}</b><small>${esc(describeRule(r))}</small></div><button class="x" data-r="${attr(r.id)}" aria-label="Forget">✕</button></div>`).join('')}</div>` : ''}
     <div class="btns" data-st><button class="btn" id="hClose">Close</button><button class="btn primary" id="hAdd">+ Add holiday</button></div>`);
-  $$('.hrow .x').forEach(x => {
+  $$('.hrow .x[data-d]').forEach(x => {
     x.onclick = async () => { await ensureMonth(x.dataset.d.slice(0, 7)); await removeHoliday(x.dataset.d); afterChange(); openHolidays(); toast(`Holiday on <b>${fmtDate(x.dataset.d)}</b> removed`); };
   });
-  $('#hClose').onclick = closeSheet; $('#hAdd').onclick = openHolidayAdd;
+  $$('.hrow .x[data-r]').forEach(x => {
+    x.onclick = async () => { await saveHolidayRules(S.holidayRules.filter(r => r.id !== x.dataset.r)); openHolidays(); toast('Forgotten. It will not be suggested again'); };
+  });
+  $('#hClose').onclick = closeSheet; $('#hAdd').onclick = () => openHolidayAdd();
 }
-function openHolidayAdd() {
-  const today = now().date;
+const titleCase = s => s.replace(/\S+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
+function openHolidayAdd(prefill) {
+  const today = now().date, marked = new Set(S.holidays.map(h => h.date));
+  let from = prefill?.date || today, to = from, nameTouched = !!prefill?.name, repeat = 0;
+  const up = upcoming(today, S.holidayRules, { n: 5, within: 150, skip: marked });
   openSheet(`<h3 data-st>Add holiday</h3>
-    <div data-st style="margin-top:10px"><div class="field"><label>Date(s)</label><button type="button" class="pf" id="hRange" data-from="${today}" data-to="${today}">${fmtDate(today)}</button></div></div>
-    <div class="field" data-st><label>Name (optional, printed after HOLIDAY)</label><input id="hName" maxlength="24" placeholder="e.g. INDEPENDENCE DAY"></div>
+    ${up.length ? `<div class="hsub" data-st>Coming up</div><div class="sugg hup" data-st>${up.map(h => `<button data-d="${h.date}" data-n="${attr(h.name)}">${fmtDate(h.date)} · ${esc(titleCase(h.name))}</button>`).join('')}</div>` : ''}
+    <div data-st style="margin-top:6px"><div class="field"><label>Date(s)</label><button type="button" class="pf" id="hRange" data-from="${from}" data-to="${to}">${fmtDate(from)}</button></div></div>
+    <div class="field" data-st><label>Name (printed after HOLIDAY)</label><input id="hName" maxlength="24" placeholder="e.g. TOWN FIESTA" value="${attr(prefill?.name || '')}" autocomplete="off"></div>
+    <div class="sugg" id="hSug" data-st></div>
     <label class="check" data-st><input type="checkbox" id="hSkip" checked> Skip Sundays</label>
+    <div id="hRemWrap"><label class="check" data-st><input type="checkbox" id="hRem"> Remember for every year</label>
+      <div class="chooser" id="hRep" style="--n:2;--p:0;margin-top:8px;display:none"><i class="th"></i><button data-i="0" class="on"></button><button data-i="1"></button></div></div>
     <div class="btns" data-st><button class="btn" id="hBack">Back</button><button class="btn primary" id="hSave">Mark for everyone</button></div>`);
-  const r = $('#hRange');
-  r.onclick = () => pickDate({ title: 'Holiday dates', mode: 'range', from: r.dataset.from, to: r.dataset.to }, ([a, b]) => {
-    r.dataset.from = a; r.dataset.to = b; r.textContent = `${fmtRange(a, b)} · ${spanDays(a, b)} day${spanDays(a, b) === 1 ? '' : 's'}`; });
+  const r = $('#hRange'), nameEl = $('#hName');
+  const known = () => holidaysOn(from, S.holidayRules);
+  /* suggestions and the "remember" choices follow the chosen date */
+  const refresh = () => {
+    const k = known(), single = from === to;
+    $('#hSug').innerHTML = k.map(h => `<button data-n="${attr(h.name)}" title="${esc(KIND_LABEL[h.kind])}">${kindDot(h.kind)}${esc(titleCase(h.name))}</button>`).join('');
+    $$('#hSug button').forEach(b => { b.onclick = () => { nameEl.value = b.dataset.n.toUpperCase(); nameTouched = true; }; });
+    if (!nameTouched) nameEl.value = k.length ? k[0].name.toUpperCase().slice(0, 24) : '';
+    const opts = repeatOptions(from), bs = $$('#hRep button');
+    bs.forEach((b, i) => { b.textContent = opts[i].label; b.style.display = single || i === 0 ? '' : 'none'; });
+    $('#hRep').style.setProperty('--n', single ? 2 : 1); if (!single) { repeat = 0; $('#hRep').style.setProperty('--p', 0); bs.forEach((b, i) => b.classList.toggle('on', i === 0)); }
+    $('#hRemWrap').style.display = k.some(h => h.kind !== 'saved') && k.length && !$('#hRem').checked ? 'none' : '';    // already known to the app: nothing to remember
+    if (!k.length && !$('#hRem').dataset.set) $('#hRem').checked = true;                                        // something new: remember by default
+    $('#hRep').style.display = $('#hRem').checked ? '' : 'none';
+  };
+  nameEl.oninput = () => { nameTouched = true; };
+  $('#hRem').onchange = () => { $('#hRem').dataset.set = '1'; $('#hRep').style.display = $('#hRem').checked ? '' : 'none'; };
+  $$('#hRep button').forEach(b => { b.onclick = () => { repeat = +b.dataset.i; $('#hRep').style.setProperty('--p', repeat); $$('#hRep button').forEach(x => x.classList.toggle('on', x === b)); }; });
+  const setDates = (a, b) => { from = a; to = b; r.dataset.from = a; r.dataset.to = b; r.textContent = a === b ? fmtDate(a) : `${fmtRange(a, b)} · ${spanDays(a, b)} day${spanDays(a, b) === 1 ? '' : 's'}`; refresh(); };
+  r.onclick = () => pickDate({ title: 'Holiday dates', mode: 'range', from, to }, ([a, b]) => setDates(a, b));
+  $$('.hup button').forEach(b => { b.onclick = () => { nameTouched = true; nameEl.value = b.dataset.n.toUpperCase().slice(0, 24); setDates(b.dataset.d, b.dataset.d); nameEl.value = b.dataset.n.toUpperCase().slice(0, 24); }; });
   $('#hBack').onclick = openHolidays;
+  refresh();
   $('#hSave').onclick = async () => {
-    const a = r.dataset.from, b = r.dataset.to, skip = $('#hSkip').checked, name = $('#hName').value.trim().toUpperCase();
-    let hit = 0, kept = 0, days = 0;
+    const skip = $('#hSkip').checked, name = nameEl.value.trim().toUpperCase();
+    let hit = 0, kept = 0, days = 0; const dates = [];
     try {
-      for (let d = a, n = 0; d <= b && n < 62; d = addDays(d, 1), n++) {
+      for (let d = from, n = 0; d <= to && n < 62; d = addDays(d, 1), n++) {
         if (skip && new Date(d + 'T00:00').getDay() === 0) continue;
-        await ensureMonth(d.slice(0, 7)); const x = await applyHoliday(d, name); hit += x.hit; kept += x.kept; days++;
+        await ensureMonth(d.slice(0, 7)); const x = await applyHoliday(d, name); hit += x.hit; kept += x.kept; days++; dates.push(d);
+      }
+      if ($('#hRem').checked && name && dates.length) {                                          // remember it for next year
+        const list = [...S.holidayRules], add = rule => { const full = { ...rule, name, id: ruleId(rule, name) }; if (!list.some(x => x.id === full.id)) list.push(full); };
+        if (dates.length === 1) add(repeatOptions(dates[0])[repeat].rule); else dates.forEach(d => add(repeatOptions(d)[0].rule));
+        await saveHolidayRules(list);
       }
     } catch (e) { fail(e); return; }
     closeSheet(); autoToggle(); afterChange();
-    toast(`${phFlag(16)} Holiday set: <b>${days} day${days === 1 ? '' : 's'}</b> for <b>${S.emps.filter(p => p.active !== false).length}</b> people${kept ? ` · ${kept} who already clocked in kept their times` : ''}`);
+    toast(`${phFlag(16)} Holiday set: <b>${days} day${days === 1 ? '' : 's'}</b> for <b>${S.emps.filter(p => p.active !== false).length}</b> people${kept ? ` · ${kept} who already clocked in kept their times` : ''}${$('#hRem').checked ? ' · remembered for next year' : ''}`);
   };
 }
 

@@ -44,7 +44,7 @@ describe('what is known on a date', () => {
   });
   it('lists what is coming up, skipping dates already marked and observances', () => {
     const up = upcoming('2026-12-01', [], { n: 10, within: 40, skip: new Set(['2026-12-25']) });
-    expect(up.map(h => h.name)).toContain('Feast of the Immaculate Conception');
+    expect(up.map(h => h.name)).toContain('Immaculate Conception');
     expect(up.map(h => h.name)).not.toContain('Christmas Day');
     expect(up.some(h => h.kind === 'observance')).toBe(false);
   });

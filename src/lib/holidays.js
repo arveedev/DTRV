@@ -26,7 +26,7 @@ const FIXED = [
   [1, 1, "New Year's Day", 'regular'], [4, 9, 'Araw ng Kagitingan', 'regular'], [5, 1, 'Labor Day', 'regular'],
   [6, 12, 'Independence Day', 'regular'], [11, 30, 'Bonifacio Day', 'regular'], [12, 25, 'Christmas Day', 'regular'], [12, 30, 'Rizal Day', 'regular'],
   [8, 21, 'Ninoy Aquino Day', 'special'], [11, 1, "All Saints' Day", 'special'], [11, 2, "All Souls' Day", 'special'],
-  [12, 8, 'Feast of the Immaculate Conception', 'special'], [12, 24, 'Christmas Eve', 'special'], [12, 31, "New Year's Eve", 'special'],
+  [12, 8, 'Immaculate Conception', 'special'], [12, 24, 'Christmas Eve', 'special'], [12, 31, "New Year's Eve", 'special'],
   [2, 14, "Valentine's Day", 'observance'],
 ];
 

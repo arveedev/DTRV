@@ -100,6 +100,23 @@ try {
   await pK.click('#remarkBtn'); await wait(pK, 1500); await pK.click('#remarkBtn'); await wait(pK, 1500);
   const names = await pK.evaluate(() => window.__anims);
   ok(!names.includes('rise'), 'no entrance animation replays after the keypad flips (' + [...new Set(names)].join(',') + ')');
+  /* holidays: suggestions from the calendar, and remembering a custom one for every year */
+  const pH = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pH.click('#toAdmin'); await wait(pH, 500); await keys(pH, '123456', '#gkeys'); await wait(pH, 1600);
+  await pH.click('#holBtn'); await wait(pH, 600); await pH.click('#hAdd'); await wait(pH, 700);
+  ok(await pH.$$eval('.hup button', b => b.map(x => x.textContent).join('|')).then(t => /Immaculate/.test(t) && /Nov 1/.test(t)), 'the sheet lists the holidays coming up');
+  await pH.click('.hup button[data-d="2026-12-08"]'); await wait(pH, 400);
+  ok(await pH.inputValue('#hName') === 'IMMACULATE CONCEPTION', 'tapping a coming-up holiday fills the date and name');
+  await pH.fill('#hName', 'TOWN FIESTA'); await pH.check('#hRem'); await wait(pH, 300);
+  ok((await pH.textContent('#hRep')).includes('Every 2nd Tuesday of December') && (await pH.textContent('#hRep')).includes('Every December 8'), 'remember offers the same date or the same weekday');
+  await pH.click('#hRep button[data-i="0"]'); await pH.click('#hSave'); await wait(pH, 900);
+  await pH.click('#holBtn'); await wait(pH, 700);
+  ok((await pH.textContent('#sheet')).includes('TOWN FIESTA') && (await pH.textContent('#sheet')).includes('Every December 8'), 'it is saved under remembered every year');
+  await pH.reload(); await pH.waitForSelector('html[data-ready]'); await pH.waitForTimeout(1200);
+  await pH.click('#toAdmin'); await wait(pH, 500); await keys(pH, '123456', '#gkeys'); await wait(pH, 1600);
+  await pH.click('#holBtn'); await wait(pH, 700);
+  ok((await pH.textContent('#sheet')).includes('Every December 8'), 'after a reload the holiday is still remembered every year');
+  ok(pH.errs.length === 0, 'no console errors (holidays) ' + pH.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);
