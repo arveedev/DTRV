@@ -9,7 +9,7 @@ import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
 import { openGate } from './admin.js';
 import { cloudInfo, saveKeyFrom, setSyncKey } from './cloud.js';
-import { sync } from '../data/db.js';
+import { sync, cloudEnabled } from '../data/db.js';
 import { bioInit, bioAvailable, bioFor, bioClear, bioEnroll, bioVerify, bioSkip, bioSkipped } from './bio.js';
 import { afterChange } from './app.js';
 
@@ -63,6 +63,7 @@ function welcomeState() {
   const ci = cloudInfo();
   if (connecting) return 'connecting';
   if (ci.on && !ci.hasKey) return 'connect';
+  if (ci.on && !cloudEnabled) return 'nosync';                       // the add-on never arrived, so nothing is syncing and nothing will arrive
   if (ci.on && ['error', 'offline'].includes(sync.phase)) return 'trouble';
   if (ci.on && sync.phase !== 'in-sync') return 'syncing';
   return hasAdminPin() ? 'empty' : 'setup';
@@ -81,6 +82,7 @@ export function paintWelcome() {
     if (!opts.busy && sp) sp.remove();
   };
   if (st === 'connect') set(WICONS.link, 'Connect this phone', 'Paste the sync key or setup link from your admin. This brings your people and PIN to this phone.', 'Connect', { input: true });
+  else if (st === 'nosync') set(WICONS.sync, "Sync isn't running", "Your people and settings aren't on this phone yet, and it couldn't reach the sync service (the connection is slow or off). Check the connection, then try again.", 'Try again');
   else if (st === 'connecting') set(WICONS.link, 'Connecting…', 'Saving the key and starting sync.', '', { busy: true });
   else if (st === 'syncing') { set(WICONS.sync, 'Syncing your data…', `Getting your people and settings. This takes a few seconds. (${sync.phase || 'starting'})`, '', { busy: true, alt: syncSlow ? 'Taking long? Reload' : '' }); clearTimeout(slowT); if (!syncSlow) slowT = setTimeout(() => { syncSlow = true; wSig = ''; paintWelcome(); }, 12000); }
   else if (st === 'trouble') set(WICONS.sync, sync.phase === 'offline' ? "You're offline" : "Couldn't sync", sync.phase === 'offline' ? 'Connect to the internet and this continues by itself.' : (cloudInfo().error || sync.error || 'Check the sync key.'), '', { alt: 'Use a different key' });
@@ -267,6 +269,7 @@ export function initHome() {
   onSheetClose(() => { if (selRemark) { selRemark = null; paintToggles(); } });   // dismissing a remark sheet also un-arms the pill
   $('#toAdmin').onclick = () => openGate();
   $('#startSetup').onclick = () => {
+    if (wState === 'nosync') { location.reload(); return; }
     if (!$('#keyIn').hidden) {
       if (!saveKeyFrom($('#keyIn').value)) { shake($('#keyIn')); return; }
       document.activeElement?.blur();              // close the keyboard first: iOS keeps a shrunken screen after a reload otherwise

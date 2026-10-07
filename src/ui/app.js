@@ -16,12 +16,19 @@ export function afterChange() {
   refreshAdmin();
 }
 
+function lateSync() {
+  if (document.getElementById('updBar')) return;
+  const b = document.createElement('button'); b.id = 'updBar'; b.textContent = 'Sync is ready · tap to connect'; b.onclick = () => location.reload();
+  (document.getElementById('app') || document.body).append(b);
+}
+
 export async function boot() {
   takeKeyFromLink();
   /* Sync must never keep the app from opening: on a slow connection its add-on can take a minute to arrive.
      Wait a few seconds for it, then start on this phone's own data; sync joins on the next start. */
   let timer; const slow = new Promise((_, no) => { timer = setTimeout(() => no(new Error('slow')), 3500); }); slow.catch(() => {});
-  const first = init({ cloudUrl, fetchTokens }); first.catch(() => {});
+  const first = init({ cloudUrl, fetchTokens });
+  first.catch(e => { if (e.message === 'superseded') lateSync(); });          // the add-on arrived after we gave up: offer to connect now
   try { await Promise.race([first, cloudUrl ? slow : new Promise(() => {})]); }
   catch (e) {
     if (!cloudUrl) throw e;
