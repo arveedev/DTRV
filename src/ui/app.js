@@ -5,8 +5,7 @@ import { watchSync } from '../data/db.js';
 import { stagger, toast } from './core.js';
 import { initHome, paintToggles, autoToggle, tick } from './home.js';
 import { initMy, refreshMy, myOpen } from './my.js';
-import { initPrint } from './print.js';
-import { initAdmin, refreshAdmin } from './admin.js';
+import { mods } from './lazy.js';
 import { cloudUrl, fetchTokens, takeKeyFromLink } from './cloud.js';
 import { loadAddon, syncNote, syncNow, sync, cloudEnabled } from '../data/db.js';
 import { startAutoBackup } from '../data/backup.js';
@@ -16,7 +15,7 @@ import { store } from '../lib/util.js';
 export function afterChange() {
   paintToggles();
   if (isOn('p-my') && myOpen()) refreshMy();
-  refreshAdmin();
+  mods.admin?.refreshAdmin();
 }
 
 /** Never give up: keep asking the sync to run until it is up to date, and again whenever it falls behind.
@@ -70,7 +69,7 @@ export async function boot() {
   if (cloudUrl) withSync = await Promise.race([loadAddon().then(() => true, e => { syncNote.text = 'The sync part could not be downloaded (' + (e?.message || e) + ')'; return false; }), wait(3500).then(() => { syncNote.text = syncNote.text || 'The sync part is still downloading'; return false; })]);
   await init({ cloudUrl: withSync ? cloudUrl : '', fetchTokens });
   if (cloudUrl && !withSync) addonUntilItArrives();
-  initHome(); initMy(); initPrint(); initAdmin();
+  initHome(); initMy();
   onExternalChange(afterChange);                  // another tab / phone / sync changed something: repaint, but never reset the keypad or a pending PIN
   watchSync(() => paintToggles());
   if (cloudUrl && withSync) keepSyncing();

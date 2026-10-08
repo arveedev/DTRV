@@ -6,7 +6,7 @@ import { S, get, schedOf, emp, monthStats, ensureMonth, saveEmployee, saveSchedu
   hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
-import { openPreview, printWith, setPrintSel, itemsOf } from './print.js';
+import { openPreview, printWith, setPrintSel, itemsOf, initPrint } from './print.js';
 import { monthCsv, csvName } from '../lib/csv.js';
 import { saveFile } from '../lib/download.js';
 import { openHistory } from './history.js';
@@ -61,6 +61,7 @@ async function gateDone() {
 }
 
 export function initAdmin() {
+  initPrint();                                   // the preview screen belongs to the admin area too
   $('#gateBack').onclick = () => { go('p-record', 'l'); autoToggle(); };
   $('#aLock').onclick = () => { adminOk = false; go('p-record', 'l'); autoToggle(); };
   buildKeys($('#gkeys'), '', () => {}, d => {

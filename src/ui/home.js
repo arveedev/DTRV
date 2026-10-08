@@ -7,7 +7,8 @@ import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime,
 import { ICONS, stagger, fast, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
 import { openRemarkSheet } from './remarks.js';
-import { openGate } from './admin.js';
+import * as lazy from './lazy.js';
+const openGate = () => lazy.admin().then(m => m.openGate());
 import { cloudInfo, saveKeyFrom, setSyncKey } from './cloud.js';
 import { sync, cloudEnabled, syncNote } from '../data/db.js';
 import { bioInit, bioAvailable, bioFor, bioClear, bioEnroll, bioVerify, bioSkip, bioSkipped } from './bio.js';

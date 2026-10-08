@@ -58,7 +58,7 @@ input,select{font:inherit}
 
 .rail{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:16px}
 .tg{border:0;border-radius:18px;padding:10px 4px 9px;color:#fff;position:relative;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;opacity:.36;cursor:pointer;transition:opacity .25s,transform .25s cubic-bezier(.3,1.4,.5,1),filter .25s;font-family:Poppins}
-.tg b{font-size:13px;font-weight:800;line-height:1.05}
+.tg b{font-size:13px;font-weight:700;line-height:1.05}
 .tg .st{font-size:9.5px;font-weight:500;opacity:.92}
 .tg .st.tm::after{content:' ✎';font-size:9px;opacity:.75}
 .tg .st.tm{font:600 12px "Space Grotesk",sans-serif;background:rgba(0,0,0,.24);border-radius:7px;padding:1px 6px;opacity:1}
@@ -71,7 +71,7 @@ input,select{font:inherit}
 .tg.on{opacity:1;animation:pick .55s cubic-bezier(.3,1.5,.5,1),breath 2.6s ease-in-out .55s infinite;transform:translateY(-3px)}
 @keyframes pick{0%{transform:translateY(8px) scale(.9)}60%{transform:translateY(-6px) scale(1.06)}100%{transform:translateY(-3px) scale(1)}}
 @keyframes breath{0%,100%{box-shadow:0 6px 18px rgba(255,140,60,.2)}50%{box-shadow:0 10px 30px rgba(255,140,60,.5)}}
-.tg.on::after{content:"✓";position:absolute;top:-7px;right:-5px;width:20px;height:20px;border-radius:50%;background:#fff;color:#ff6a3d;font-size:11px;font-weight:800;display:grid;place-items:center;animation:popin .5s cubic-bezier(.3,1.8,.5,1) .15s backwards}
+.tg.on::after{content:"✓";position:absolute;top:-7px;right:-5px;width:20px;height:20px;border-radius:50%;background:#fff;color:#ff6a3d;font-size:11px;font-weight:700;display:grid;place-items:center;animation:popin .5s cubic-bezier(.3,1.8,.5,1) .15s backwards}
 @keyframes popin{from{transform:scale(0) rotate(-90deg)}}
 .tg.shake,.dots.shake{animation:shakeX .4s}
 @keyframes shakeX{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}

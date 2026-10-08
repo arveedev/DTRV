@@ -6,8 +6,7 @@ import { get, emp, schedOf, monthStats, monthDays, ensureMonth, yearRemarkCounts
 import { go, countUp, toast } from './core.js';
 import { SLOT_G, autoToggle } from './home.js';
 import { openRemarkSheet, openDaySheet } from './remarks.js';
-import { openPreview } from './print.js';
-import { renderAdmin, isAdmin } from './admin.js';
+import * as lazy from './lazy.js';
 import { openHistory } from './history.js';
 
 let myNo = null, myYM = null, mySel = null, myFrom = 'rec';
@@ -21,11 +20,11 @@ export async function openMy(no, from = 'rec') {
 export const refreshMy = () => { if (myNo) paintMy({ sel: true }); };
 
 export function initMy() {
-  $('#myBack').onclick = () => { if (myFrom === 'admin') { go('p-admin', 'l'); renderAdmin(); } else { go('p-record', 'l'); autoToggle(); } };
+  $('#myBack').onclick = () => { if (myFrom === 'admin') { go('p-admin', 'l'); lazy.mods.admin?.renderAdmin(); } else { go('p-record', 'l'); autoToggle(); } };
   $('#mPrev').onclick = () => monthTo(-1);
   $('#mNext').onclick = () => monthTo(1);
   $('#myRemark').onclick = () => openRemarkSheet(myNo, 'OTHER', mySel || now().date);
-  $('#myPrint').onclick = () => openPreview({ nos: [myNo], ym: myYM, page: 0 }, 'my');
+  $('#myPrint').onclick = () => lazy.printer().then(m => m.openPreview({ nos: [myNo], ym: myYM, span: 1, page: 0 }, 'my'));
 }
 async function monthTo(n) { myYM = shiftYM(myYM, n); await ensureMonth(myYM); paintMy({ dir: n < 0 ? 'L' : 'R' }); }
 
@@ -56,7 +55,7 @@ function paintMy(o = {}) {
   const e = get(myNo, mySel), wd = new Date(mySel + 'T00:00').getDay(), cls = dayClass(e, mySel, wd, sc, today), late = lateMinutes(e, sc);
   const badge = e?.remark ? `<em class="${e.remark.code === 'HOLIDAY' ? 'hol' : 'rm'}">${e.remark.code === 'OTHER' ? 'Remark' : esc(remarkText(e.remark))}</em>` : late ? `<em class="lt">Late ${late}m</em>` : cls === 'inc' ? '<em class="inc">Incomplete</em>' : '';
   const lateAt = lateSlots(e, sc);
-  $('#myDetail').innerHTML = `<div class="detail"><div class="dh"><span>${new Date(mySel + 'T00:00').toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}${e?.edited ? ' · ✎ edited' : ''}</span><span style="display:flex;gap:6px;align-items:center">${badge}${isAdmin() ? '<button id="myHist">History</button>' : ''}<button id="myEdit">Edit</button></span></div>
+  $('#myDetail').innerHTML = `<div class="detail"><div class="dh"><span>${new Date(mySel + 'T00:00').toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}${e?.edited ? ' · ✎ edited' : ''}</span><span style="display:flex;gap:6px;align-items:center">${badge}${lazy.mods.admin?.isAdmin() ? '<button id="myHist">History</button>' : ''}<button id="myEdit">Edit</button></span></div>
     <div class="tchips">${SLOTS.map((s, i) => `<div style="--i:${i}" class="${e?.[s] ? SLOT_G(s) : 'e'}" ${lateAt[s] ? 'data-late' : ''}>${e?.[s] ? tPrint(e[s]) : '—'}<small>${SLOT_LABEL[s]}</small></div>`).join('')}</div>
     ${e?.remark?.code === 'OTHER' ? `<div class="rmkline">✏️ ${esc(e.remark.text)}</div>` : ''}</div>`;
   $('#myEdit').onclick = () => openDaySheet(myNo, mySel);

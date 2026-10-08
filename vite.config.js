@@ -10,7 +10,13 @@ export default defineConfig({
   plugins: [VitePWA({
     registerType: 'prompt', injectRegister: false,   // updates are applied by src/main.js: at once if the app is in the background, otherwise on tap
     includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
-    workbox: { navigateFallbackDenylist: [/^\/api\//], globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'] },
+    workbox: {
+      navigateFallbackDenylist: [/^\/api\//],
+      /* the install downloads only what the first screens need: woff2 fonts (every PWA browser has them) and not the PDF libraries */
+      globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+      globIgnores: ['**/jspdf*', '**/html2canvas*', '**/purify*', '**/index.es-*'],
+      runtimeCaching: [{ urlPattern: /\/assets\/(jspdf|html2canvas|purify|index\.es)[^/]*\.js$/, handler: 'CacheFirst', options: { cacheName: 'on-demand', expiration: { maxEntries: 8 } } }],
+    },
     manifest: {
       name: 'DTRV', short_name: 'DTRV', description: 'Personal Daily Time Record (CS Form 48)',
       start_url: '/', display: 'standalone', orientation: 'portrait', background_color: '#0a0f1c', theme_color: '#0a0f1c',

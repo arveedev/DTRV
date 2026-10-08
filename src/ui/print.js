@@ -4,7 +4,7 @@ import { nickOf, lateSlots } from '../lib/rules.js';
 import { S, get, emp, schedOf, ensureMonth } from '../data/repo.js';
 import { dtrCopy } from '../print/dtr.js';
 import { go, stagger, toast } from './core.js';
-import { renderAdmin } from './admin.js';
+import { mods } from './lazy.js';
 
 let curPrintSt = null, printFrom = 'my', printReady = false;
 const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign, e => lateSlots(e, schedOf(emp(no))));
@@ -86,11 +86,13 @@ export async function printWith(btn, st) {
   finally { btn.disabled = false; }
 }
 
+let printReadyInit = false;
 export function initPrint() {
+  if (printReadyInit) return; printReadyInit = true;
   /* Ctrl+P / browser menu: rebuild from the current selection right before printing, so it is never stale. */
   window.addEventListener('beforeprint', () => { if (!printReady && curPrintSt?.nos.length) $('#printRoot').innerHTML = pages(curPrintSt); });
   window.addEventListener('afterprint', () => { printReady = false; });      // pages stay in the (hidden) root: some phones fire this before the sheet has rendered
-  $('#printBack').onclick = () => { $('#printRoot').innerHTML = ''; if (printFrom === 'admin') { go('p-admin', 'l'); renderAdmin(); } else go('p-my', 'l'); };
+  $('#printBack').onclick = () => { $('#printRoot').innerHTML = ''; if (printFrom === 'admin') { go('p-admin', 'l'); mods.admin?.renderAdmin(); } else go('p-my', 'l'); };
 }
 
 export async function openPreview(st, from) {
