@@ -10,6 +10,7 @@ import { openPreview, printWith, setPrintSel } from './print.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
+import { bioFor, bioClear } from './bio.js';
 import { holidaysOn, upcoming, repeatOptions, ruleId, describeRule, KIND_LABEL } from '../lib/holidays.js';
 
 let adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
@@ -319,6 +320,7 @@ function aSet(b) {
       <button class="btn" id="setupLink" style="width:100%">Copy setup link for other phones</button>
       <div style="font-size:12px;color:var(--rmuted);line-height:1.5;margin-top:8px">Send the link once. Opening it sets up sync on that phone, with nothing to type. Anyone with the link can sync, so share it only with your people.</div></div>` : ''}
     <div class="card" data-st><h4>This phone</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">Times come from each person's <b style="color:var(--rink)">own phone clock</b>. If it is wrong, use <b style="color:var(--rink)">Change time</b>.</div>
+      ${bioFor() ? '<button class="btn" id="bioOffBtn" style="width:100%;margin-top:10px">Turn off face / fingerprint on this phone</button>' : ''}
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
     <div class="ver" data-st>Version ${typeof __BUILD__ === 'undefined' ? 'dev' : __BUILD__}</div>
     <button class="bigbtn" id="sLock" data-st style="background:var(--rsurf);color:var(--rink);animation:none">Lock admin</button>`;
@@ -347,6 +349,7 @@ function aSet(b) {
     try { if (navigator.share) await navigator.share({ title: 'DTRV setup', url: link }); else { await navigator.clipboard.writeText(link); toast('Setup link copied'); } }
     catch (e) { if (e.name !== 'AbortError') toast('Could not copy. Long-press to copy: ' + esc(link), 'err'); }
   };
+  if (bioFor()) $('#bioOffBtn').onclick = () => { if (!confirm('Turn off face / fingerprint on this phone? The person will type their code again.')) return; bioClear(); afterChange(); toast('Face / fingerprint turned off on this phone'); renderAdmin(); };
   $('#forget').onclick = () => { forgetUser(); toast('This phone no longer remembers a user'); };
   $('#sLock').onclick = () => $('#aLock').click();
 }
