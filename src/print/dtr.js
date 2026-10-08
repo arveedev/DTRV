@@ -19,7 +19,7 @@ export function dtrCopy(p, ym, dayOf, sign, lateOf = () => ({})) {
     if (d > n) { rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; continue; }
     const ds = `${ym}-${pad(d)}`, wd = new Date(Y, M - 1, d).getDay(), e = dayOf(ds), has = e && SLOTS.some(s => e[s]);
     const rem = esc(remarkText(e?.remark));
-    const ut = rem ? `<td colspan="2" class="rmk">${rem}</td>` : '<td></td><td></td>';
+    const rtext = remarkText(e?.remark), ut = rem ? `<td colspan="2" class="rmk${rtext.length > 30 ? ' long xlong' : rtext.length > 17 ? ' long' : ''}">${rem}</td>` : '<td></td><td></td>';
     const lt = has ? lateOf(e) : {};
     if (has) rows += `<tr><td class="dn">${d}</td>${SLOTS.map(s => `<td${lt[s] ? ' class="late"' : ''}>${tPrint(e[s])}</td>`).join('')}${ut}</tr>`;
     else if (rem) rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td>${ut}</tr>`;

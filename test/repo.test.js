@@ -151,3 +151,24 @@ describe('settings, PIN, backup', () => {
     await expect(repo.importAll('{"app":"other"}')).rejects.toMatchObject({ code: 'BAD_BACKUP' });
   });
 });
+
+describe('late not counted', () => {
+  it('marks existing days, marks days made later, and can be undone', async () => {
+    await repo.ensureMonth('2026-10');
+    await repo.recordTime('024', 'am_in', '08:40', '2026-10-09');
+    await repo.excuseDays(['2026-10-09'], 'TYPHOON');
+    expect(repo.get('024', '2026-10-09').excused).toBe(true);
+    await repo.recordTime('205', 'am_in', '08:50', '2026-10-09');                 // clocks in after the mark was made
+    expect(repo.get('205', '2026-10-09').excused).toBe(true);
+    expect((await db.days.get('day:205:2026-10-09')).excused).toBe(true);        // and it is saved
+    expect(repo.S.excused).toEqual([{ date: '2026-10-09', name: 'TYPHOON' }]);
+    await repo.unexcuseDay('2026-10-09');
+    expect(repo.get('024', '2026-10-09').excused).toBe(false); expect(repo.S.excused).toEqual([]);
+  });
+  it('one person one day, from the day editor', async () => {
+    await repo.recordTime('024', 'am_in', '08:40', '2026-10-07');
+    await repo.saveDay('024', '2026-10-07', { am_in: '08:40', excused: true });
+    expect(repo.get('024', '2026-10-07').excused).toBe(true);
+  });
+});
+

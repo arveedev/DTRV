@@ -22,17 +22,18 @@ export const remarkText = r => !r ? '' : r.code === 'OTHER' ? r.text : (r.code =
 export const lateLimit = sc => sc.mode === 'flexi' ? sc.flexEnd : sc.amIn;
 
 /** Minutes late for one day (0 = on time). Counted from the limit; 1 minute over is late. */
-export function lateMinutes(day, sc) {
+/** Minutes late on a day, ignoring any excuse (what the clock says). */
+export function rawLateMinutes(day, sc) {
   if (!day) return 0;
   let late = 0;
   if (day.am_in) { const o = m(day.am_in) - m(lateLimit(sc)); if (o > 0) late += o; }
   if (sc.pmLate && day.pm_in) { const o = m(day.pm_in) - m(LUNCH_END); if (o > 0) late += o; }
   return late;
 }
-
-/** Flexi only: when the person may go home after clocking in. */
+/** Minutes late that count. A day marked "late not counted" (a typhoon, a road closure) counts none. */
+export const lateMinutes = (day, sc) => (day?.excused ? 0 : rawLateMinutes(day, sc));
 /** Which arrivals were late: AM IN after the limit; PM IN after 1:00 PM only if the late-return setting is on. */
-export function lateSlots(day, sc) {
+export function lateSlotsRaw(day, sc) {
   if (!day) return { am_in: false, pm_in: false };
   return { am_in: !!day.am_in && m(day.am_in) > m(lateLimit(sc)), pm_in: !!(sc.pmLate && day.pm_in && m(day.pm_in) > m(LUNCH_END)) };
 }
@@ -139,6 +140,8 @@ export function monthSummary(days) {
   }
   return { total, counted, avgIn: arrN ? Math.round(arr / arrN) : null };
 }
+
+export const lateSlots = (day, sc) => (day?.excused ? { am_in: false, pm_in: false } : lateSlotsRaw(day, sc));
 
 /** Which of the four times are missing from a day. */
 export const missingSlots = e => SLOTS.filter(s => !e?.[s]);

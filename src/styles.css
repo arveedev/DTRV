@@ -412,11 +412,15 @@ input,select{font:inherit}
 .dtr .meta .blank{display:inline-block;min-width:55%;border-bottom:1px solid #000;height:3mm;vertical-align:bottom}
 .dtr .grid{margin-top:2mm}
 .dtr .grid th,.dtr .grid td{border:1px solid #000;text-align:center;padding:0;height:5mm;font-size:8.8pt;font-weight:700;overflow:hidden;white-space:nowrap}
+.dtr .grid td:not(.dn):not(.across){font-family:Montserrat,Arial,Helvetica,sans-serif}
+.dtr .grid td:not(.dn):not(.across):not(.rmk){font-size:8pt}
 .dtr .grid th{font-weight:700;font-size:6.5pt;line-height:1.1}
 .dtr .grid th.big{font-size:8pt}
 .dtr .grid td.dn{font-weight:700;text-align:left;padding-left:1mm}
 .dtr .grid td.late{color:#d10000}
-.dtr .grid td.rmk{font-size:6.6pt;font-weight:700;white-space:normal;line-height:1}
+.dtr .grid td.rmk{font-size:7.2pt;font-weight:700;white-space:nowrap;line-height:1}
+.dtr .grid td.rmk.long{font-size:6pt;white-space:normal;line-height:1.02;padding:0 .6mm}
+.dtr .grid td.rmk.long.xlong{font-size:5.2pt}
 .dtr .grid td.across{font-size:6pt;font-weight:400;letter-spacing:.5px}
 .dtr .grid tr.tot td{border:0}
 .dtr .grid tr.tot td.b{border:1px solid #000}
@@ -580,3 +584,9 @@ html[data-theme="light"] #keyIn{background:#fff}
 .app.theming,.app.theming *{transition:background-color .45s ease,color .45s ease,border-color .45s ease,fill .45s ease,stroke .45s ease!important}
 
 .sumline{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 4px;font:500 12px Poppins,sans-serif;color:var(--rmuted)}.sumline b{color:var(--rink);font-weight:700}
+
+.excchip{display:inline-block;margin:8px 0 0 6px;padding:5px 14px;border-radius:99px;background:var(--rhol-bg);color:var(--rhol);font:600 12.5px Poppins,sans-serif}
+.excchip[hidden]{display:none}#p-record.setup .excchip{display:none}
+.res .ok.exc{background:var(--rhol-bg);color:var(--rhol)}
+.tchips div[data-exc]{background:#2563eb!important;color:#fff}
+.tchips div[data-exc] small::after{content:' · excused'}

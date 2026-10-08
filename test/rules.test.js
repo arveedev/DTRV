@@ -187,3 +187,15 @@ describe('hours worked', () => {
     expect(s.total).toBe(480 + 480); expect(s.counted).toBe(2); expect(s.avgIn).toBe(Math.round((480 + 510 + 540) / 3));
   });
 });
+
+describe('excused days', () => {
+  it('an excused day has no late minutes, but the clock still says what it says', async () => {
+    const { lateMinutes, rawLateMinutes, lateSlots, lateSlotsRaw } = await import('../src/lib/rules.js');
+    const sc = { mode: 'fixed', amIn: '08:00', pmLate: false };
+    expect(lateMinutes({ am_in: '08:30' }, sc)).toBe(30);
+    expect(lateMinutes({ am_in: '08:30', excused: true }, sc)).toBe(0);
+    expect(rawLateMinutes({ am_in: '08:30', excused: true }, sc)).toBe(30);
+    expect(lateSlots({ am_in: '08:30', excused: true }, sc).am_in).toBe(false);
+    expect(lateSlotsRaw({ am_in: '08:30', excused: true }, sc).am_in).toBe(true);
+  });
+});

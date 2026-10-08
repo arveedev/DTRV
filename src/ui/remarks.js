@@ -75,6 +75,7 @@ export async function openDaySheet(no, ds) {
     <div class="row2" data-st style="margin-top:10px">${SLOTS.slice(0, 2).map(s => pfTime('dt_' + s, SLOT_LABEL[s], e[s])).join('')}</div>
     <div class="row2" data-st>${SLOTS.slice(2).map(s => pfTime('dt_' + s, SLOT_LABEL[s], e[s])).join('')}</div>
     <div class="chooser" data-st style="--n:5;--p:${opts.findIndex(o => o[0] === rc)}"><i class="th"></i>${opts.map(([c, l]) => `<button data-c="${c}" class="${c === rc ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <label class="check" data-st><input type="checkbox" id="dEx" ${e.excused ? 'checked' : ''}> Don't count a late arrival on this day</label>
     <div class="field" id="dTxtF" data-st><label>Reason / where (max 40)</label><input id="dTxt" maxlength="40" value="${attr(e.remark?.text || '')}"></div>
     <div class="btns" data-st><button class="btn danger" id="dDel">Delete day</button><button class="btn primary" id="dOk">Save</button></div>`);
   SLOTS.forEach(s => bindTime('dt_' + s, { title: `${SLOT_LABEL[s]} · ${fmtDate(ds)}`, presets: SLOT_PRESETS[s], clearable: true }));
@@ -87,7 +88,7 @@ export async function openDaySheet(no, ds) {
     const vals = {}; SLOTS.forEach(s => { vals[s] = $('#dt_' + s).dataset.v || null; });
     if (rc === 'OTHER' && !$('#dTxt').value.trim()) { shake($('#dTxt')); return; }
     try {
-      await fast(saveDay(no, ds, { ...vals, remark: rc ? { code: rc, text: rc === 'OTHER' ? $('#dTxt').value.trim().toUpperCase() : '' } : null }));
+      await fast(saveDay(no, ds, { ...vals, remark: rc ? { code: rc, text: rc === 'OTHER' ? $('#dTxt').value.trim().toUpperCase() : '' } : null, excused: $('#dEx').checked }));
     } catch (err) { toast(err.html || esc(err.message), 'err'); return; }
     closeSheet(); autoToggle(); afterChange(); toast('Saved');
   };

@@ -2,7 +2,7 @@
 import { $, $$, hm, m, t12, fmtDate, fmtRange, spanDays, addDays, shiftYM, MONTHS, GRAD, phFlag, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
-import { S, get, schedOf, emp, monthStats, monthDays, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
+import { S, get, schedOf, emp, monthStats, monthDays, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday, excuseDays, unexcuseDay,
   hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
@@ -136,7 +136,9 @@ function openHolidays() {
   openSheet(`<h3 data-st>${phFlag(22)} Holidays</h3>
     <div class="hlist" data-st style="margin-top:10px">${list.length ? list.map(h => `<div class="hrow"><div><b>${fmtDate(h.date)}</b><small>${esc(h.name || 'Holiday')}</small></div><button class="x" data-d="${h.date}" aria-label="Remove">✕</button></div>`).join('') : '<div class="emptyl">No holidays marked yet</div>'}</div>
     ${rules.length ? `<div class="hsub" data-st>Remembered every year</div><div class="hlist" data-st>${rules.map(r => `<div class="hrow"><div><b>${esc(r.name)}</b><small>${esc(describeRule(r))}</small></div><button class="x" data-r="${attr(r.id)}" aria-label="Forget">✕</button></div>`).join('')}</div>` : ''}
+    <button class="wlink" id="hExc" data-st style="display:block;margin:10px auto 0">Late not counted for a day…${S.excused.length ? ` (${S.excused.length})` : ''}</button>
     <div class="btns" data-st><button class="btn" id="hClose">Close</button><button class="btn primary" id="hAdd">+ Add holiday</button></div>`);
+  $('#hExc').onclick = openExcuse;
   $$('.hrow .x[data-d]').forEach(x => {
     x.onclick = async () => { await ensureMonth(x.dataset.d.slice(0, 7)); await removeHoliday(x.dataset.d); afterChange(); openHolidays(); toast(`Holiday on <b>${fmtDate(x.dataset.d)}</b> removed`); };
   });
@@ -144,6 +146,25 @@ function openHolidays() {
     x.onclick = async () => { await saveHolidayRules(S.holidayRules.filter(r => r.id !== x.dataset.r)); openHolidays(); toast('Forgotten. It will not be suggested again'); };
   });
   $('#hClose').onclick = closeSheet; $('#hAdd').onclick = () => openHolidayAdd();
+}
+/* ---------- days when lates do not count (a typhoon, a road closure) ---------- */
+function openExcuse() {
+  const today = now().date, list = [...S.excused].sort((a, b) => b.date.localeCompare(a.date));
+  openSheet(`<h3 data-st>Late not counted</h3><div class="sub" data-st>For days nobody could be on time. Arrivals on these days are not counted as late, not shown in red, and not on the printed form.</div>
+    <div class="hlist" data-st style="margin-top:10px">${list.length ? list.map(x => `<div class="hrow"><div><b>${fmtDate(x.date)}</b><small>${esc(x.name || 'Late not counted')}</small></div><button class="x" data-d="${x.date}" aria-label="Remove">✕</button></div>`).join('') : '<div class="emptyl">None marked</div>'}</div>
+    <div data-st style="margin-top:6px"><div class="field"><label>Date(s)</label><button type="button" class="pf" id="xRange" data-from="${today}" data-to="${today}">${fmtDate(today)}</button></div></div>
+    <div class="field" data-st><label>Reason (optional)</label><input id="xName" maxlength="24" placeholder="e.g. TYPHOON" autocomplete="off"></div>
+    <div class="btns" data-st><button class="btn" id="xBack">Back</button><button class="btn primary" id="xSave">Mark these days</button></div>`);
+  const r = $('#xRange');
+  r.onclick = () => pickDate({ title: 'Days', mode: 'range', from: r.dataset.from, to: r.dataset.to }, ([a, b]) => { r.dataset.from = a; r.dataset.to = b; r.textContent = a === b ? fmtDate(a) : `${fmtRange(a, b)} · ${spanDays(a, b)} days`; });
+  $$('.hrow .x').forEach(x => { x.onclick = async () => { await ensureMonth(x.dataset.d.slice(0, 7)); await unexcuseDay(x.dataset.d); afterChange(); openExcuse(); toast(`<b>${fmtDate(x.dataset.d)}</b> counts lates again`); }; });
+  $('#xBack').onclick = openHolidays;
+  $('#xSave').onclick = async () => {
+    const a = r.dataset.from, b = r.dataset.to, dates = [];
+    for (let d = a, n = 0; d <= b && n < 62; d = addDays(d, 1), n++) dates.push(d);
+    try { for (const ym of new Set(dates.map(x => x.slice(0, 7)))) await ensureMonth(ym); await excuseDays(dates, $('#xName').value.trim().toUpperCase()); } catch (e) { fail(e); return; }
+    closeSheet(); autoToggle(); afterChange(); toast(`Late not counted on <b>${dates.length} day${dates.length === 1 ? '' : 's'}</b>`);
+  };
 }
 const titleCase = s => s.replace(/\S+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
 function openHolidayAdd(prefill) {

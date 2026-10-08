@@ -15,7 +15,7 @@ export class RepoError extends Error {
 }
 
 /** The in-memory copy. Day key: "<code>|<YYYY-MM-DD>". */
-export const S = { ready: false, emps: [], sched: { ...DEFAULT_SCHEDULE }, sign: { ...DEFAULT_SIGN }, holidays: [], holidayRules: [], adminPin: null, e: {} };
+export const S = { ready: false, emps: [], sched: { ...DEFAULT_SCHEDULE }, sign: { ...DEFAULT_SIGN }, holidays: [], holidayRules: [], excused: [], adminPin: null, e: {} };
 
 /* ---------- accessors (sync) ---------- */
 export const key = (no, d) => no + '|' + d;
@@ -23,8 +23,8 @@ export const get = (no, d) => S.e[key(no, d)];
 export const emp = no => S.emps.find(x => x.no === no);
 export const schedOf = p => p.sched || S.sched;
 export const activePeople = () => S.emps.filter(p => p.active !== false);
-const blankDay = () => ({ am_in: null, am_out: null, pm_in: null, pm_out: null, remark: null, edited: false });
-const ensureDay = (no, d) => (S.e[key(no, d)] ||= blankDay());
+const blankDay = d => ({ am_in: null, am_out: null, pm_in: null, pm_out: null, remark: null, edited: false, excused: S.excused.some(x => x.date === d) });
+const ensureDay = (no, d) => (S.e[key(no, d)] ||= blankDay(d));
 const dropIfEmpty = (no, d) => { const x = get(no, d); if (x && !SLOTS.some(s => x[s]) && !x.remark) delete S.e[key(no, d)]; };
 
 export function monthDays(no, ym) {
@@ -38,8 +38,8 @@ export const monthStats = (no, ym) => statsOf(monthDays(no, ym), schedOf(emp(no)
 const toEmp = r => ({ no: r.code, name: r.name, nick: r.nick || '', pos: r.pos || '', sched: r.sched || null, active: r.active !== false });
 const fromEmp = p => ({ id: 'emp:' + p.no, code: p.no, name: p.name, nick: p.nick || '', pos: p.pos || '', sched: p.sched || null, active: p.active !== false });
 const dayId = (no, d) => `day:${no}:${d}`;
-const toDay = r => ({ am_in: r.am_in ?? null, am_out: r.am_out ?? null, pm_in: r.pm_in ?? null, pm_out: r.pm_out ?? null, remark: r.remark ?? null, edited: !!r.edited });
-const fromDay = (no, d, x) => ({ id: dayId(no, d), employeeId: no, date: d, am_in: x.am_in, am_out: x.am_out, pm_in: x.pm_in, pm_out: x.pm_out, remark: x.remark, edited: x.edited });
+const toDay = r => ({ am_in: r.am_in ?? null, am_out: r.am_out ?? null, pm_in: r.pm_in ?? null, pm_out: r.pm_out ?? null, remark: r.remark ?? null, edited: !!r.edited, excused: !!r.excused });
+const fromDay = (no, d, x) => ({ id: dayId(no, d), employeeId: no, date: d, am_in: x.am_in, am_out: x.am_out, pm_in: x.pm_in, pm_out: x.pm_out, remark: x.remark, edited: x.edited, excused: !!x.excused });
 const uid = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
 const strip = r => { if (!r) return {}; const { id, ...rest } = r; return rest; };
 
@@ -75,7 +75,7 @@ async function readStatic() {
   return { emps, settings, hols };
 }
 function applyStatic({ emps, settings, hols }) {
-  const before = sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.adminPin]);
+  const before = sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.excused, S.adminPin]);
   S.emps = emps.map(toEmp).sort((a, b) => a.no.localeCompare(b.no));
   // an edit that is still waiting to be written is newer than what the database holds: keep it
   if (!dirty.has('schedule')) S.sched = { ...DEFAULT_SCHEDULE, ...strip(settings.find(r => r.id === 'schedule')) };
@@ -83,7 +83,8 @@ function applyStatic({ emps, settings, hols }) {
   const a = settings.find(r => r.id === 'admin'); S.adminPin = a ? { salt: a.salt, hash: a.hash } : null;
   S.holidays = hols.map(h => ({ date: h.date, name: h.name || '' })).sort((x, y) => x.date.localeCompare(y.date));
   S.holidayRules = settings.find(x => x.id === 'holidayrules')?.list || [];
-  return before !== sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.adminPin]);
+  S.excused = settings.find(x => x.id === 'lateexcuse')?.list || [];
+  return before !== sig([S.emps, S.sched, S.sign, S.holidays, S.holidayRules, S.excused, S.adminPin]);
 }
 
 const months = new Map();   // ym -> { ready, sub }
@@ -135,7 +136,7 @@ export async function init(opts) {
 function staleCleanup() {
   staticSub?.unsubscribe(); staticSub = null;
   months.forEach(v => v.sub.unsubscribe()); months.clear();
-  S.ready = false; S.emps = []; S.holidays = []; S.holidayRules = []; S.e = {}; S.adminPin = null;
+  S.ready = false; S.emps = []; S.holidays = []; S.holidayRules = []; S.excused = []; S.e = {}; S.adminPin = null;
   S.sched = { ...DEFAULT_SCHEDULE }; S.sign = { ...DEFAULT_SIGN };
   pending = 0; skipped = false;
 }
@@ -189,13 +190,13 @@ export async function setTime(no, date, slot, time) {
 }
 
 /** Save a whole day from the editor: four times and an optional remark. */
-export async function saveDay(no, date, { am_in = null, am_out = null, pm_in = null, pm_out = null, remark = null }) {
+export async function saveDay(no, date, { am_in = null, am_out = null, pm_in = null, pm_out = null, remark = null, excused }) {
   const vals = { am_in, am_out, pm_in, pm_out };
   const err = sequenceError(vals); if (err) throw new RepoError('ORDER', err);
   if (remark && AWAY.includes(remark.code) && SLOTS.some(s => vals[s])) throw new RepoError('HAS_TIMES', `With times recorded this day can't be <b>${remark.code}</b>`);
   const before = snap(no, date), d = ensureDay(no, date);
   SLOTS.forEach(k => { if (vals[k] !== d[k]) { d[k] = vals[k]; d.edited = true; } });
-  d.remark = remark; dropIfEmpty(no, date);
+  d.remark = remark; if (excused !== undefined) d.excused = !!excused; dropIfEmpty(no, date);
   await saveDayRow(no, date, auditRow('day.save', no, date, before, snap(no, date)));
 }
 
@@ -259,6 +260,21 @@ export async function applyHoliday(date, name = '') {
   await write(async () => { await db.days.bulkPut(rows); await db.holidays.put({ date, name }); await db.audit.add(auditRow('holiday.add', null, date, null, { name, hit, kept })); });
   return { hit, kept };
 }
+/* ---------- "late not counted" days ---------- */
+/** Mark whole days so lates on them do not count for anyone (a typhoon, a road closure). Existing days are updated; days made later get the mark. */
+export async function excuseDays(dates, name = '') {
+  const rows = [];
+  S.excused = S.excused.filter(x => !dates.includes(x.date)).concat(dates.map(date => ({ date, name }))).sort((a, b) => a.date.localeCompare(b.date));
+  for (const p of S.emps) for (const d of dates) { const e = get(p.no, d); if (e && !e.excused) { e.excused = true; rows.push(fromDay(p.no, d, e)); } }
+  await write(async () => { await db.settings.put({ id: 'lateexcuse', list: S.excused }); await db.days.bulkPut(rows); await db.audit.add(auditRow('excuse.add', null, dates[0], null, { name, days: dates.length })); });
+  return rows.length;
+}
+export async function unexcuseDay(date) {
+  S.excused = S.excused.filter(x => x.date !== date); const rows = [];
+  for (const p of S.emps) { const e = get(p.no, date); if (e?.excused) { e.excused = false; rows.push(fromDay(p.no, date, e)); } }
+  await write(async () => { await db.settings.put({ id: 'lateexcuse', list: S.excused }); await db.days.bulkPut(rows); await db.audit.add(auditRow('excuse.remove', null, date)); });
+}
+
 /** Holidays the admin chose to remember every year (a town fiesta, a family day…). */
 export async function saveHolidayRules(list) {
   S.holidayRules = list;

@@ -2,7 +2,7 @@
    and the sheet that follows a recording. */
 import { $, $$, isOn, addDays, shiftYM, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
-import { SLOT_LABEL, REMARK_LABEL, isIncomplete, missingText, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
+import { SLOT_LABEL, REMARK_LABEL, isIncomplete, missingText, rawLateMinutes, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
 import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
 import { ICONS, stagger, fast, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
@@ -105,6 +105,7 @@ export function paintToggles() {
   if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
   paintKeyD();
+  { const x = S.excused.find(v => v.date === now().date), chip = $('#excChip'), t = x ? `Late not counted today${x.name ? ' · ' + x.name : ''}` : ''; if (chip.textContent !== t) { chip.textContent = t; chip.hidden = !x; } }
   { /* a recent day with a forgotten time, for the phone's remembered person */
     const chip = $('#fixChip'), today = now().date; let hit = null;
     if (lastCode && emp(lastCode)) for (let i = 1; i <= 7 && !hit; i++) { const ds = addDays(today, -i), e = get(lastCode, ds); if (isIncomplete(e, ds, today)) hit = { ds, e }; }
@@ -151,13 +152,14 @@ export function enjoy(p, code, note = '') {
 /* ---------- after recording ---------- */
 export function showResult(no, date, slot, opt = {}) {
   const p = emp(no), e = get(no, date), sc = schedOf(p), ym = date.slice(0, 7), u = SLOT_UI[slot];
-  const late = slot === 'am_in' ? lateMinutes({ am_in: e.am_in }, { ...sc, pmLate: false }) : (slot === 'pm_in' && sc.pmLate) ? lateMinutes({ pm_in: e.pm_in }, sc) : 0;
+  const late = slot === 'am_in' ? lateMinutes({ am_in: e.am_in, excused: e.excused }, { ...sc, pmLate: false }) : (slot === 'pm_in' && sc.pmLate) ? lateMinutes({ pm_in: e.pm_in, excused: e.excused }, sc) : 0;
   const st = monthStats(no, ym), exp = slot === 'am_in' ? expectedOut(e, sc) : null;
   const chars = [...t12(e[slot])].map((c, i) => `<span class="ch" style="--i:${i}">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
   openSheet(`
     <div class="hd" data-st><div class="ic ${u.g}" id="rsIc">${ICONS[u.ic]}</div><b>${u.greet}, ${esc(nickOf(p))}!</b></div>
     <div class="bigt">${chars}</div>
     ${late ? `<div class="late" data-st><div class="r"><span>⚠ Late by <b id="lateN">0</b> min</span><span><b>${ordinal(st.lates)}</b> late this ${MONTHS[+ym.slice(5) - 1]}</span></div><div class="bar"><i style="--w:${Math.min(100, Math.max(8, late / 60 * 100))}%"></i></div></div>`
+      : e.excused && slot === 'am_in' && rawLateMinutes({ am_in: e.am_in }, { ...sc, pmLate: false }) ? `<div class="ok exc" data-st><span>Arrived after the start time, but late is not counted today</span></div>`
       : slot === 'am_in' ? `<div class="ok" data-st><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16 9.5"/></svg><span>On time · ${st.lates} late${st.lates === 1 ? '' : 's'} this month</span></div>` : ''}
     ${exp ? `<div class="note" data-st>Your time out today: <b>${t12(exp)}</b> (flexi)</div>` : ''}
     ${bioAvailable() && opt.fresh && !(bioFor()?.code === no) && !bioSkipped(no) ? `<div class="bioask" data-st>Use your face or fingerprint next time, instead of typing your code?<div class="row"><button id="rsBioNo">Not now</button><button class="p" id="rsBioYes">Turn on</button></div></div>` : ''}

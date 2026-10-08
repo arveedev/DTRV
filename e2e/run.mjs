@@ -200,6 +200,18 @@ try {
   await pS.goto(URL + '?go=my'); await pS.waitForSelector('html[data-ready]'); await pS.waitForTimeout(900);
   const pK2 = pS;
   ok(await pK2.$eval('#keys', k => k.classList.contains('pin')), 'the My DTR shortcut opens the app ready for the PIN');
+  /* a day when late is not counted: nobody is marked late, it is not red, and the home screen says so */
+  const pX = await fresh('2026-10-07T08:50:00', '?demo=1');
+  await pX.click('#toAdmin'); await wait(pX, 500); await keys(pX, '123456', '#gkeys'); await wait(pX, 1600);
+  await pX.click('#holBtn'); await wait(pX, 600); await pX.click('#hExc'); await wait(pX, 700);
+  await pX.fill('#xName', 'typhoon'); await pX.click('#xSave'); await wait(pX, 900);
+  await pX.click('#aLock'); await wait(pX, 900);
+  ok((await pX.textContent('#excChip')).includes('TYPHOON'), 'the home screen says late is not counted today');
+  await keys(pX, '024'); await wait(pX, 1300);
+  ok((await pX.textContent('#sheet')).includes('late is not counted today') && !(await pX.textContent('#sheet')).includes('Late by'), 'a late arrival that day is not reported as late');
+  await pX.click('#rsDone'); await wait(pX, 500);
+  ok((await pX.textContent('#lateChip')).includes('2 lates in October'), 'and the month stays at 2 lates (the excused arrival is not counted)');
+  ok(pX.errs.length === 0, 'no console errors (excused day) ' + pX.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

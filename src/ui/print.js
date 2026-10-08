@@ -34,6 +34,7 @@ export async function doPrint(st) {
   f.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;opacity:0;pointer-events:none';
   document.body.append(f);
   const d = f.contentDocument; d.open(); d.write(frameDoc(html)); d.close();
+  try { await f.contentDocument.fonts.ready; await f.contentDocument.fonts.load('700 8pt Montserrat'); } catch { /* print anyway */ }
   await new Promise(r => setTimeout(r, 250));                       // let the frame lay out before the print dialog asks for it
   try { f.contentWindow.focus(); f.contentWindow.print(); }
   catch { $('#printRoot').innerHTML = html; printReady = true; window.print(); }   // last resort: print the page itself
@@ -49,6 +50,7 @@ let ready = null;      // { sig, file } the PDF made by the first tap, shared by
 async function makePdf(st, progress) {
   const [{ jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
   await ensureAll(st);
+  try { await document.fonts.load('700 8pt Montserrat'); } catch { /* fall back to Arial */ }
   const items = itemsOf(st);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff'; document.body.append(host);
