@@ -176,3 +176,14 @@ describe('incomplete days', () => {
     expect(missingText({ ...full, am_out: null, pm_out: null })).toBe('no AM OUT, PM OUT');
   });
 });
+
+describe('hours worked', () => {
+  it('adds the two stretches, or the span less lunch when lunch was not tapped', async () => {
+    const { workedMinutes, monthSummary } = await import('../src/lib/rules.js');
+    expect(workedMinutes({ am_in: '08:00', am_out: '12:00', pm_in: '13:00', pm_out: '17:00' })).toBe(480);
+    expect(workedMinutes({ am_in: '08:00', pm_out: '17:00' })).toBe(480);
+    expect(workedMinutes({ am_in: '08:00', am_out: '12:00' })).toBeNull();
+    const s = monthSummary([{ am_in: '08:00', pm_out: '17:00' }, { am_in: '08:30', am_out: '12:00', pm_in: '13:00', pm_out: '17:30' }, { am_in: '09:00' }]);
+    expect(s.total).toBe(480 + 480); expect(s.counted).toBe(2); expect(s.avgIn).toBe(Math.round((480 + 510 + 540) / 3));
+  });
+});

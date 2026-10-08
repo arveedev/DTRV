@@ -291,7 +291,11 @@ export function initHome() {
     openGate();
   };
   bioInit().then(paintToggles);
+
   $('#wAlt').onclick = () => { if (wState === 'syncing') { location.reload(); return; } setSyncKey(null); location.reload(); };
   tick(); autoToggle(); paintDots();
   setInterval(tick, 1000);
+  /* long-press shortcuts on the app icon (Android): /?go=my arms My DTR, /?go=remark arms the Remark button */
+  const go = new URLSearchParams(location.search).get('go');
+  if (go === 'my' || go === 'remark') { if (go === 'my') pendingMy = true; else selRemark = 'ASK'; paintToggles(); history.replaceState(null, '', location.pathname); }
 }

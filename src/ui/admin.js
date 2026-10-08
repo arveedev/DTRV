@@ -10,6 +10,7 @@ import { openPreview, printWith, setPrintSel, itemsOf, initPrint } from './print
 import { monthCsv, csvName } from '../lib/csv.js';
 import { saveFile } from '../lib/download.js';
 import { openHistory } from './history.js';
+import { pref as themePref, setTheme } from './theme.js';
 import { listErrors, clearErrors, pruneErrors, asText, markErrorsSeen, unseenCount } from '../lib/errlog.js';
 import { openInvite } from './invite.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
@@ -364,6 +365,7 @@ function aSet(b) {
       <button class="btn" id="setupLink" style="width:100%">Copy setup link for other phones</button>
       <div style="font-size:12px;color:var(--rmuted);line-height:1.5;margin-top:8px">Send the link once. Opening it sets up sync on that phone, with nothing to type. Anyone with the link can sync, so share it only with your people.</div></div>` : ''}
     <div class="card" data-st><h4>This phone</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">Times come from each person's <b style="color:var(--rink)">own phone clock</b>. If it is wrong, use <b style="color:var(--rink)">Change time</b>.</div>
+      <div class="chooser" id="themeCh" style="--n:3;--p:${['auto', 'light', 'dark'].indexOf(themePref())};margin:12px 0 0"><i class="th"></i><button data-t="auto" class="${themePref() === 'auto' ? 'on' : ''}">Auto</button><button data-t="light" class="${themePref() === 'light' ? 'on' : ''}">Light</button><button data-t="dark" class="${themePref() === 'dark' ? 'on' : ''}">Dark</button></div>
       ${bioFor() ? '<button class="btn" id="bioOffBtn" style="width:100%;margin-top:10px">Turn off face / fingerprint on this phone</button>' : ''}
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
     <div class="ver" data-st>Version ${typeof __BUILD__ === 'undefined' ? 'dev' : __BUILD__}</div>
@@ -409,6 +411,7 @@ function aSet(b) {
     try { if (navigator.share) await navigator.share({ title: 'DTRV setup', url: link }); else { await navigator.clipboard.writeText(link); toast('Setup link copied'); } }
     catch (e) { if (e.name !== 'AbortError') toast('Could not copy. Long-press to copy: ' + esc(link), 'err'); }
   };
+  $$('#themeCh button').forEach(b => { b.onclick = () => { setTheme(b.dataset.t); $('#themeCh').style.setProperty('--p', ['auto', 'light', 'dark'].indexOf(b.dataset.t)); $$('#themeCh button').forEach(x => x.classList.toggle('on', x === b)); }; });
   if (bioFor()) $('#bioOffBtn').onclick = () => { if (!confirm('Turn off face / fingerprint on this phone? The person will type their code again.')) return; bioClear(); afterChange(); toast('Face / fingerprint turned off on this phone'); renderAdmin(); };
   $('#forget').onclick = () => { forgetUser(); toast('This phone no longer remembers a user'); };
   unseenCount().then(n => { const el = $('#errN'); if (el && n) el.innerHTML = `<i class="dotbadge">${n}</i>`; });

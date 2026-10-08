@@ -6,6 +6,7 @@ import { stagger, toast } from './core.js';
 import { initHome, paintToggles, autoToggle, tick } from './home.js';
 import { initMy, refreshMy, myOpen } from './my.js';
 import { mods } from './lazy.js';
+import { initTheme } from './theme.js';
 import { cloudUrl, fetchTokens, takeKeyFromLink } from './cloud.js';
 import { loadAddon, syncNote, syncNow, sync, cloudEnabled } from '../data/db.js';
 import { startAutoBackup } from '../data/backup.js';
@@ -73,7 +74,7 @@ export async function boot() {
   if (cloudUrl) withSync = await Promise.race([loadAddon().then(() => true, e => { syncNote.text = 'The sync part could not be downloaded (' + (e?.message || e) + ')'; return false; }), wait(3500).then(() => { syncNote.text = syncNote.text || 'The sync part is still downloading'; return false; })]);
   await init({ cloudUrl: withSync ? cloudUrl : '', fetchTokens });
   if (cloudUrl && !withSync) addonUntilItArrives();
-  initHome(); initMy();
+  initTheme(); initHome(); initMy();
   onExternalChange(afterChange);                  // another tab / phone / sync changed something: repaint, but never reset the keypad or a pending PIN
   watchSync(syncChanged);
   if (cloudUrl && withSync) keepSyncing();

@@ -20,6 +20,10 @@ export default defineConfig({
     manifest: {
       name: 'DTRV', short_name: 'DTRV', description: 'Personal Daily Time Record (CS Form 48)',
       start_url: '/', display: 'standalone', orientation: 'portrait', background_color: '#0a0f1c', theme_color: '#0a0f1c',
+      shortcuts: [
+        { name: 'My DTR', short_name: 'My DTR', description: 'Open my month', url: '/?go=my', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
+        { name: 'Add a remark', short_name: 'Remark', description: 'Leave, day-off, holiday or other', url: '/?go=remark', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
+      ],
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

@@ -1,7 +1,7 @@
 /* "My DTR": month calendar, stats and a day detail. Opened from the PIN pad (employee) or the admin overview. */
 import { $, $$, pad, t12, tPrint, shiftYM, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
-import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, lateSlots, dayClass, isIncomplete } from '../lib/rules.js';
+import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, lateSlots, dayClass, isIncomplete, monthSummary } from '../lib/rules.js';
 import { get, emp, schedOf, monthStats, monthDays, ensureMonth, yearRemarkCounts } from '../data/repo.js';
 import { go, countUp, toast } from './core.js';
 import { SLOT_G, autoToggle } from './home.js';
@@ -49,7 +49,9 @@ function paintMy(o = {}) {
   const tally = c => ['LEAVE', 'DAYOFF', 'HOLIDAY'].filter(k => c[k]).map(k => `<i class="${k}">${{ LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday' }[k]} ${c[k]}</i>`).join('') || '<em>no days off</em>';
   const mc = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0 }; monthDays(myNo, myYM).forEach(d => { if (d.remark && mc[d.remark.code] !== undefined) mc[d.remark.code]++; });
   const bad = monthDays(myNo, myYM).filter(x => isIncomplete(x, x.date, today));
-  $('#myCnts').innerHTML = `${bad.length ? `<button class="needline" id="needBtn">⚠ ${bad.length} day${bad.length === 1 ? '' : 's'} missing a time · tap to fix</button>` : ''}<div><b>${MONTHS[M - 1].slice(0, 3)}</b>${tally(mc)}</div><div><b>${Y}</b><span id="myYear"><em>…</em></span></div>`;
+  const sm = monthSummary(monthDays(myNo, myYM)), hm = n => `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
+  const sumLine = sm.counted || sm.avgIn != null ? `<div class="sumline">${sm.counted ? `<span>≈ <b>${hm(sm.total)}</b> worked in ${sm.counted} day${sm.counted === 1 ? '' : 's'}</span>` : ''}${sm.avgIn != null ? `<span>usual arrival <b>${t12(String(Math.floor(sm.avgIn / 60)).padStart(2, '0') + ':' + String(sm.avgIn % 60).padStart(2, '0'))}</b></span>` : ''}</div>` : '';
+  $('#myCnts').innerHTML = `${sumLine}${bad.length ? `<button class="needline" id="needBtn">⚠ ${bad.length} day${bad.length === 1 ? '' : 's'} missing a time · tap to fix</button>` : ''}<div><b>${MONTHS[M - 1].slice(0, 3)}</b>${tally(mc)}</div><div><b>${Y}</b><span id="myYear"><em>…</em></span></div>`;
   if ($('#needBtn')) $('#needBtn').onclick = () => { mySel = bad[0].date; paintMy({ sel: true }); openDaySheet(myNo, mySel); };
   const wantNo = myNo, wantY = Y; yearRemarkCounts(myNo, String(Y)).then(c => { if (myNo === wantNo && myYM.startsWith(wantY) && $('#myYear')) $('#myYear').innerHTML = tally(c); }).catch(() => {});
   let h = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(d => `<div class="h">${d}</div>`).join('');

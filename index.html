@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="DTRV">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<script>try{var t=localStorage.getItem('dtrv.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t==='light')m.content='#f3f6fb'}catch(e){}</script>
 <title>DTRV</title>
 </head>
 <body>
@@ -23,6 +24,7 @@
 
     <!-- 1 · Record -->
     <div class="scr" id="p-record">
+      <button class="themebtn" id="themeBtn" aria-label="Light or dark"></button>
       <button class="secret" id="toAdmin" aria-label="·">✦</button>
       <div class="rclock" data-st><div class="date" id="hDate">Starting…</div><div class="clock" id="hTime"></div><div class="latechip" id="lateChip" hidden></div><button class="fixchip" id="fixChip" hidden></button></div>
       <div class="welcome" id="welcome" hidden>

@@ -124,6 +124,22 @@ export function remarkHistory(days, limit = 6) {
 }
 
 /** Calendar colour class for a day. */
+/** Minutes worked on a day, or null if it cannot be told. Four times: the two stretches. Arrival and departure only: that span less the lunch hour. */
+export function workedMinutes(e) {
+  if (!e?.am_in || !e?.pm_out) return null;
+  if (e.am_out && e.pm_in) return (m(e.am_out) - m(e.am_in)) + (m(e.pm_out) - m(e.pm_in));
+  return Math.max(0, m(e.pm_out) - m(e.am_in) - (m(LUNCH_END) - m(LUNCH_START)));
+}
+/** For a month's days: total worked minutes, how many days that covers, and the average arrival (minutes since midnight). */
+export function monthSummary(days) {
+  let total = 0, counted = 0, arr = 0, arrN = 0;
+  for (const e of days) {
+    const w = workedMinutes(e); if (w != null) { total += w; counted++; }
+    if (e.am_in) { arr += m(e.am_in); arrN++; }
+  }
+  return { total, counted, avgIn: arrN ? Math.round(arr / arrN) : null };
+}
+
 /** Which of the four times are missing from a day. */
 export const missingSlots = e => SLOTS.filter(s => !e?.[s]);
 /** A day before today with some times but not all four, and no remark that explains it (leave, "field work"…). */

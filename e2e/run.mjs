@@ -183,6 +183,23 @@ try {
   await pG.mouse.move(mb.x + 300, mb.y + 80); await pG.mouse.down(); await pG.mouse.move(mb.x + 120, mb.y + 84, { steps: 6 }); await pG.mouse.up(); await wait(pG, 900);
   ok((await pG.textContent('#mLabel')) !== lbl, 'swiping the calendar sideways changes the month');
   ok(pG.errs.length === 0, 'no console errors (gestures) ' + pG.errs.join('|'));
+  /* light and dark theme: the button switches it, the choice is kept, Settings has Auto / Light / Dark */
+  const pT = await fresh('2026-10-07T09:00:00', '?demo=1'); await pT.emulateMedia({ colorScheme: 'dark' }); await wait(pT, 700);
+  const th = () => pT.evaluate(() => document.documentElement.dataset.theme);
+  const first = await th(); await pT.click('#themeBtn'); await wait(pT, 700);
+  ok(first !== await th(), 'the theme button switches between light and dark');
+  await pT.waitForTimeout(800);
+  const bg1 = await pT.$eval('#app', a => getComputedStyle(a).backgroundColor);
+  await pT.reload(); await pT.waitForSelector('html[data-ready]'); await pT.waitForTimeout(900);
+  ok(await th() !== first && bg1 === await pT.$eval('#app', a => getComputedStyle(a).backgroundColor), 'the choice is kept after a reload');
+  ok(pT.errs.length === 0, 'no console errors (theme) ' + pT.errs.join('|'));
+  /* hours worked and usual arrival in My DTR; the app icon shortcut arms My DTR */
+  const pS = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pS.click('#keys [data-k="L"]'); await keys(pS, '024'); await wait(pS, 1700);
+  ok((await pS.textContent('#myCnts')).includes('worked') && (await pS.textContent('#myCnts')).includes('usual arrival'), 'My DTR shows hours worked and the usual arrival');
+  await pS.goto(URL + '?go=my'); await pS.waitForSelector('html[data-ready]'); await pS.waitForTimeout(900);
+  const pK2 = pS;
+  ok(await pK2.$eval('#keys', k => k.classList.contains('pin')), 'the My DTR shortcut opens the app ready for the PIN');
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);
