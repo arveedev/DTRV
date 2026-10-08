@@ -21,6 +21,16 @@ export function watchSync(fn) {
   return () => s.unsubscribe();
 }
 
+/** Ask the sync to try again now (it also retries by itself, but not when it has given up after an error). */
+export async function syncNow() {
+  if (!cloudEnabled || !db?.cloud) return;
+  try {
+    const u = db.cloud.currentUser?.value;
+    if (!u?.isLoggedIn) await Promise.race([db.cloud.login(), new Promise(r => setTimeout(r, 20000))]);   // fetch a token again (our own token function)
+    await db.cloud.sync({ wait: false });
+  } catch (e) { sync.error = String(e?.message || e); }
+}
+
 /** The sync add-on is a separate download; this loads it once and remembers it. */
 let addonP = null;
 export const loadAddon = () => (addonP ||= import('dexie-cloud-addon').catch(e => { addonP = null; throw e; }));

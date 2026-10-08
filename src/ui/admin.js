@@ -11,6 +11,8 @@ import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
 import { bioFor, bioClear } from './bio.js';
+import { listSnapshots, restoreSnapshot, takeSnapshot } from '../data/backup.js';
+import { sync } from '../data/db.js';
 import { holidaysOn, upcoming, repeatOptions, ruleId, describeRule, KIND_LABEL } from '../lib/holidays.js';
 
 let adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
@@ -312,8 +314,11 @@ function aSet(b) {
   b.innerHTML = `<div class="card" data-st style="margin-top:0"><h4>Signatory on the DTR</h4>
       <div class="field"><label>Name</label><input id="gName" value="${attr(S.sign.name)}"></div><div class="field"><label>Title</label><input id="gTitle" value="${attr(S.sign.title)}"></div><div class="field"><label>Label under title</label><input id="gLabel" value="${attr(S.sign.label)}"></div></div>
     <div class="card" data-st><h4>Admin PIN</h4><div class="row2"><div class="field"><label>New PIN</label><input id="pin1" type="password" maxlength="6" inputmode="numeric"></div><div class="field"><label>Confirm</label><input id="pin2" type="password" maxlength="6" inputmode="numeric"></div></div><button class="btn" id="pinSave" style="width:100%">Change PIN</button></div>
-    <div class="card" data-st><h4>Backup</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin-bottom:10px">${cloud.on ? 'Your data also syncs through Dexie Cloud.' : 'Your data lives on this phone only. Keep a backup file.'}</div>
-      <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden></div>
+    <div class="card" data-st><h4>Backup</h4>
+      <div class="syncline" id="syncLine"></div>
+      <div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 10px">A copy is saved on this phone every day (the last 14 days are kept). You can also download one as a file.</div>
+      <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore file…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden>
+      <div class="hsub" style="margin-top:14px">Saved on this phone</div><div id="snapList"><div class="emptyl">Loading…</div></div></div>
     ${cloud.bad ? '<div class="card" data-st><h4>Sync is off</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">The sync address saved in Vercel (<b style="color:var(--rink)">VITE_DEXIE_CLOUD_DB_URL</b>) is not a valid <b style="color:var(--rink)">https://…</b> address, so the app is running on this phone only.</div></div>' : ''}
     ${cloud.error ? `<div class="card" data-st><h4>Sync problem</h4><div style="font-size:13px;color:var(--rlate);line-height:1.5">${esc(cloud.error)}</div></div>` : ''}
     ${cloud.on ? `<div class="card" data-st><h4>Sync key</h4><div class="field"><label>Type it once on each phone</label><input id="syncKey" type="password" autocomplete="off" placeholder="${cloud.hasKey ? 'saved on this phone' : 'sync key'}"></div>
@@ -336,11 +341,24 @@ function aSet(b) {
     const blob = new Blob([await exportAll()], { type: 'application/json' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `dtrv-backup-${now().date}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   };
+  const SYNC_TEXT = { 'in-sync': ['✓ Synced and up to date', 'ok'], pushing: ['Sending changes…', ''], pulling: ['Getting changes…', ''], 'not-in-sync': ['Waiting to sync…', ''], initial: ['Starting sync…', ''], offline: ['Offline. Will retry by itself', 'bad'], error: ['Sync problem. Retrying by itself', 'bad'] };
+  const line = () => { const el = $('#syncLine'); if (!el) return; if (!cloud.on) { el.hidden = true; return; } const [t, k] = SYNC_TEXT[sync.phase] || ['Starting sync…', '']; el.className = 'syncline ' + k; el.textContent = t; };
+  line(); const lt = setInterval(() => { if (!$('#syncLine')) clearInterval(lt); else line(); }, 2000);
+  const fmtSnap = s => { const d = new Date(s.at), today = now().date === s.id; return `${s.id.startsWith('before-restore') ? 'Before a restore' : today ? 'Today' : fmtDate(s.id)} · ${d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })} · ${s.people} people · ${s.days} days`; };
+  const paintSnaps = async () => {
+    const list = await listSnapshots(), el = $('#snapList'); if (!el) return;
+    el.innerHTML = list.length ? list.map(s => `<div class="hrow"><div><small style="margin:0">${esc(fmtSnap(s))}</small></div><button class="mini" data-id="${attr(s.id)}">Restore</button></div>`).join('') : '<div class="emptyl">The first one is saved shortly after the app opens</div>';
+    $$('#snapList .mini').forEach(b => { b.onclick = async () => {
+      if (!confirm('Put this backup back? What is on this phone now is saved first, so you can undo it.')) return;
+      try { const r = await restoreSnapshot(b.dataset.id); await ensureMonth(now().date.slice(0, 7)); autoToggle(); afterChange(); toast(`Restored · <b>${r.people}</b> people, <b>${r.days}</b> days`); renderAdmin(); } catch (err) { fail(err); }
+    }; });
+  };
+  paintSnaps();
   $('#bkLoad').onclick = () => $('#bkFile').click();
   $('#bkFile').onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
-    if (!confirm('Replace everything on this phone with this backup?')) { e.target.value = ''; return; }
-    try { const r = await importAll(await f.text()); await ensureMonth(now().date.slice(0, 7)); autoToggle(); afterChange(); toast(`Restored · <b>${r.people}</b> people, <b>${r.days}</b> days`); renderAdmin(); } catch (err) { fail(err); }
+    if (!confirm('Replace everything on this phone with this backup? What is here now is saved first.')) { e.target.value = ''; return; }
+    try { await takeSnapshot('before-restore-' + new Date().toISOString().slice(0, 19)); const r = await importAll(await f.text()); await ensureMonth(now().date.slice(0, 7)); autoToggle(); afterChange(); toast(`Restored · <b>${r.people}</b> people, <b>${r.days}</b> days`); renderAdmin(); } catch (err) { fail(err); }
     e.target.value = '';
   };
   if (cloud.on) $('#syncKey').onchange = e => { setSyncKey(e.target.value.trim()); e.target.value = ''; toast('Sync key saved. Reload to sync'); };
