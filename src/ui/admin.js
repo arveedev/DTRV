@@ -2,11 +2,15 @@
 import { $, $$, hm, m, t12, fmtDate, fmtRange, spanDays, addDays, shiftYM, MONTHS, GRAD, phFlag, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
-import { S, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
+import { S, get, schedOf, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
   hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
-import { openPreview, printWith, setPrintSel } from './print.js';
+import { openPreview, printWith, setPrintSel, itemsOf } from './print.js';
+import { monthCsv, csvName } from '../lib/csv.js';
+import { saveFile } from '../lib/download.js';
+import { openHistory } from './history.js';
+import { openInvite } from './invite.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
@@ -68,6 +72,7 @@ export function initAdmin() {
   $$('#aTabs button').forEach(b => { b.onclick = () => { aTab = +b.dataset.t; renderAdmin(); }; });
 }
 
+export const isAdmin = () => adminOk;
 export const adminOpen = () => adminOk && $('#p-admin') && !$('#p-admin').classList.contains('hide');
 
 export async function renderAdmin() {
@@ -273,20 +278,22 @@ function hoursPreview() {
 /* ---------- print many ---------- */
 function aPrint(b) {
   const people = S.emps.filter(p => p.active !== false);
-  aPrintSt ||= { sel: new Set(), ym: aYM, q: '' };
+  aPrintSt ||= { sel: new Set(), ym: aYM, q: '', span: 1 };
   const st = aPrintSt; st.sel = new Set([...st.sel].filter(no => people.some(p => p.no === no)));
   const label = () => MONTHS[+st.ym.slice(5) - 1] + ' ' + st.ym.slice(0, 4);
   const nos = () => people.map(p => p.no).filter(no => st.sel.has(no));
   b.innerHTML = `<div class="pctl" data-st><span style="font-weight:700">Who to print</span><div class="mnav"><button id="pPrev">‹</button><span id="pLbl">${label()}</span><button id="pNext">›</button></div></div>
     <div class="searchrow" data-st><input id="psq" type="search" placeholder="Search ${people.length} people" value="${attr(st.q)}" autocomplete="off"><button class="mini" id="pAll">All</button><button class="mini" id="pNone">None</button></div>
+    <div class="spanrow" data-st><span>Months</span>${[1, 3, 6, 12].map(k => `<button data-k="${k}" class="${(st.span || 1) === k ? 'on' : ''}">${k}</button>`).join('')}<button class="wlink" id="pExport" style="margin:0 0 0 auto;padding:4px 6px"title="Export a spreadsheet of this month">⬇ Export</button></div>
     <div class="cnt" id="pCount"></div>
     <div class="slist" id="slist"></div>
     <div class="pfoot" data-st><button class="btn" id="pView">Preview</button><button class="btn primary" id="pGo"></button></div>`;
   const shown = () => people.filter(p => matches(p, st.q));
   const counts = () => {
     const n = st.sel.size; $('#pCount').innerHTML = n ? `<b>${n}</b> selected${st.q ? ` · showing ${shown().length} of ${people.length}` : ''}` : `Pick who to print${st.q ? ` · showing ${shown().length} of ${people.length}` : ''}`;
-    setPrintSel({ nos: nos(), ym: st.ym, page: 0 });
-    $('#pGo').textContent = n ? `Print ${n} DTR${n === 1 ? '' : 's'}` : 'Print'; $('#pGo').style.opacity = $('#pView').style.opacity = n ? 1 : 0.4;
+    setPrintSel({ nos: nos(), ym: st.ym, span: st.span, page: 0 });
+    const pg = itemsOf({ nos: nos(), ym: st.ym, span: st.span }).length;
+    $('#pGo').textContent = n ? `Print ${pg} page${pg === 1 ? '' : 's'}` : 'Print'; $('#pGo').style.opacity = $('#pView').style.opacity = n ? 1 : 0.4;
   };
   const paint = animate => {
     const rows = shown();
@@ -303,8 +310,15 @@ function aPrint(b) {
   $('#pNone').onclick = () => { st.sel.clear(); paint(false); };
   $('#pPrev').onclick = () => { st.ym = shiftYM(st.ym, -1); $('#pLbl').textContent = label(); counts(); };
   $('#pNext').onclick = () => { st.ym = shiftYM(st.ym, 1); $('#pLbl').textContent = label(); counts(); };
-  $('#pView').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } openPreview({ nos: nos(), ym: st.ym, page: 0 }, 'admin'); };
-  $('#pGo').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } printWith($('#pGo'), { nos: nos(), ym: st.ym, page: 0 }).catch(fail); };
+  $('#pView').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } openPreview({ nos: nos(), ym: st.ym, span: st.span, page: 0 }, 'admin'); };
+  $('#pGo').onclick = () => { if (!st.sel.size) { toast('Pick at least one person', 'err'); return; } printWith($('#pGo'), { nos: nos(), ym: st.ym, span: st.span, page: 0 }).catch(fail); };
+  $$('.spanrow button[data-k]').forEach(b => { b.onclick = () => { st.span = +b.dataset.k; $$('.spanrow button[data-k]').forEach(x => x.classList.toggle('on', x === b)); counts(); }; });
+  /* a spreadsheet of the chosen month for the chosen people (everyone if nobody is ticked) */
+  $('#pExport').onclick = async () => {
+    const who = st.sel.size ? people.filter(p => st.sel.has(p.no)) : people;
+    try { await ensureMonth(st.ym); await saveFile(csvName(st.ym), new Blob([monthCsv(who, st.ym, (no, d) => get(no, d), no => schedOf(emp(no)))], { type: 'text/csv;charset=utf-8' })); toast(`Spreadsheet ready · ${who.length} ${who.length === 1 ? 'person' : 'people'}`); }
+    catch (e) { fail(e); }
+  };
   paint(false);
 }
 
@@ -328,6 +342,7 @@ function aSet(b) {
       ${bioFor() ? '<button class="btn" id="bioOffBtn" style="width:100%;margin-top:10px">Turn off face / fingerprint on this phone</button>' : ''}
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
     <div class="ver" data-st>Version ${typeof __BUILD__ === 'undefined' ? 'dev' : __BUILD__}</div>
+    <div class="card" data-st><h4>People & history</h4><div class="row2"><button class="btn" id="invBtn">Invite someone</button><button class="btn" id="histBtn">Edit history</button></div></div>
     <button class="bigbtn" id="sLock" data-st style="background:var(--rsurf);color:var(--rink);animation:none">Lock admin</button>`;
   [['gName', 'name'], ['gTitle', 'title'], ['gLabel', 'label']].forEach(([id, k]) => { $('#' + id).oninput = e => saveSignatory({ [k]: e.target.value }); });
   $('#pinSave').onclick = async () => {
@@ -337,9 +352,7 @@ function aSet(b) {
     await setAdminPin(a); $('#pin1').value = $('#pin2').value = ''; toast('PIN changed');
   };
   $('#bkSave').onclick = async () => {
-    await settle();
-    const blob = new Blob([await exportAll()], { type: 'application/json' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `dtrv-backup-${now().date}.json`; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    try { await settle(); await saveFile(`dtrv-backup-${now().date}.json`, new Blob([await exportAll()], { type: 'application/json' })); } catch (e) { fail(e); }
   };
   const SYNC_TEXT = { 'in-sync': ['✓ Synced and up to date', 'ok'], pushing: ['Sending changes…', ''], pulling: ['Getting changes…', ''], 'not-in-sync': ['Waiting to sync…', ''], initial: ['Starting sync…', ''], offline: ['Offline. Will retry by itself', 'bad'], error: ['Sync problem. Retrying by itself', 'bad'] };
   const line = () => { const el = $('#syncLine'); if (!el) return; if (!cloud.on) { el.hidden = true; return; } const [t, k] = SYNC_TEXT[sync.phase] || ['Starting sync…', '']; el.className = 'syncline ' + k; el.textContent = t; };
@@ -372,5 +385,6 @@ function aSet(b) {
   };
   if (bioFor()) $('#bioOffBtn').onclick = () => { if (!confirm('Turn off face / fingerprint on this phone? The person will type their code again.')) return; bioClear(); afterChange(); toast('Face / fingerprint turned off on this phone'); renderAdmin(); };
   $('#forget').onclick = () => { forgetUser(); toast('This phone no longer remembers a user'); };
+  $('#invBtn').onclick = openInvite; $('#histBtn').onclick = () => openHistory();
   $('#sLock').onclick = () => $('#aLock').click();
 }

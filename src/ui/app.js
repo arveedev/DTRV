@@ -9,7 +9,7 @@ import { initPrint } from './print.js';
 import { initAdmin, refreshAdmin } from './admin.js';
 import { cloudUrl, fetchTokens, takeKeyFromLink } from './cloud.js';
 import { loadAddon, syncNote, syncNow, sync, cloudEnabled } from '../data/db.js';
-import { autoBackup } from '../data/backup.js';
+import { startAutoBackup } from '../data/backup.js';
 import { store } from '../lib/util.js';
 
 /** Repaint what is visible. Cheap; call after any write. */
@@ -75,9 +75,8 @@ export async function boot() {
   watchSync(() => paintToggles());
   if (cloudUrl && withSync) keepSyncing();
   stagger($('#p-record'));
-  /* automatic backups: shortly after start, and whenever the app goes to the background */
-  setTimeout(() => autoBackup().catch(() => {}), 4000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) autoBackup().catch(() => {}); });
+  /* automatic backups run on their own, only when the app is not being used (see src/lib/scheduler.js) */
+  startAutoBackup();
   document.documentElement.dataset.ready = '1';
   if (new URLSearchParams(location.search).has('demo')) (await import('../demo.js')).seed().then(() => { autoToggle(); afterChange(); });
   tick();

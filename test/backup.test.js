@@ -2,11 +2,13 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setClock } from '../src/lib/clock.js';
 import * as repo from '../src/data/repo.js';
-import { autoBackup, takeSnapshot, listSnapshots, restoreSnapshot, retained } from '../src/data/backup.js';
+import { autoBackup, takeSnapshot, listSnapshots, restoreSnapshot, retained, _reset } from '../src/data/backup.js';
 
+const mem = {}; globalThis.localStorage = { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; } };
 let n = 0;
 const at = iso => setClock(() => new Date(iso));
 beforeEach(async () => {
+  _reset(); await new Promise(r => { const q = indexedDB.deleteDatabase('dtrv-backups'); q.onsuccess = q.onerror = q.onblocked = () => r(); });
   at('2026-10-07T08:20:00');
   await repo.init({ name: 'bk-' + (++n), cloudUrl: '' });
   await repo.saveEmployee({ no: '024', name: 'JUAN A. DELA CRUZ', nick: 'Juan', pos: '', sched: null }, true);
@@ -54,4 +56,23 @@ describe('retention policy', () => {
     expect(kept.has(day(731))).toBe(false); expect(kept.size).toBeLessThan(80);
   });
   it('covers at least 3 months back', () => { expect([...kept].some(id => id <= '2026-07-01')).toBe(true); });
+});
+
+describe('when a backup is due', () => {
+  it('first one as soon as there is data, then only after a change, and only after working hours', async () => {
+    at('2026-10-07T10:00:00');
+    expect(await autoBackup()).toBe(true);                       // the first ever: any hour
+    await repo.recordTime('024', 'am_out', '12:01', '2026-10-07');   // something changed
+    expect(await autoBackup()).toBe(false);                      // 10:00: working hours, not overdue
+    at('2026-10-07T19:00:00');
+    expect(await autoBackup()).toBe(true);                       // evening and changed: due
+    expect(await autoBackup()).toBe(false);                      // unchanged since: costs nothing
+  });
+  it('an unchanged day is skipped even in the evening', async () => {
+    at('2026-10-07T20:00:00'); await autoBackup();
+    const before = (await listSnapshots()).find(s => s.id === '2026-10-07').at;
+    await new Promise(r => setTimeout(r, 15));
+    expect(await autoBackup()).toBe(false);
+    expect((await listSnapshots()).find(s => s.id === '2026-10-07').at).toBe(before);
+  });
 });

@@ -8,7 +8,11 @@ import { renderAdmin } from './admin.js';
 
 let curPrintSt = null, printFrom = 'my', printReady = false;
 const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign, e => lateSlots(e, schedOf(emp(no))));
-const pages = st => st.nos.map(no => { const c = copy(no, st.ym); return `<div class="a4">${c}${c}</div>`; }).join('');
+/* One printed page per person per month. `st.span` months, ending at `st.ym` (1 = just that month). */
+export const monthsOf = st => Array.from({ length: st.span || 1 }, (_, k) => shiftYM(st.ym, -((st.span || 1) - 1 - k)));
+export const itemsOf = st => st.nos.flatMap(no => monthsOf(st).map(ym => ({ no, ym })));
+const ensureAll = st => Promise.all(monthsOf(st).map(ensureMonth));
+const pages = st => itemsOf(st).map(({ no, ym }) => { const c = copy(no, ym); return `<div class="a4">${c}${c}</div>`; }).join('');
 
 /** The admin list keeps this up to date so Ctrl+P prints exactly what is selected. */
 export const setPrintSel = st => { curPrintSt = st; };
@@ -21,7 +25,7 @@ const frameDoc = html => `<!doctype html><html><head><meta charset="utf-8"><titl
 
 export async function doPrint(st) {
   if (!st.nos.length) return;
-  curPrintSt = st; await ensureMonth(st.ym);
+  curPrintSt = st; await ensureAll(st);
   const html = pages(st);
   document.getElementById('printFrame')?.remove();
   const f = document.createElement('iframe');
@@ -38,18 +42,19 @@ export async function doPrint(st) {
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
 const useShare = () => isIOS() && standalone();
-const sigOf = st => st.ym + ':' + st.nos.join(',') + ':' + JSON.stringify(S.sign);
+const sigOf = st => st.ym + ':' + (st.span || 1) + ':' + st.nos.join(',') + ':' + JSON.stringify(S.sign);
 let ready = null;      // { sig, file } the PDF made by the first tap, shared by the second
 
 async function makePdf(st, progress) {
   const [{ jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
-  await ensureMonth(st.ym);
+  await ensureAll(st);
+  const items = itemsOf(st);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff'; document.body.append(host);
   try {
-    for (let i = 0; i < st.nos.length; i++) {
-      progress?.(i + 1, st.nos.length);
-      const c = copy(st.nos[i], st.ym); host.innerHTML = `<div class="a4" style="box-shadow:none;margin:0">${c}${c}</div>`;
+    for (let i = 0; i < items.length; i++) {
+      progress?.(i + 1, items.length);
+      const c = copy(items[i].no, items[i].ym); host.innerHTML = `<div class="a4" style="box-shadow:none;margin:0">${c}${c}</div>`;
       const canvas = await html2canvas(host.firstElementChild, { scale: 2, backgroundColor: '#fff', logging: false });
       if (i) doc.addPage();
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
@@ -89,16 +94,18 @@ export function initPrint() {
 }
 
 export async function openPreview(st, from) {
-  st.page = 0; curPrintSt = st; printFrom = from; await ensureMonth(st.ym); go('p-print', 'r');
+  st.page = 0; st.span ||= 1; curPrintSt = st; printFrom = from; await ensureAll(st); go('p-print', 'r');
   setTimeout(() => renderPreview(st), 60);
 }
 
 /* Every lookup below is scoped to #printBody: the preview and the admin list must never share element ids. */
 function renderPreview(st) {
   const host = $('#printBody'), q = sel => host.querySelector(sel);
-  const label = () => MONTHS[+st.ym.slice(5) - 1] + ' ' + st.ym.slice(0, 4);
+  const mlabel = ym => MONTHS[+ym.slice(5) - 1].slice(0, 3) + ' ' + ym.slice(0, 4);
+  const label = () => (st.span || 1) > 1 ? `${mlabel(monthsOf(st)[0])} – ${mlabel(st.ym)}` : MONTHS[+st.ym.slice(5) - 1] + ' ' + st.ym.slice(0, 4);
   host.innerHTML = `<div class="pctl" data-st><div class="pname">${st.nos.length > 1 ? st.nos.length + ' people' : esc(emp(st.nos[0]).name)}</div>
     <div class="mnav"><button class="pPrev">‹</button><span class="pLbl">${label()}</span><button class="pNext">›</button></div></div>
+    <div class="spanrow" data-st><span>Months</span>${[1, 3, 6, 12].map(k => `<button data-k="${k}" class="${(st.span || 1) === k ? 'on' : ''}">${k}</button>`).join('')}</div>
     <div class="pager"><button class="pgPrev">‹</button><span class="pgLbl"></span><button class="pgNext">›</button></div>
     <div class="prev"><div class="zbar"><button class="zOut" aria-label="Zoom out">−</button><button class="zFit">Fit</button><button class="zIn" aria-label="Zoom in">+</button></div></div>
     <div class="tap">Pinch to zoom · drag to move · double-tap to zoom in</div>
@@ -120,12 +127,13 @@ function renderPreview(st) {
 
   const draw = (reset = true) => {
     try {
-      const n = st.nos.length; st.page = Math.max(0, Math.min(st.page || 0, n - 1));
+      const items = itemsOf(st), n = items.length; st.page = Math.max(0, Math.min(st.page || 0, n - 1));
+      const it = items[st.page];
       q('.pLbl').textContent = label();
       q('.pager').style.display = n > 1 ? 'flex' : 'none';
-      if (n > 1) q('.pgLbl').textContent = `${nickOf(emp(st.nos[st.page]))} · ${st.page + 1} of ${n}`;
-      q('.bigbtn').textContent = n > 1 ? `Print ${n} DTRs` : 'Print';
-      const { w, h } = bounds(), m = 12, sc = Math.min((w - 2 * m) / 793.7, h > 60 ? (h - 2 * m) / 1122.5 : 9), c = copy(st.nos[st.page], st.ym);
+      if (n > 1) q('.pgLbl').textContent = `${st.nos.length > 1 ? nickOf(emp(it.no)) + ' · ' : ''}${mlabel(it.ym)} · ${st.page + 1} of ${n}`;
+      q('.bigbtn').textContent = n > 1 ? `Print ${n} pages` : 'Print';
+      const { w, h } = bounds(), m = 12, sc = Math.min((w - 2 * m) / 793.7, h > 60 ? (h - 2 * m) / 1122.5 : 9), c = copy(it.no, it.ym);
       view.pw = 793.7 * sc; view.ph = 1122.5 * sc; if (reset) { view.k = 1; view.tx = view.ty = 0; }
       box.querySelector('.paper')?.remove();
       box.insertAdjacentHTML('afterbegin', `<div class="paper" style="width:${view.pw}px;height:${view.ph}px"><div class="a4" style="transform:scale(${sc})">${c}${c}</div></div>`);
@@ -155,9 +163,12 @@ function renderPreview(st) {
   q('.zOut').onclick = () => zoomAt(...centre(), view.k / 1.5);
   q('.zFit').onclick = () => { view.k = 1; view.tx = view.ty = 0; apply(); };
 
-  const month = async n => { st.ym = shiftYM(st.ym, n); await ensureMonth(st.ym); draw(); };
-  q('.pgPrev').onclick = () => { st.page = (st.page - 1 + st.nos.length) % st.nos.length; draw(); };
-  q('.pgNext').onclick = () => { st.page = (st.page + 1) % st.nos.length; draw(); };
+  const month = async n => { st.ym = shiftYM(st.ym, n); await ensureAll(st); draw(); };
+  host.querySelectorAll('.spanrow button').forEach(b => { b.onclick = async () => {
+    st.span = +b.dataset.k; st.page = 0; host.querySelectorAll('.spanrow button').forEach(x => x.classList.toggle('on', x === b)); await ensureAll(st); draw();
+  }; });
+  q('.pgPrev').onclick = () => { const n = itemsOf(st).length; st.page = (st.page - 1 + n) % n; draw(); };
+  q('.pgNext').onclick = () => { const n = itemsOf(st).length; st.page = (st.page + 1) % n; draw(); };
   q('.pPrev').onclick = () => month(-1);
   q('.pNext').onclick = () => month(1);
   q('.bigbtn').onclick = () => printWith(q('.bigbtn'), st).catch(e => toast(esc(e.message), 'err'));

@@ -118,11 +118,34 @@ try {
   ok((await pH.textContent('#sheet')).includes('Every December 8'), 'after a reload the holiday is still remembered every year');
   ok(pH.errs.length === 0, 'no console errors (holidays) ' + pH.errs.join('|'));
   /* automatic backups show up in Settings and can be restored */
-  const pBk = await fresh('2026-10-07T09:00:00', '?demo=1'); await wait(pBk, 5000); await pBk.waitForTimeout(800);
+  const pBk = await fresh('2026-10-07T09:00:00', '?demo=1'); await wait(pBk, 5000);
+  await pBk.clock.runFor(200000); await pBk.waitForTimeout(2500);        // the background job waits until the app has been quiet for a minute
   await pBk.click('#toAdmin'); await wait(pBk, 500); await keys(pBk, '123456', '#gkeys'); await wait(pBk, 1600);
   await pBk.click('#aTabs button[data-t="4"]'); await wait(pBk, 900);
   ok((await pBk.textContent('#snapList')).includes('Today') && (await pBk.textContent('#snapList')).includes('3 people'), 'Settings lists today\'s automatic backup');
   ok(pBk.errs.length === 0, 'no console errors (backups) ' + pBk.errs.join('|'));
+  /* spreadsheet export, several months in one print, edit history, yearly counts, invite QR */
+  const pN = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pN.click('#toAdmin'); await wait(pN, 500); await keys(pN, '123456', '#gkeys'); await wait(pN, 1600);
+  await pN.click('#aTabs button[data-t="3"]'); await wait(pN, 700);
+  const [dl] = await Promise.all([pN.waitForEvent('download'), pN.click('#pExport')]);
+  const csv = (await (await import('fs')).promises.readFile(await dl.path(), 'utf8'));
+  ok(dl.suggestedFilename() === 'DTR-October-2026.csv' && csv.includes('JUAN M. DELA CRUZ') && csv.includes('08:12'), 'export gives a CSV of the month with the clock times');
+  await pN.click('#pAll'); await pN.click('.spanrow button[data-k="3"]'); await wait(pN, 300);
+  ok((await pN.textContent('#pGo')).includes('9 pages'), 'three months for three people is nine pages');
+  await pN.click('#pView'); await wait(pN, 1200);
+  ok((await pN.textContent('#printBody .pgLbl')).includes('1 of 9'), 'the preview pages through every person and month');
+  await pN.click('#printBack'); await wait(pN, 700);
+  await pN.click('.prow[data-no]', { force: true }).catch(() => {});
+  await pN.click('#aTabs button[data-t="0"]'); await wait(pN, 800); await pN.click('.prow[data-no="024"]'); await wait(pN, 1300);
+  ok((await pN.textContent('#myCnts')).includes('2026') && (await pN.textContent('#myCnts')).includes('Oct'), 'My DTR shows leave / day-off / holiday counts for the month and the year');
+  await pN.click('#myDays .c[data-d="2026-10-02"]'); await wait(pN, 400); await pN.click('#myEdit'); await wait(pN, 700); await pN.click('#dDel'); await wait(pN, 900);
+  await pN.click('#myBack'); await wait(pN, 700); await pN.click('#aTabs button[data-t="4"]'); await wait(pN, 900);
+  await pN.click('#histBtn'); await wait(pN, 900);
+  ok((await pN.textContent('#hxList')).includes('Day deleted') && (await pN.textContent('#hxList')).includes('08:12'.replace('08:12', '8:12')), 'edit history shows the deleted day and what it had');
+  await pN.click('#hxClose'); await wait(pN, 500); await pN.click('#invBtn'); await wait(pN, 800);
+  ok(await pN.isVisible('.qrbox svg'), 'invite shows a QR code');
+  ok(pN.errs.length === 0, 'no console errors (new features) ' + pN.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

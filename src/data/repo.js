@@ -6,6 +6,7 @@ import { db, openDatabase } from './db.js';
 import { DEFAULT_SCHEDULE, SLOTS, canRecord, dayState, orderError, sequenceError, awayConflicts, AWAY, statsOf, remarkHistory } from '../lib/rules.js';
 import { daysInMonth, pad } from '../lib/util.js';
 import { now } from '../lib/clock.js';
+import { yieldToMain } from '../lib/scheduler.js';
 
 export const DEFAULT_SIGN = { name: 'AL MARTIN A. MENES', title: 'Acting Branch Manager', label: 'In Charge' };
 
@@ -46,15 +47,22 @@ const strip = r => { if (!r) return {}; const { id, ...rest } = r; return rest; 
 const listeners = new Set();
 /** Called when data changed from *outside* this tab's own actions (other tab / other phone). */
 export const onExternalChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+/* "Has anything changed since the last backup?" Kept in localStorage so it survives a restart. Every write and every change that
+   arrives from sync sets it; a finished backup clears it, so an unchanged day costs nothing. */
+const DIRTY = 'dtrv.dirty';
+export const markDirty = () => { try { localStorage.setItem(DIRTY, '1'); } catch { /* ignore */ } };
+export const isDirty = () => { try { return localStorage.getItem(DIRTY) !== '0'; } catch { return true; } };
+export const clearDirty = () => { try { localStorage.setItem(DIRTY, '0'); } catch { /* ignore */ } };
+
 let notifyT = 0;   // sync can deliver many small changes in a row: repaint once per burst, not once per change
-const notify = () => { clearTimeout(notifyT); notifyT = setTimeout(() => listeners.forEach(f => { try { f(); } catch (e) { console.error(e); } }), 150); };
+const notify = () => { markDirty(); clearTimeout(notifyT); notifyT = setTimeout(() => listeners.forEach(f => { try { f(); } catch (e) { console.error(e); } }), 150); };
 
 const timers = {};        // settings id -> debounce timer
 const dirty = new Set();  // settings ids edited but not yet written (their in-memory value is the newest)
 let pending = 0, skipped = false;
 /** Wrap every DB write: while writes are in flight, ignore live-query echoes (they may be stale) and re-sync after. */
 async function write(fn) {
-  pending++;
+  markDirty(); pending++;
   try { return await fn(); }
   finally { pending--; if (!pending && skipped) { skipped = false; await reloadAll(true); } }
 }
@@ -284,11 +292,25 @@ export async function checkAdminPin(pin) {
 
 /* ---------- backup / restore ---------- */
 const TABLES = ['employees', 'days', 'punches', 'settings', 'holidays', 'audit'];
-export async function exportAll() {
-  const out = { app: 'dtrv', version: 1, exportedAt: new Date().toISOString() };
-  for (const t of TABLES) out[t] = await db[t].toArray();
-  return JSON.stringify(out);
+/** One table as a JSON array. When `polite`, rows are read and written out in small chunks with a breath in between. */
+async function tableJson(t, polite) {
+  if (!polite) return JSON.stringify(await db[t].toArray());
+  const CHUNK = 1500, pk = db[t].schema.primKey.keyPath, out = [];
+  let last, rows;                                                    // page by key ("everything after the last one"): no re-reading from the start
+  do {
+    rows = await (last === undefined ? db[t].orderBy(pk) : db[t].where(pk).above(last)).limit(CHUNK).toArray();
+    if (rows.length) { out.push(JSON.stringify(rows).slice(1, -1)); last = rows[rows.length - 1][pk]; }
+    await yieldToMain();
+  } while (rows.length === CHUNK);
+  return '[' + out.join(',') + ']';
 }
+export async function exportAll({ polite = false } = {}) {
+  const parts = [`{"app":"dtrv","version":1,"exportedAt":${JSON.stringify(new Date().toISOString())}`];
+  for (const t of TABLES) { parts.push(`,${JSON.stringify(t)}:${await tableJson(t, polite)}`); if (polite) await yieldToMain(); }
+  parts.push('}'); return parts.join('');
+}
+/** Cheap totals for the backup list (no need to parse a whole backup to count). */
+export const totals = async () => ({ people: await db.employees.count(), days: await db.days.count() });
 /** Replace everything with a backup file's contents. Throws RepoError('BAD_BACKUP') for anything else. */
 export async function importAll(text) {
   let j; try { j = JSON.parse(text); } catch { throw new RepoError('BAD_BACKUP', 'This is not a backup file'); }
@@ -299,4 +321,18 @@ export async function importAll(text) {
   S.e = {};
   await reloadAll(false);
   return { people: j.employees.length, days: j.days.length };
+}
+
+/* ---------- edit history and yearly counts ---------- */
+/** Newest first. `no` limits it to one person. Reads straight from the database a page at a time. */
+export async function auditPage({ offset = 0, limit = 30, no = null } = {}) {
+  let q = db.audit.orderBy('at').reverse();
+  if (no) q = q.filter(a => a.employeeId === no);
+  return q.offset(offset).limit(limit).toArray();
+}
+/** How many days of each kind of remark this person has in a year: { LEAVE, DAYOFF, HOLIDAY, OTHER }. */
+export async function yearRemarkCounts(no, year) {
+  const out = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0, OTHER: 0 };
+  await db.days.where('[employeeId+date]').between([no, year + '-01-01'], [no, year + '-12-32'], true, true).each(d => { if (d.remark && out[d.remark.code] !== undefined) out[d.remark.code]++; });
+  return out;
 }

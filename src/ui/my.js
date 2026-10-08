@@ -2,12 +2,13 @@
 import { $, $$, pad, t12, tPrint, shiftYM, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, lateSlots, dayClass } from '../lib/rules.js';
-import { get, emp, schedOf, monthStats, ensureMonth } from '../data/repo.js';
+import { get, emp, schedOf, monthStats, monthDays, ensureMonth, yearRemarkCounts } from '../data/repo.js';
 import { go, countUp, toast } from './core.js';
 import { SLOT_G, autoToggle } from './home.js';
 import { openRemarkSheet, openDaySheet } from './remarks.js';
 import { openPreview } from './print.js';
-import { renderAdmin } from './admin.js';
+import { renderAdmin, isAdmin } from './admin.js';
+import { openHistory } from './history.js';
 
 let myNo = null, myYM = null, mySel = null, myFrom = 'rec';
 export const myOpen = () => myNo;
@@ -37,6 +38,11 @@ function paintMy(o = {}) {
   $('#mLabel').textContent = MONTHS[M - 1].slice(0, 3) + ' ' + Y;
   $('#myStats').innerHTML = `<div class="hero ${st.lates ? 'g1' : 'calm'}"><div class="n" id="heroN">${o.anim || o.dir ? 0 : st.lates}</div><div class="t"><b>late${st.lates === 1 ? '' : 's'} in ${MONTHS[M - 1]}</b><br>${st.lateMin} min total · ${st.present} days present · ${st.remarks} remark${st.remarks === 1 ? '' : 's'}</div></div>`;
   if (o.anim || o.dir) countUp($('#heroN'), st.lates, 800);
+  /* leave / day-off / holiday days: this month now, this year as soon as it is read */
+  const tally = c => ['LEAVE', 'DAYOFF', 'HOLIDAY'].filter(k => c[k]).map(k => `<i class="${k}">${{ LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday' }[k]} ${c[k]}</i>`).join('') || '<em>no days off</em>';
+  const mc = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0 }; monthDays(myNo, myYM).forEach(d => { if (d.remark && mc[d.remark.code] !== undefined) mc[d.remark.code]++; });
+  $('#myCnts').innerHTML = `<div><b>${MONTHS[M - 1].slice(0, 3)}</b>${tally(mc)}</div><div><b>${Y}</b><span id="myYear"><em>…</em></span></div>`;
+  const wantNo = myNo, wantY = Y; yearRemarkCounts(myNo, String(Y)).then(c => { if (myNo === wantNo && myYM.startsWith(wantY) && $('#myYear')) $('#myYear').innerHTML = tally(c); }).catch(() => {});
   let h = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(d => `<div class="h">${d}</div>`).join('');
   h += '<button class="c pad"></button>'.repeat(new Date(Y, M - 1, 1).getDay());
   for (let d = 1; d <= n; d++) {
@@ -50,8 +56,9 @@ function paintMy(o = {}) {
   const e = get(myNo, mySel), wd = new Date(mySel + 'T00:00').getDay(), cls = dayClass(e, mySel, wd, sc, today), late = lateMinutes(e, sc);
   const badge = e?.remark ? `<em class="${e.remark.code === 'HOLIDAY' ? 'hol' : 'rm'}">${e.remark.code === 'OTHER' ? 'Remark' : esc(remarkText(e.remark))}</em>` : late ? `<em class="lt">Late ${late}m</em>` : cls === 'inc' ? '<em class="inc">Incomplete</em>' : '';
   const lateAt = lateSlots(e, sc);
-  $('#myDetail').innerHTML = `<div class="detail"><div class="dh"><span>${new Date(mySel + 'T00:00').toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}${e?.edited ? ' · ✎ edited' : ''}</span><span style="display:flex;gap:6px;align-items:center">${badge}<button id="myEdit">Edit</button></span></div>
+  $('#myDetail').innerHTML = `<div class="detail"><div class="dh"><span>${new Date(mySel + 'T00:00').toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}${e?.edited ? ' · ✎ edited' : ''}</span><span style="display:flex;gap:6px;align-items:center">${badge}${isAdmin() ? '<button id="myHist">History</button>' : ''}<button id="myEdit">Edit</button></span></div>
     <div class="tchips">${SLOTS.map((s, i) => `<div style="--i:${i}" class="${e?.[s] ? SLOT_G(s) : 'e'}" ${lateAt[s] ? 'data-late' : ''}>${e?.[s] ? tPrint(e[s]) : '—'}<small>${SLOT_LABEL[s]}</small></div>`).join('')}</div>
     ${e?.remark?.code === 'OTHER' ? `<div class="rmkline">✏️ ${esc(e.remark.text)}</div>` : ''}</div>`;
   $('#myEdit').onclick = () => openDaySheet(myNo, mySel);
+  if ($('#myHist')) $('#myHist').onclick = () => openHistory({ no: myNo });
 }
