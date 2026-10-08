@@ -8,6 +8,9 @@ import { SLOTS, remarkText } from '../lib/rules.js';
  * @param dayOf  date => {am_in,am_out,pm_in,pm_out,remark} | undefined
  * @param sign   {name,title,label}
  */
+/** Keep long names on one line: step the size down instead of cutting letters off. */
+const fit = (s, big, mid, small, a, b) => { const n = String(s).length; return n > b ? small : n > a ? mid : big; };
+
 export function dtrCopy(p, ym, dayOf, sign) {
   const [Y, M] = ym.split('-').map(Number), n = daysInMonth(ym);
   let rows = '';
@@ -24,7 +27,7 @@ export function dtrCopy(p, ym, dayOf, sign) {
   return `<div class="dtr">
     <div class="formno">Civil Service Form No. 48</div>
     <div class="title">DAILY TIME RECORD</div><div class="ooo">-----o0o-----</div>
-    <div class="name">${esc(p.name)}</div><div class="cap">(Name)</div>
+    <div class="name" style="font-size:${fit(p.name, 12, 10.5, 9, 27, 34)}pt">${esc(p.name)}</div><div class="cap">(Name)</div>
     <table class="meta">
       <tr><td style="width:34%"><i>For the month of</i></td><td class="u" style="width:46%">${MONTHS[M - 1].toUpperCase()}</td><td class="u" style="width:20%">${Y}</td></tr>
       <tr><td rowspan="2"><i>Official hours for arrival<br>and departure</i></td><td><i>Regular days</i> <span class="blank"></span></td><td></td></tr>
@@ -40,6 +43,6 @@ export function dtrCopy(p, ym, dayOf, sign) {
     <div class="cert">I certify on my honor that the above is a true and correct report of the hours of work performed, record of which was made daily at the time of arrival and departure from office.</div>
     <div class="sigline"></div>
     <div class="verified">VERIFIED as to the prescribed office hours:</div>
-    <div class="sup"><div class="n">${esc(sign.name)}</div><div class="t">${esc(sign.title)}</div><div class="l">${esc(sign.label)}</div></div>
+    <div class="sup"><div class="n" style="font-size:${fit(sign.name, 10.5, 9.5, 8.5, 26, 33)}pt">${esc(sign.name)}</div><div class="t">${esc(sign.title)}</div><div class="l">${esc(sign.label)}</div></div>
   </div>`;
 }

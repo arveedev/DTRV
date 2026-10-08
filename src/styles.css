@@ -400,7 +400,7 @@ input,select{font:inherit}
 .dtr .formno{font-style:italic;font-size:7pt}
 .dtr .title{text-align:center;font-weight:700;font-size:11pt;margin-top:2mm}
 .dtr .ooo{text-align:center;font-size:7pt;margin-bottom:3mm}
-.dtr .name{border-bottom:1px solid #000;text-align:center;font-weight:700;font-size:9pt;height:6mm;line-height:6mm;text-transform:uppercase}
+.dtr .name{border-bottom:1px solid #000;text-align:center;font-weight:700;font-size:12pt;height:8mm;line-height:8mm;text-transform:uppercase;white-space:nowrap;overflow:hidden}
 .dtr .cap{text-align:center;font-size:7pt;margin-bottom:2mm}
 .dtr table{width:100%;border-collapse:collapse;table-layout:fixed}
 .dtr .meta td{font-size:7pt;padding:.4mm 1mm;vertical-align:bottom}
@@ -408,21 +408,21 @@ input,select{font:inherit}
 .dtr .meta i{font-style:italic}
 .dtr .meta .blank{display:inline-block;min-width:55%;border-bottom:1px solid #000;height:3mm;vertical-align:bottom}
 .dtr .grid{margin-top:2mm}
-.dtr .grid th,.dtr .grid td{border:1px solid #000;text-align:center;padding:0;height:5mm;font-size:7.5pt;overflow:hidden;white-space:nowrap}
+.dtr .grid th,.dtr .grid td{border:1px solid #000;text-align:center;padding:0;height:5mm;font-size:8.8pt;font-weight:700;overflow:hidden;white-space:nowrap}
 .dtr .grid th{font-weight:700;font-size:6.5pt;line-height:1.1}
 .dtr .grid th.big{font-size:8pt}
 .dtr .grid td.dn{font-weight:700;text-align:left;padding-left:1mm}
-.dtr .grid td.rmk{font-size:5.4pt;white-space:normal;line-height:1}
-.dtr .grid td.across{font-size:6pt;letter-spacing:.5px}
+.dtr .grid td.rmk{font-size:6.6pt;font-weight:700;white-space:normal;line-height:1}
+.dtr .grid td.across{font-size:6pt;font-weight:400;letter-spacing:.5px}
 .dtr .grid tr.tot td{border:0}
 .dtr .grid tr.tot td.b{border:1px solid #000}
 .dtr .cert{font-style:italic;font-size:6.3pt;margin-top:4mm;line-height:1.3}
 .dtr .sigline{border-bottom:1px solid #000;height:9mm}
 .dtr .verified{font-style:italic;font-size:6.3pt;margin-top:4mm}
-.dtr .sup{text-align:center;margin-top:8mm;font-size:7pt}
-.dtr .sup .n{font-weight:700;text-transform:uppercase;border-bottom:1px solid #000;display:inline-block;min-width:60%}
-.dtr .sup .t{font-size:6.5pt}
-.dtr .sup .l{font-style:italic;font-size:6.5pt}
+.dtr .sup{text-align:center;margin-top:7mm;font-size:9pt}
+.dtr .sup .n{font-weight:700;font-size:10.5pt;text-transform:uppercase;border-bottom:1px solid #000;display:inline-block;min-width:60%}
+.dtr .sup .t{font-size:8.5pt;font-weight:600}
+.dtr .sup .l{font-style:italic;font-size:8.5pt}
 
 #printRoot{display:none}
 @media print{
