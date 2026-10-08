@@ -151,6 +151,27 @@ export function openSheet(html, cls=''){ const sh=$('#sheet'); sh.className='she
 export function closeSheet(){ closePicker(); $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); closeHooks.forEach(f => f()); }
 $('#scrim').onclick = closeSheet;
 
+/** Pull a sheet down by its handle to close it: it follows the finger, then either drops away or springs back. */
+function dragToClose(el, close) {
+  let id = null, y0 = 0, dy = 0, t0 = 0;
+  el.addEventListener('pointerdown', ev => {
+    if (!ev.target.closest('.grab')) return;
+    id = ev.pointerId; y0 = ev.clientY; dy = 0; t0 = performance.now(); el.setPointerCapture(id); el.style.transition = 'none';
+  });
+  el.addEventListener('pointermove', ev => { if (ev.pointerId !== id) return; dy = Math.max(0, ev.clientY - y0); el.style.transform = `translateY(${dy}px)`; });
+  const end = ev => {
+    if (ev.pointerId !== id) return; id = null;
+    const fast = dy / Math.max(1, performance.now() - t0) > 0.6 && dy > 30;
+    el.style.transition = 'transform .3s cubic-bezier(.2,.9,.25,1)';
+    if (dy > 110 || fast) {
+      el.style.transform = 'translateY(110%)';
+      setTimeout(() => { el.style.transition = 'none'; close(); el.style.transform = ''; void el.offsetWidth; el.style.transition = ''; }, 280);
+    } else { el.style.transform = ''; setTimeout(() => { el.style.transition = ''; }, 320); }
+  };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+dragToClose($('#sheet'), closeSheet); dragToClose($('#picker'), closePicker);
+
 
 
 /** Wait for a database write only for a moment. Mistakes in the input come back at once; a slow write (the database can be

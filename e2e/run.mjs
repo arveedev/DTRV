@@ -171,6 +171,18 @@ try {
   await pE.click('#aTabs button[data-t="4"]'); await wait(pE, 900); await pE.click('#errBtn'); await wait(pE, 900);
   ok((await pE.textContent('#sheet')).includes('test boom 123'), 'the error log lists it with its device and version');
   await pE.click('#errClear'); await wait(pE, 700);
+  /* pull a sheet down to close it; swipe sideways to change month */
+  const pG = await fresh('2026-10-07T09:00:00', '?demo=1&lite=0');
+  await pG.click('#toAdmin'); await wait(pG, 500); await keys(pG, '123456', '#gkeys'); await wait(pG, 1600);
+  await pG.click('#holBtn'); await wait(pG, 700);
+  const gb = await (await pG.$('#sheet .grab')).boundingBox();
+  await pG.mouse.move(gb.x + gb.width / 2, gb.y + 3); await pG.mouse.down(); await pG.mouse.move(gb.x + gb.width / 2, gb.y + 200, { steps: 8 }); await pG.mouse.up(); await wait(pG, 700);
+  ok(await pG.$eval('#sheet', s => !s.classList.contains('show')), 'pulling the handle down closes the sheet');
+  await pG.click('#hAdd').catch(() => {}); await pG.click('.prow[data-no="024"]'); await wait(pG, 1300);
+  const lbl = await pG.textContent('#mLabel'); const mb = await (await pG.$('#myDays')).boundingBox();
+  await pG.mouse.move(mb.x + 300, mb.y + 80); await pG.mouse.down(); await pG.mouse.move(mb.x + 120, mb.y + 84, { steps: 6 }); await pG.mouse.up(); await wait(pG, 900);
+  ok((await pG.textContent('#mLabel')) !== lbl, 'swiping the calendar sideways changes the month');
+  ok(pG.errs.length === 0, 'no console errors (gestures) ' + pG.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

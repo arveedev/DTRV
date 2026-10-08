@@ -9,6 +9,13 @@ import '@fontsource/space-grotesk/latin-700.css';
 import { registerSW } from 'virtual:pwa-register';
 import { boot } from './ui/app.js';
 
+/* Weak phones (few cores, little memory, or data saver on) get a flatter, lighter look. ?lite=1 / ?lite=0 forces it either way. */
+{
+  const q = /[?&]lite=([01])/.exec(location.search), c = navigator.connection;
+  const weak = q ? q[1] === '1' : (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 2 || !!c?.saveData;
+  document.documentElement.classList.toggle('lite', weak);
+}
+
 /* A new version is fetched in the background. If the app is in the background we switch to it at once; otherwise we
    offer a tap, so nothing reloads in the middle of someone using the keypad. */
 if ('serviceWorker' in navigator) {

@@ -22,6 +22,13 @@ export const refreshMy = () => { if (myNo) paintMy({ sel: true }); };
 
 export function initMy() {
   $('#myBack').onclick = () => { if (myFrom === 'admin') { go('p-admin', 'l'); lazy.mods.admin?.renderAdmin(); } else { go('p-record', 'l'); autoToggle(); } };
+  /* swipe the month left or right (mostly sideways, long enough, not a tap) */
+  let sx = 0, sy = 0, sid = null; const pm = $('#p-my');
+  pm.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; sid = e.pointerId; });
+  pm.addEventListener('pointerup', e => {
+    if (e.pointerId !== sid) return; sid = null; const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && !$('#sheet').classList.contains('show')) monthTo(dx < 0 ? 1 : -1);
+  });
   $('#mPrev').onclick = () => monthTo(-1);
   $('#mNext').onclick = () => monthTo(1);
   $('#myRemark').onclick = () => openRemarkSheet(myNo, 'OTHER', mySel || now().date);
