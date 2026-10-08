@@ -7,11 +7,12 @@ import { SLOTS, remarkText } from '../lib/rules.js';
  * @param ym     'YYYY-MM'
  * @param dayOf  date => {am_in,am_out,pm_in,pm_out,remark} | undefined
  * @param sign   {name,title,label}
+ * @param lateOf e => { am_in:boolean, pm_in:boolean }  (those arrivals print in red)
  */
 /** Keep long names on one line: step the size down instead of cutting letters off. */
 const fit = (s, big, mid, small, a, b) => { const n = String(s).length; return n > b ? small : n > a ? mid : big; };
 
-export function dtrCopy(p, ym, dayOf, sign) {
+export function dtrCopy(p, ym, dayOf, sign, lateOf = () => ({})) {
   const [Y, M] = ym.split('-').map(Number), n = daysInMonth(ym);
   let rows = '';
   for (let d = 1; d <= 31; d++) {
@@ -19,7 +20,8 @@ export function dtrCopy(p, ym, dayOf, sign) {
     const ds = `${ym}-${pad(d)}`, wd = new Date(Y, M - 1, d).getDay(), e = dayOf(ds), has = e && SLOTS.some(s => e[s]);
     const rem = esc(remarkText(e?.remark));
     const ut = rem ? `<td colspan="2" class="rmk">${rem}</td>` : '<td></td><td></td>';
-    if (has) rows += `<tr><td class="dn">${d}</td>${SLOTS.map(s => `<td>${tPrint(e[s])}</td>`).join('')}${ut}</tr>`;
+    const lt = has ? lateOf(e) : {};
+    if (has) rows += `<tr><td class="dn">${d}</td>${SLOTS.map(s => `<td${lt[s] ? ' class="late"' : ''}>${tPrint(e[s])}</td>`).join('')}${ut}</tr>`;
     else if (rem) rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td>${ut}</tr>`;
     else if (wd === 0 || wd === 6) rows += `<tr><td class="dn">${d}</td><td colspan="4" class="across">${wd === 0 ? 'SUNDAY' : 'SATURDAY'}</td><td></td><td></td></tr>`;
     else rows += `<tr><td class="dn">${d}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;

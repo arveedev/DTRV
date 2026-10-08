@@ -12,8 +12,8 @@ input,select{font:inherit}
 .app{
   --sat:max(env(safe-area-inset-top),16px); --sab:max(env(safe-area-inset-bottom),16px); --kg:10px;
   --rbg:#0a0f1c; --rsurf:#141b2d; --rsurf2:#1d2640; --rink:#eef2fa; --rmuted:#7c8aa8; --rline:#26304a;
-  --acc:#5eead4; --acc-ink:#062a26; --rlate:#fb923c; --rlate-bg:#3d2312; --rok:#5eead4; --rok-bg:#123b37;
-  --rrem:#c4b5fd; --rrem-bg:#2a1f4a; --rhol:#fb7185; --rhol-bg:#4a1d2b; --rwarn:#facc15; --rwarn-bg:#3b3410;
+  --acc:#5eead4; --acc-ink:#062a26; --rlate:#ff6b6b; --rlate-bg:#401519; --rok:#5eead4; --rok-bg:#123b37;
+  --rrem:#c4b5fd; --rrem-bg:#2a1f4a; --rhol:#60a5fa; --rhol-bg:#12284a; --rwarn:#facc15; --rwarn-bg:#3b3410;
   position:fixed;top:0;bottom:0;left:0;right:0;width:100%;max-width:480px;margin:0 auto;background:var(--rbg);color:var(--rink);
   overflow:hidden;overflow:clip;font-family:Poppins,system-ui,sans-serif;
 }
@@ -227,6 +227,8 @@ input,select{font:inherit}
 .tchips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .tchips div{border-radius:10px;padding:5px 0;text-align:center;color:#fff;font:600 13px/1.15 "Space Grotesk",sans-serif;animation:chipin .5s cubic-bezier(.3,1.6,.5,1) calc(var(--i)*60ms) backwards}
 .tchips div small{display:block;font:500 8.5px Poppins,sans-serif;opacity:.9}
+.tchips div[data-late]{background:#e11d48!important;color:#fff;box-shadow:0 0 0 2px rgba(255,107,107,.35)}
+.tchips div[data-late] small::after{content:' · late'}
 .tchips div.e{background:var(--rsurf2)!important;color:var(--rmuted)}
 .rmkline{margin-top:7px;font-size:11.5px;color:var(--rrem);font-weight:600}
 .mspace{flex:1;min-height:8px}
@@ -412,6 +414,7 @@ input,select{font:inherit}
 .dtr .grid th{font-weight:700;font-size:6.5pt;line-height:1.1}
 .dtr .grid th.big{font-size:8pt}
 .dtr .grid td.dn{font-weight:700;text-align:left;padding-left:1mm}
+.dtr .grid td.late{color:#d10000}
 .dtr .grid td.rmk{font-size:6.6pt;font-weight:700;white-space:normal;line-height:1}
 .dtr .grid td.across{font-size:6pt;font-weight:400;letter-spacing:.5px}
 .dtr .grid tr.tot td{border:0}

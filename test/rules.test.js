@@ -148,3 +148,18 @@ describe('text', () => {
     expect(dayClass(undefined, '2026-10-10', 6, fixed, '2026-10-07')).toBe('we');
   });
 });
+
+describe('lateSlots', () => {
+  const fixed = { mode: 'fixed', amIn: '08:00', pmLate: false };
+  it('flags a late AM IN, not an on-time one', async () => {
+    const { lateSlots } = await import('../src/lib/rules.js');
+    expect(lateSlots({ am_in: '08:01' }, fixed).am_in).toBe(true);
+    expect(lateSlots({ am_in: '08:00' }, fixed).am_in).toBe(false);
+  });
+  it('flags PM IN only when the late-return setting is on', async () => {
+    const { lateSlots } = await import('../src/lib/rules.js');
+    expect(lateSlots({ pm_in: '13:10' }, fixed).pm_in).toBe(false);
+    expect(lateSlots({ pm_in: '13:10' }, { ...fixed, pmLate: true }).pm_in).toBe(true);
+    expect(lateSlots({ pm_in: '13:00' }, { ...fixed, pmLate: true }).pm_in).toBe(false);
+  });
+});

@@ -1,13 +1,13 @@
 /* Print preview (one person from My DTR, or many from the admin list) and the real-size pages for printing. */
 import { $, shiftYM, MONTHS, esc } from '../lib/util.js';
-import { nickOf } from '../lib/rules.js';
-import { S, get, emp, ensureMonth } from '../data/repo.js';
+import { nickOf, lateSlots } from '../lib/rules.js';
+import { S, get, emp, schedOf, ensureMonth } from '../data/repo.js';
 import { dtrCopy } from '../print/dtr.js';
 import { go, stagger, toast } from './core.js';
 import { renderAdmin } from './admin.js';
 
 let curPrintSt = null, printFrom = 'my', printReady = false;
-const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign);
+const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign, e => lateSlots(e, schedOf(emp(no))));
 const pages = st => st.nos.map(no => { const c = copy(no, st.ym); return `<div class="a4">${c}${c}</div>`; }).join('');
 
 /** The admin list keeps this up to date so Ctrl+P prints exactly what is selected. */

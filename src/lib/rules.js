@@ -31,6 +31,12 @@ export function lateMinutes(day, sc) {
 }
 
 /** Flexi only: when the person may go home after clocking in. */
+/** Which arrivals were late: AM IN after the limit; PM IN after 1:00 PM only if the late-return setting is on. */
+export function lateSlots(day, sc) {
+  if (!day) return { am_in: false, pm_in: false };
+  return { am_in: !!day.am_in && m(day.am_in) > m(lateLimit(sc)), pm_in: !!(sc.pmLate && day.pm_in && m(day.pm_in) > m(LUNCH_END)) };
+}
+
 export function expectedOut(day, sc) {
   if (!day?.am_in || sc.mode !== 'flexi') return null;
   return hm(Math.max(m(day.am_in), m(sc.flexStart)) + sc.req * 60 + (m(LUNCH_END) - m(LUNCH_START)));
