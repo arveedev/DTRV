@@ -117,6 +117,12 @@ try {
   await pH.click('#holBtn'); await wait(pH, 700);
   ok((await pH.textContent('#sheet')).includes('Every December 8'), 'after a reload the holiday is still remembered every year');
   ok(pH.errs.length === 0, 'no console errors (holidays) ' + pH.errs.join('|'));
+  /* automatic backups show up in Settings and can be restored */
+  const pBk = await fresh('2026-10-07T09:00:00', '?demo=1'); await wait(pBk, 5000); await pBk.waitForTimeout(800);
+  await pBk.click('#toAdmin'); await wait(pBk, 500); await keys(pBk, '123456', '#gkeys'); await wait(pBk, 1600);
+  await pBk.click('#aTabs button[data-t="4"]'); await wait(pBk, 900);
+  ok((await pBk.textContent('#snapList')).includes('Today') && (await pBk.textContent('#snapList')).includes('3 people'), 'Settings lists today\'s automatic backup');
+  ok(pBk.errs.length === 0, 'no console errors (backups) ' + pBk.errs.join('|'));
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

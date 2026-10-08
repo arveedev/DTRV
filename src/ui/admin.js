@@ -316,7 +316,7 @@ function aSet(b) {
     <div class="card" data-st><h4>Admin PIN</h4><div class="row2"><div class="field"><label>New PIN</label><input id="pin1" type="password" maxlength="6" inputmode="numeric"></div><div class="field"><label>Confirm</label><input id="pin2" type="password" maxlength="6" inputmode="numeric"></div></div><button class="btn" id="pinSave" style="width:100%">Change PIN</button></div>
     <div class="card" data-st><h4>Backup</h4>
       <div class="syncline" id="syncLine"></div>
-      <div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 10px">A copy is saved on this phone every day (the last 14 days are kept). You can also download one as a file.</div>
+      <div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 10px">A copy is saved on this phone every day: every day for 30 days, then weekly up to 6 months, then monthly up to 2 years. You can also download one as a file.</div>
       <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore file…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden>
       <div class="hsub" style="margin-top:14px">Saved on this phone</div><div id="snapList"><div class="emptyl">Loading…</div></div></div>
     ${cloud.bad ? '<div class="card" data-st><h4>Sync is off</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">The sync address saved in Vercel (<b style="color:var(--rink)">VITE_DEXIE_CLOUD_DB_URL</b>) is not a valid <b style="color:var(--rink)">https://…</b> address, so the app is running on this phone only.</div></div>' : ''}
@@ -345,10 +345,13 @@ function aSet(b) {
   const line = () => { const el = $('#syncLine'); if (!el) return; if (!cloud.on) { el.hidden = true; return; } const [t, k] = SYNC_TEXT[sync.phase] || ['Starting sync…', '']; el.className = 'syncline ' + k; el.textContent = t; };
   line(); const lt = setInterval(() => { if (!$('#syncLine')) clearInterval(lt); else line(); }, 2000);
   const fmtSnap = s => { const d = new Date(s.at), today = now().date === s.id; return `${s.id.startsWith('before-restore') ? 'Before a restore' : today ? 'Today' : fmtDate(s.id)} · ${d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })} · ${s.people} people · ${s.days} days`; };
+  let showAll = false;
   const paintSnaps = async () => {
-    const list = await listSnapshots(), el = $('#snapList'); if (!el) return;
-    el.innerHTML = list.length ? list.map(s => `<div class="hrow"><div><small style="margin:0">${esc(fmtSnap(s))}</small></div><button class="mini" data-id="${attr(s.id)}">Restore</button></div>`).join('') : '<div class="emptyl">The first one is saved shortly after the app opens</div>';
-    $$('#snapList .mini').forEach(b => { b.onclick = async () => {
+    const all = await listSnapshots(), el = $('#snapList'); if (!el) return;
+    const list = showAll ? all : all.slice(0, 8);
+    el.innerHTML = (list.length ? list.map(s => `<div class="hrow"><div><small style="margin:0">${esc(fmtSnap(s))}</small></div><button class="mini" data-id="${attr(s.id)}">Restore</button></div>`).join('') : '<div class="emptyl">The first one is saved shortly after the app opens</div>') + (all.length > 8 && !showAll ? `<button class="wlink" id="snapAll">Show all ${all.length}</button>` : '');
+    if ($('#snapAll')) $('#snapAll').onclick = () => { showAll = true; paintSnaps(); };
+    $$('#snapList .mini[data-id]').forEach(b => { b.onclick = async () => {
       if (!confirm('Put this backup back? What is on this phone now is saved first, so you can undo it.')) return;
       try { const r = await restoreSnapshot(b.dataset.id); await ensureMonth(now().date.slice(0, 7)); autoToggle(); afterChange(); toast(`Restored · <b>${r.people}</b> people, <b>${r.days}</b> days`); renderAdmin(); } catch (err) { fail(err); }
     }; });

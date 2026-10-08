@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setClock } from '../src/lib/clock.js';
 import * as repo from '../src/data/repo.js';
-import { autoBackup, takeSnapshot, listSnapshots, restoreSnapshot } from '../src/data/backup.js';
+import { autoBackup, takeSnapshot, listSnapshots, restoreSnapshot, retained } from '../src/data/backup.js';
 
 let n = 0;
 const at = iso => setClock(() => new Date(iso));
@@ -23,10 +23,10 @@ describe('automatic backups', () => {
   it('does nothing while there is no data', async () => {
     repo.S.emps = []; expect(await autoBackup()).toBe(false);
   });
-  it('keeps only the last 14 days', async () => {
-    for (let d = 1; d <= 20; d++) await takeSnapshot('2026-09-' + String(d).padStart(2, '0'));
-    const days = (await listSnapshots()).filter(s => /^\d{4}-\d\d-\d\d$/.test(s.id));
-    expect(days).toHaveLength(14);
+  it('prunes by the policy: 30 daily days, weekly to 6 months, monthly to 2 years', async () => {
+    for (const id of ['2026-09-20', '2026-08-05', '2026-03-01']) await takeSnapshot(id);
+    const ids = (await listSnapshots()).map(s => s.id);
+    expect(ids).toEqual(expect.arrayContaining(['2026-09-20', '2026-08-05', '2026-03-01']));    // all inside the windows
   });
   it('restores an older state and saves the current one first', async () => {
     await takeSnapshot('2026-10-06');
@@ -37,4 +37,21 @@ describe('automatic backups', () => {
     expect(repo.get('024', '2026-10-07').am_out).toBeNull();
     expect((await listSnapshots()).some(s => s.id.startsWith('before-restore-'))).toBe(true);
   });
+});
+
+describe('retention policy', () => {
+  const day = (n, from = '2026-10-07') => new Date(Date.UTC(+from.slice(0, 4), +from.slice(5, 7) - 1, +from.slice(8, 10) - n)).toISOString().slice(0, 10);
+  const ids = Array.from({ length: 800 }, (_, i) => day(i));
+  const kept = retained(ids, '2026-10-07');
+  it('keeps every day for the last 30 days', () => { for (let i = 0; i <= 30; i++) expect(kept.has(day(i))).toBe(true); });
+  it('then one per week up to about 6 months', () => {
+    const wk = [...kept].filter(id => { const a = Math.round((Date.UTC(2026, 9, 7) - Date.parse(id)) / 86400000); return a > 30 && a <= 183; });
+    expect(wk.length).toBeGreaterThanOrEqual(21); expect(wk.length).toBeLessThanOrEqual(24);
+  });
+  it('then one per month up to 2 years, nothing older', () => {
+    const mo = [...kept].filter(id => { const a = Math.round((Date.UTC(2026, 9, 7) - Date.parse(id)) / 86400000); return a > 183; });
+    expect(mo.length).toBeGreaterThanOrEqual(17); expect(mo.length).toBeLessThanOrEqual(20);
+    expect(kept.has(day(731))).toBe(false); expect(kept.size).toBeLessThan(80);
+  });
+  it('covers at least 3 months back', () => { expect([...kept].some(id => id <= '2026-07-01')).toBe(true); });
 });
