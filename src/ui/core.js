@@ -2,6 +2,7 @@
    Nothing here knows about people or days. */
 import { $, $$, pad, t12, ymd, addDays, mondayOf, shiftYM, spanDays, fmtDate, fmtRange, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
+import { logError } from '../lib/errlog.js';
 
 /* =================== animation helpers =================== */
 export function stagger(root, step){
@@ -158,5 +159,5 @@ export async function fast(pr, what = 'Saving') {
   let early = null; pr.catch(e => { early = e; });
   await Promise.race([pr.then(() => {}, () => {}), new Promise(r => setTimeout(r, 30))]);
   if (early) throw early;
-  pr.catch(e => toast(`${what} failed: ${esc(e.message || String(e))}`, 'err'));
+  pr.catch(e => { logError('save', e, { what }); toast(`${what} failed: ${esc(e.message || String(e))}`, 'err'); });
 }

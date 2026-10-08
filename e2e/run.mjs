@@ -139,13 +139,38 @@ try {
   await pN.click('.prow[data-no]', { force: true }).catch(() => {});
   await pN.click('#aTabs button[data-t="0"]'); await wait(pN, 800); await pN.click('.prow[data-no="024"]'); await wait(pN, 1300);
   ok((await pN.textContent('#myCnts')).includes('2026') && (await pN.textContent('#myCnts')).includes('Oct'), 'My DTR shows leave / day-off / holiday counts for the month and the year');
-  await pN.click('#myDays .c[data-d="2026-10-02"]'); await wait(pN, 400); await pN.click('#myEdit'); await wait(pN, 700); await pN.click('#dDel'); await wait(pN, 900);
+  await pN.click('#myDays .c[data-d="2026-10-02"]'); await wait(pN, 400); await pN.click('#myEdit'); await wait(pN, 700); await pN.click('#dDel'); await wait(pN, 300);
+  ok((await pN.textContent('#dDel')).includes('Sure?') && await pN.isVisible('#dOk'), 'deleting a day asks "Sure?" first and nothing is deleted yet');
+  await pN.click('#dDel'); await wait(pN, 900);
   await pN.click('#myBack'); await wait(pN, 700); await pN.click('#aTabs button[data-t="4"]'); await wait(pN, 900);
   await pN.click('#histBtn'); await wait(pN, 900);
   ok((await pN.textContent('#hxList')).includes('Day deleted') && (await pN.textContent('#hxList')).includes('08:12'.replace('08:12', '8:12')), 'edit history shows the deleted day and what it had');
   await pN.click('#hxClose'); await wait(pN, 500); await pN.click('#invBtn'); await wait(pN, 800);
   ok(await pN.isVisible('.qrbox svg'), 'invite shows a QR code');
   ok(pN.errs.length === 0, 'no console errors (new features) ' + pN.errs.join('|'));
+  /* the forgotten clock-out is found: on the home screen, in My DTR, and in the admin overview */
+  const pF2 = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pF2.evaluate(() => localStorage.setItem('dtrv.lastCode', '024')); await pF2.reload(); await pF2.waitForSelector('html[data-ready]'); await pF2.waitForTimeout(1200);
+  ok((await pF2.textContent('#fixChip')).includes('no PM OUT'), 'the home screen offers to fix yesterday\'s missing PM OUT');
+  await pF2.click('#fixChip'); await wait(pF2, 400);
+  ok(await pF2.$eval('#keys', k => k.classList.contains('pin')), 'tapping it asks for the PIN (teal keypad)');
+  await keys(pF2, '024'); await wait(pF2, 1800);
+  ok(await pF2.isVisible('#dOk'), 'after the PIN, My DTR opens straight on that day');
+  await pF2.click('#dOk'); await wait(pF2, 800);
+  const pF3 = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pF3.click('#toAdmin'); await wait(pF3, 500); await keys(pF3, '123456', '#gkeys'); await wait(pF3, 1600);
+  ok((await pF3.textContent('#aBody')).includes('Needs attention') && (await pF3.textContent('#aBody')).includes('no PM OUT'), 'the admin overview lists the day under Needs attention');
+  await pF3.click('.nrow'); await wait(pF3, 900);
+  ok(await pF3.isVisible('#dOk'), 'tapping it opens the day to fix');
+  ok(pF2.errs.length === 0 && pF3.errs.length === 0, 'no console errors (missing-time finder) ' + pF2.errs.concat(pF3.errs).join('|'));
+  /* an error on a phone reaches the admin's error log */
+  const pE = await fresh('2026-10-07T09:00:00', '?demo=1');
+  await pE.evaluate(() => { Promise.reject(new Error('test boom 123')); }); await wait(pE, 600);
+  await pE.click('#toAdmin'); await wait(pE, 500); await keys(pE, '123456', '#gkeys'); await wait(pE, 1600);
+  ok(await pE.$eval('#aTabs button[data-t="4"]', b => b.classList.contains('dot')), 'the Settings tab shows a dot when a problem was reported');
+  await pE.click('#aTabs button[data-t="4"]'); await wait(pE, 900); await pE.click('#errBtn'); await wait(pE, 900);
+  ok((await pE.textContent('#sheet')).includes('test boom 123'), 'the error log lists it with its device and version');
+  await pE.click('#errClear'); await wait(pE, 700);
   /* multi print */
   await pg.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed = document.querySelectorAll('#printRoot .a4').length; }; });
   await pg.click('#toAdmin'); await wait(pg, 500); await keys(pg, '123456', '#gkeys'); await wait(pg, 1600);

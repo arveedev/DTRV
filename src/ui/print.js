@@ -4,6 +4,7 @@ import { nickOf, lateSlots } from '../lib/rules.js';
 import { S, get, emp, schedOf, ensureMonth } from '../data/repo.js';
 import { dtrCopy } from '../print/dtr.js';
 import { go, stagger, toast } from './core.js';
+import { logError } from '../lib/errlog.js';
 import { mods } from './lazy.js';
 
 let curPrintSt = null, printFrom = 'my', printReady = false;
@@ -82,7 +83,7 @@ export async function printWith(btn, st) {
     const file = await makePdf(st, (i, n) => { btn.textContent = n > 1 ? `Preparing ${i} of ${n}…` : 'Preparing…'; });
     ready = { sig, file }; btn.textContent = 'Tap again, then choose Print';
     setTimeout(() => { if (ready?.file === file && btn.isConnected) btn.textContent = label, ready = null; }, 60000);
-  } catch (e) { btn.textContent = label; toast(esc(e.message || 'Could not prepare the pages'), 'err'); }
+  } catch (e) { logError('print', e); btn.textContent = label; toast(esc(e.message || 'Could not prepare the pages'), 'err'); }
   finally { btn.disabled = false; }
 }
 

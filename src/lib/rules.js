@@ -124,12 +124,19 @@ export function remarkHistory(days, limit = 6) {
 }
 
 /** Calendar colour class for a day. */
+/** Which of the four times are missing from a day. */
+export const missingSlots = e => SLOTS.filter(s => !e?.[s]);
+/** A day before today with some times but not all four, and no remark that explains it (leave, "field work"…). */
+export const isIncomplete = (e, date, today) => !!e && date < today && SLOTS.some(s => e[s]) && missingSlots(e).length > 0 && !e.remark;
+/** "no PM OUT", "no AM OUT, PM IN" */
+export const missingText = e => 'no ' + missingSlots(e).map(s => SLOT_LABEL[s]).join(', ');
+
 export function dayClass(e, ds, wd, sc, today) {
   const has = e && SLOTS.some(s => e[s]);
   if (e?.remark && !has) return e.remark.code === 'HOLIDAY' ? 'hol' : 'rm';
   if (has) {
     if (lateMinutes(e, sc)) return 'lt';
-    if (SLOTS.some(s => !e[s]) && !e.remark && ds < today) return 'inc';
+    if (isIncomplete(e, ds, today)) return 'inc';
     return e.remark ? (e.remark.code === 'HOLIDAY' ? 'hol' : 'rm') : 'ok';
   }
   return (wd === 0 || wd === 6) ? 'we' : '';

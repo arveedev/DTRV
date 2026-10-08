@@ -2,7 +2,7 @@
 import { $, $$, hm, m, t12, fmtDate, fmtRange, spanDays, addDays, shiftYM, MONTHS, GRAD, phFlag, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
-import { S, get, schedOf, emp, monthStats, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
+import { S, get, schedOf, emp, monthStats, monthDays, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday,
   hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
@@ -10,6 +10,7 @@ import { openPreview, printWith, setPrintSel, itemsOf, initPrint } from './print
 import { monthCsv, csvName } from '../lib/csv.js';
 import { saveFile } from '../lib/download.js';
 import { openHistory } from './history.js';
+import { listErrors, clearErrors, pruneErrors, asText, markErrorsSeen, unseenCount } from '../lib/errlog.js';
 import { openInvite } from './invite.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
@@ -17,9 +18,11 @@ import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
 import { bioFor, bioClear } from './bio.js';
 import { listSnapshots, restoreSnapshot, takeSnapshot } from '../data/backup.js';
 import { sync } from '../data/db.js';
+import { isIncomplete, missingText } from '../lib/rules.js';
+import { openDaySheet } from './remarks.js';
 import { holidaysOn, upcoming, repeatOptions, ruleId, describeRule, KIND_LABEL } from '../lib/holidays.js';
 
-let adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
+let needAll = false, adminOk = false, aTab = 0, aYM = now().date.slice(0, 7), gateTyped = '', gateMode = 'enter', gateFirst = '', aQ = '', aSort = 'lates', aPrintSt = null;
 const TABICONS = [
   ['Overview','<path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/>'],
   ['People','<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.2.7 3.5 2.6 3.5 5.7"/>'],
@@ -81,7 +84,7 @@ export async function renderAdmin() {
   $$('#aTabs button').forEach((b, i) => b.classList.toggle('on', i === aTab)); $('#aTabs').style.setProperty('--tab', aTab);
   $('#aTitle').textContent = TITLES[aTab]; const body = $('#aBody'); body.scrollTop = 0;
   body.classList.toggle('fill', aTab === 3);
-  [aOver, aPeople, aHours, aPrint, aSet][aTab](body); stagger(body, 50);
+  [aOver, aPeople, aHours, aPrint, aSet][aTab](body); stagger(body, 50); tabDot();
 }
 /** Redraw the tabs that show data, keeping the scroll position. */
 export function refreshAdmin() {
@@ -93,9 +96,15 @@ export function refreshAdmin() {
 function aOver(b) {
   const act = S.emps.filter(p => p.active !== false), all = act.map(p => ({ p, st: monthStats(p.no, aYM) }));
   const tl = all.reduce((a, r) => a + r.st.lates, 0), tp = all.reduce((a, r) => a + r.st.present, 0);
+  /* days someone forgot a time: newest first, one tap opens the day to fix */
+  const today = now().date, need = [];
+  for (const { p } of all) for (const x of monthDays(p.no, aYM)) if (isIncomplete(x, x.date, today)) need.push({ p, x });
+  need.sort((a, b) => b.x.date.localeCompare(a.x.date) || a.p.no.localeCompare(b.p.no));
+  const needHtml = need.length ? `<div class="need" data-st><div class="hsub" style="margin-top:0">Needs attention · ${need.length}</div>${need.slice(0, needAll ? 99 : 4).map(n => `<button class="nrow" data-no="${n.p.no}" data-d="${n.x.date}"><b>${esc(nickOf(n.p))}</b><span>${fmtDate(n.x.date)}</span><em>${esc(missingText(n.x))}</em></button>`).join('')}${need.length > 4 && !needAll ? `<button class="wlink" id="needMore">Show all ${need.length}</button>` : ''}</div>` : '';
   const nextHol = upcoming(now().date, S.holidayRules, { n: 1, within: 14, skip: new Set(S.holidays.map(h => h.date)) })[0];
   b.innerHTML = `<div class="pctl" data-st><span style="font-weight:700">${MONTHS[+aYM.slice(5) - 1]} ${aYM.slice(0, 4)}</span><div class="mnav"><button id="oPrev">‹</button><button id="oNext">›</button></div></div>
     <div class="hero ${tl ? 'g1' : 'calm'}" style="margin-top:0" data-st><div class="n" id="oTot">0</div><div class="t"><b>late${tl === 1 ? '' : 's'} this month</b><br>${act.length} people · ${tp} days present</div></div>
+    ${needHtml}
     <button class="holbtn" id="holBtn" data-st>${phFlag(18)} ${nextHol ? `${esc(titleCase(nextHol.name))} · ${fmtDate(nextHol.date)}: mark it` : `Holidays · mark a day for everyone${S.holidays.length ? ` (${S.holidays.length})` : ''}`}</button>
     <div style="height:10px"></div>
     <div class="searchrow" data-st><input id="oq" type="search" placeholder="Search ${act.length} people" value="${attr(aQ)}" autocomplete="off"><button class="mini ${aSort === 'lates' ? 'on' : ''}" data-s="lates">Most lates</button><button class="mini ${aSort === 'az' ? 'on' : ''}" data-s="az">A–Z</button></div>
@@ -114,6 +123,8 @@ function aOver(b) {
   $('#oq').oninput = e => { aQ = e.target.value; paint(true); };
   $$('.searchrow .mini').forEach(x => { x.onclick = () => { aSort = x.dataset.s; $$('.searchrow .mini').forEach(y => y.classList.toggle('on', y === x)); paint(true); }; });
   $('#oPrev').onclick = () => { aYM = shiftYM(aYM, -1); renderAdmin(); }; $('#oNext').onclick = () => { aYM = shiftYM(aYM, 1); renderAdmin(); };
+  $$('.nrow').forEach(b => { b.onclick = () => openDaySheet(b.dataset.no, b.dataset.d); });
+  if ($('#needMore')) $('#needMore').onclick = () => { needAll = true; renderAdmin(); };
   $('#holBtn').onclick = openHolidays;
 }
 
@@ -323,6 +334,19 @@ function aPrint(b) {
   paint(false);
 }
 
+/* ---------- error log (notes sent in by every phone) ---------- */
+async function openErrors() {
+  await pruneErrors(); const rows = await listErrors(); markErrorsSeen(); tabDot();
+  openSheet(`<h3 data-st>Error log</h3><div class="sub" data-st>Problems any phone ran into, newest first. They arrive by themselves.</div>
+    <div class="hlist hx" data-st style="margin-top:10px">${rows.length ? rows.slice(0, 40).map(r => `<div class="hrow"><div><b>${esc(r.label)} · ${esc(r.device)}</b><small>${esc(r.what)} · v${esc(r.version)}</small><small style="word-break:break-word;color:var(--rink)">${esc(r.msg)}</small></div><small class="when">${esc(new Date(r.at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }))}<br>${esc(new Date(r.at).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }))}</small></div>`).join('') : '<div class="emptyl">No problems reported. All good.</div>'}</div>
+    <div class="btns" data-st><button class="btn" id="errCopy" ${rows.length ? '' : 'disabled'}>Copy all</button><button class="btn danger" id="errClear" ${rows.length ? '' : 'disabled'}>Clear</button><button class="btn primary" id="errClose">Close</button></div>`);
+  $('#errClose').onclick = closeSheet;
+  $('#errCopy').onclick = async () => { try { await navigator.clipboard.writeText(asText(rows)); toast('Copied. Paste it wherever you need'); } catch { toast('Could not copy', 'err'); } };
+  $('#errClear').onclick = async () => { await clearErrors(); closeSheet(); toast('Error log cleared'); };
+}
+/** A small dot on the Settings tab when new problems have been reported. */
+export async function tabDot() { const b = $('#aTabs button[data-t="4"]'); if (!b) return; const n = await unseenCount(); b.classList.toggle('dot', n > 0); }
+
 /* ---------- settings ---------- */
 function aSet(b) {
   const cloud = cloudInfo();
@@ -343,7 +367,8 @@ function aSet(b) {
       ${bioFor() ? '<button class="btn" id="bioOffBtn" style="width:100%;margin-top:10px">Turn off face / fingerprint on this phone</button>' : ''}
       <button class="btn" id="forget" style="width:100%;margin-top:10px">Forget this phone's user${rememberedUser() ? '' : ' (none set)'}</button></div>
     <div class="ver" data-st>Version ${typeof __BUILD__ === 'undefined' ? 'dev' : __BUILD__}</div>
-    <div class="card" data-st><h4>People & history</h4><div class="row2"><button class="btn" id="invBtn">Invite someone</button><button class="btn" id="histBtn">Edit history</button></div></div>
+    <div class="card" data-st><h4>People & history</h4><div class="row2"><button class="btn" id="invBtn">Invite someone</button><button class="btn" id="histBtn">Edit history</button></div>
+      <button class="btn" id="errBtn" style="width:100%;margin-top:10px">Error log <span id="errN"></span></button></div>
     <button class="bigbtn" id="sLock" data-st style="background:var(--rsurf);color:var(--rink);animation:none">Lock admin</button>`;
   [['gName', 'name'], ['gTitle', 'title'], ['gLabel', 'label']].forEach(([id, k]) => { $('#' + id).oninput = e => saveSignatory({ [k]: e.target.value }); });
   $('#pinSave').onclick = async () => {
@@ -386,6 +411,8 @@ function aSet(b) {
   };
   if (bioFor()) $('#bioOffBtn').onclick = () => { if (!confirm('Turn off face / fingerprint on this phone? The person will type their code again.')) return; bioClear(); afterChange(); toast('Face / fingerprint turned off on this phone'); renderAdmin(); };
   $('#forget').onclick = () => { forgetUser(); toast('This phone no longer remembers a user'); };
+  unseenCount().then(n => { const el = $('#errN'); if (el && n) el.innerHTML = `<i class="dotbadge">${n}</i>`; });
+  $('#errBtn').onclick = openErrors;
   $('#invBtn').onclick = openInvite; $('#histBtn').onclick = () => openHistory();
   $('#sLock').onclick = () => $('#aLock').click();
 }

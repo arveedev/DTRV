@@ -91,5 +91,14 @@ export async function openDaySheet(no, ds) {
     } catch (err) { toast(err.html || esc(err.message), 'err'); return; }
     closeSheet(); autoToggle(); afterChange(); toast('Saved');
   };
-  $('#dDel').onclick = async () => { await fast(deleteDay(no, ds)); closeSheet(); autoToggle(); afterChange(); toast('Day deleted'); };
+  /* deleting a day asks "Sure?" first: the button changes and must be tapped again within a few seconds */
+  let armT = 0;
+  $('#dDel').onclick = async () => {
+    const btn = $('#dDel');
+    if (!btn.classList.contains('armed')) {
+      btn.classList.add('armed'); btn.textContent = 'Sure? Tap again to delete'; clearTimeout(armT);
+      armT = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = 'Delete day'; }, 3500); return;
+    }
+    clearTimeout(armT); await fast(deleteDay(no, ds)); closeSheet(); autoToggle(); afterChange(); toast('Day deleted');
+  };
 }

@@ -1,7 +1,7 @@
 /* "My DTR": month calendar, stats and a day detail. Opened from the PIN pad (employee) or the admin overview. */
 import { $, $$, pad, t12, tPrint, shiftYM, MONTHS, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
-import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, lateSlots, dayClass } from '../lib/rules.js';
+import { SLOTS, SLOT_LABEL, remarkText, lateMinutes, lateSlots, dayClass, isIncomplete } from '../lib/rules.js';
 import { get, emp, schedOf, monthStats, monthDays, ensureMonth, yearRemarkCounts } from '../data/repo.js';
 import { go, countUp, toast } from './core.js';
 import { SLOT_G, autoToggle } from './home.js';
@@ -12,10 +12,11 @@ import { openHistory } from './history.js';
 let myNo = null, myYM = null, mySel = null, myFrom = 'rec';
 export const myOpen = () => myNo;
 
-export async function openMy(no, from = 'rec') {
-  myNo = no; myFrom = from; myYM = now().date.slice(0, 7); mySel = null;
+export async function openMy(no, from = 'rec', fixDate = null) {
+  myNo = no; myFrom = from; myYM = (fixDate || now().date).slice(0, 7); mySel = fixDate;
   await ensureMonth(myYM);
   go('p-my', 'r'); paintMy({ anim: true });
+  if (fixDate) setTimeout(() => openDaySheet(no, fixDate), 450);          // straight to the day that needs a time
 }
 export const refreshMy = () => { if (myNo) paintMy({ sel: true }); };
 
@@ -40,7 +41,9 @@ function paintMy(o = {}) {
   /* leave / day-off / holiday days: this month now, this year as soon as it is read */
   const tally = c => ['LEAVE', 'DAYOFF', 'HOLIDAY'].filter(k => c[k]).map(k => `<i class="${k}">${{ LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday' }[k]} ${c[k]}</i>`).join('') || '<em>no days off</em>';
   const mc = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0 }; monthDays(myNo, myYM).forEach(d => { if (d.remark && mc[d.remark.code] !== undefined) mc[d.remark.code]++; });
-  $('#myCnts').innerHTML = `<div><b>${MONTHS[M - 1].slice(0, 3)}</b>${tally(mc)}</div><div><b>${Y}</b><span id="myYear"><em>…</em></span></div>`;
+  const bad = monthDays(myNo, myYM).filter(x => isIncomplete(x, x.date, today));
+  $('#myCnts').innerHTML = `${bad.length ? `<button class="needline" id="needBtn">⚠ ${bad.length} day${bad.length === 1 ? '' : 's'} missing a time · tap to fix</button>` : ''}<div><b>${MONTHS[M - 1].slice(0, 3)}</b>${tally(mc)}</div><div><b>${Y}</b><span id="myYear"><em>…</em></span></div>`;
+  if ($('#needBtn')) $('#needBtn').onclick = () => { mySel = bad[0].date; paintMy({ sel: true }); openDaySheet(myNo, mySel); };
   const wantNo = myNo, wantY = Y; yearRemarkCounts(myNo, String(Y)).then(c => { if (myNo === wantNo && myYM.startsWith(wantY) && $('#myYear')) $('#myYear').innerHTML = tally(c); }).catch(() => {});
   let h = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(d => `<div class="h">${d}</div>`).join('');
   h += '<button class="c pad"></button>'.repeat(new Date(Y, M - 1, 1).getDay());

@@ -9,6 +9,7 @@ import { mods } from './lazy.js';
 import { cloudUrl, fetchTokens, takeKeyFromLink } from './cloud.js';
 import { loadAddon, syncNote, syncNow, sync, cloudEnabled } from '../data/db.js';
 import { startAutoBackup } from '../data/backup.js';
+import { initErrorLog, flushErrors, logError } from '../lib/errlog.js';
 import { store } from '../lib/util.js';
 
 /** Repaint what is visible. Cheap; call after any write. */
@@ -17,6 +18,9 @@ export function afterChange() {
   if (isOn('p-my') && myOpen()) refreshMy();
   mods.admin?.refreshAdmin();
 }
+
+/** Sync state changed: repaint, and make a note when it reports an error (once per kind of error). */
+function syncChanged(s) { if (s.phase === 'error') logError('sync', s.error || 'sync error', { phase: s.phase }); paintToggles(); }
 
 /** Never give up: keep asking the sync to run until it is up to date, and again whenever it falls behind.
  *  Backs off from 15 s to 2 min; any sign of life (back online, app brought forward) tries at once. */
@@ -56,7 +60,7 @@ async function addonUntilItArrives() {
 async function switchToSync() {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 90 && !(idle() && !$('#sheet').classList.contains('show') && !$('#picker').classList.contains('show')); i++) await wait(1000);
-  try { await init({ cloudUrl, fetchTokens }); syncNote.text = ''; watchSync(() => paintToggles()); afterChange(); keepSyncing(); }
+  try { await init({ cloudUrl, fetchTokens }); syncNote.text = ''; watchSync(syncChanged); afterChange(); keepSyncing(); }
   catch (e) { syncNote.text = 'Sync could not start (' + (e?.message || e) + ')'; paintToggles(); }
 }
 
@@ -71,8 +75,9 @@ export async function boot() {
   if (cloudUrl && !withSync) addonUntilItArrives();
   initHome(); initMy();
   onExternalChange(afterChange);                  // another tab / phone / sync changed something: repaint, but never reset the keypad or a pending PIN
-  watchSync(() => paintToggles());
+  watchSync(syncChanged);
   if (cloudUrl && withSync) keepSyncing();
+  initErrorLog(); flushErrors();
   stagger($('#p-record'));
   /* automatic backups run on their own, only when the app is not being used (see src/lib/scheduler.js) */
   startAutoBackup();

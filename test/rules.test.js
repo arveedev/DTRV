@@ -163,3 +163,16 @@ describe('lateSlots', () => {
     expect(lateSlots({ pm_in: '13:00' }, { ...fixed, pmLate: true }).pm_in).toBe(false);
   });
 });
+
+describe('incomplete days', () => {
+  it('a past day with some times and no remark is incomplete; today, empty days and explained days are not', async () => {
+    const { isIncomplete, missingText } = await import('../src/lib/rules.js');
+    const full = { am_in: '08:00', am_out: '12:00', pm_in: '13:00', pm_out: '17:00', remark: null };
+    expect(isIncomplete({ ...full, pm_out: null }, '2026-10-07', '2026-10-08')).toBe(true);
+    expect(isIncomplete({ ...full, pm_out: null }, '2026-10-08', '2026-10-08')).toBe(false);   // today: still in progress
+    expect(isIncomplete(full, '2026-10-07', '2026-10-08')).toBe(false);
+    expect(isIncomplete({ am_in: null, am_out: null, pm_in: null, pm_out: null, remark: { code: 'LEAVE' } }, '2026-10-07', '2026-10-08')).toBe(false);
+    expect(isIncomplete({ ...full, pm_out: null, remark: { code: 'OTHER', text: 'FIELD' } }, '2026-10-07', '2026-10-08')).toBe(false);
+    expect(missingText({ ...full, am_out: null, pm_out: null })).toBe('no AM OUT, PM OUT');
+  });
+});

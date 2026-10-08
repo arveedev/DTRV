@@ -1,8 +1,8 @@
 /* The home screen: clock, the four tiles, Leave/Day-off/Holiday/Others pills, the PIN keypad,
    and the sheet that follows a recording. */
-import { $, $$, isOn, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc } from '../lib/util.js';
+import { $, $$, isOn, addDays, shiftYM, t12, tPrint, store, phFlag, ordinal, MONTHS, fmtDate, esc } from '../lib/util.js';
 import { now } from '../lib/clock.js';
-import { SLOT_LABEL, REMARK_LABEL, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
+import { SLOT_LABEL, REMARK_LABEL, isIncomplete, missingText, AWAY, canRecord, suggest, lateMinutes, expectedOut, dayState, nickOf } from '../lib/rules.js';
 import { S, hasAdminPin, get, emp, schedOf, monthStats, ensureMonth, recordTime, undoRecord, setTime } from '../data/repo.js';
 import { ICONS, stagger, fast, buildKeys, openSheet, closeSheet, toast, shake, countUp, burst, pickTime, SLOT_PRESETS, onSheetClose } from './core.js';
 import { openMy } from './my.js';
@@ -27,6 +27,7 @@ const DEFAULT_SUB = { am_in: 'Arrive', am_out: 'Lunch', pm_in: 'Back', pm_out: '
 const KEY_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h2M12 14h2M8 17h2" /></svg>';
 const KEY_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 let keysWerePin = null, swapT = 0;
+let fixDate = null, pendingFix = null;
 let selSlot = 'am_in', selRemark = null, typed = '', pendingMy = false;
 let lastCode = store.get('dtrv.lastCode');
 let lastH = '', lastM = '', lastDate = '';
@@ -43,6 +44,7 @@ export function tick() {
   $('#hDate').textContent = d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).replace(/,/g, ' ·');
   if (date !== lastDate) {                      // a new day (or first run): make sure its month is loaded, re-pick the tile
     const first = !lastDate; lastDate = date;
+    if (+date.slice(8) <= 7) ensureMonth(shiftYM(date.slice(0, 7), -1)).then(() => afterChange());     // early in the month, yesterday may be last month
     ensureMonth(date.slice(0, 7)).then(() => { if (!first) { autoToggle(); afterChange(); } });
   }
   if (hh === lastH && mi === lastM) return;
@@ -103,6 +105,13 @@ export function paintToggles() {
   if (selSlot && e?.[selSlot] && !away) selSlot = suggest(e, now().time);     // that slot was just recorded elsewhere: move on
   paintWelcome();
   paintKeyD();
+  { /* a recent day with a forgotten time, for the phone's remembered person */
+    const chip = $('#fixChip'), today = now().date; let hit = null;
+    if (lastCode && emp(lastCode)) for (let i = 1; i <= 7 && !hit; i++) { const ds = addDays(today, -i), e = get(lastCode, ds); if (isIncomplete(e, ds, today)) hit = { ds, e }; }
+    const txt = hit ? `⚠ ${fmtDate(hit.ds)}: ${missingText(hit.e)}. Fix it` : '';
+    fixDate = hit?.ds || null;
+    if (chip.textContent !== txt) { chip.textContent = txt; chip.hidden = !hit; if (hit) { chip.style.animation = 'none'; void chip.offsetWidth; chip.style.animation = ''; } }
+  }
   { const p = lastCode && emp(lastCode), ym = now().date.slice(0, 7), n = p ? monthStats(lastCode, ym).lates : 0, chip = $('#lateChip');
     const txt = n ? `⚠ ${n} late${n === 1 ? '' : 's'} in ${MONTHS[+ym.slice(5) - 1]}` : '';
     if (chip.textContent !== txt) { chip.textContent = txt; chip.hidden = !n; if (n) { chip.style.animation = 'none'; void chip.offsetWidth; chip.style.animation = ''; } } }
@@ -230,7 +239,7 @@ async function submit() {
 }
 /** Everything that follows once we know who it is: typed code or face / fingerprint. */
 async function proceed(p) {
-  if (pendingMy) { pendingMy = false; paintToggles(); setTimeout(() => openMy(p.no, 'rec'), 420); return; }   // just looking: never changes whose phone this is
+  if (pendingMy) { const fix = pendingFix; pendingMy = false; pendingFix = null; paintToggles(); setTimeout(() => openMy(p.no, 'rec', fix), 420); return; }   // just looking: never changes whose phone this is
   const switched = p.no !== lastCode; lastCode = p.no; store.set('dtrv.lastCode', p.no);
   const st = stateOf(p.no);
   if (switched || !selSlot) selSlot = st.away ? null : suggest(st.e, now().time);       // a different person: pick *their* next slot
@@ -257,6 +266,7 @@ export function initHome() {
     if (lastCode && (st.e?.[k] || !chk.ok)) { openTimeSheet(lastCode, now().date, k, 'tile'); return; }     // recorded, or blocked: edit the time
     selSlot = k; selRemark = null; pendingMy = false; paintToggles();
   });
+  $('#fixChip').onclick = () => { if (!fixDate) return; pendingMy = true; pendingFix = fixDate; selRemark = null; typed = ''; paintDots(); paintToggles(); };
   $('#remarkBtn').onclick = () => { selRemark = selRemark ? null : 'ASK'; pendingMy = false; typed = ''; paintDots(); paintToggles(); };
   buildKeys($('#keys'), KEY_CAL, () => { if (pendingMy || selRemark) { pendingMy = false; selRemark = null; } else pendingMy = true; typed = ''; paintDots(); paintToggles(); },
     pressDigit, () => { if (dMode === 'bio') bioGo(); else if (dMode === 'del') { typed = typed.slice(0, -1); paintDots(); } });
