@@ -216,8 +216,10 @@ input,select{font:inherit}
 .cal .c.inc{background:var(--rwarn-bg);color:var(--rwarn)}
 .cal .c.we{background:transparent;color:var(--rmuted);opacity:.55}
 .cal .c.pad{visibility:hidden}
-.cal .c.td{outline:2px solid var(--acc);outline-offset:-2px}
-.cal .c.sel{box-shadow:0 0 0 2px #fff inset;transform:scale(1.08);z-index:1}
+.cal .c.td{border:2px dashed var(--acc)}
+.cal .c.td::before{content:"";position:absolute;top:4px;width:5px;height:5px;border-radius:50%;background:var(--acc)}
+.cal .c.sel{outline:3px solid var(--rink);outline-offset:1px;transform:scale(1.08);z-index:1;font-weight:700}
+.cal .c.sel.td{border-style:solid}
 .legend{display:flex;gap:10px;justify-content:center;font-size:10px;color:var(--rmuted);margin:8px 0 2px;flex-wrap:wrap}
 .legend i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px}
 .detail{margin-top:8px;background:var(--rsurf);border-radius:16px;padding:10px 12px;animation:rise .5s cubic-bezier(.2,.9,.3,1.15) backwards}
