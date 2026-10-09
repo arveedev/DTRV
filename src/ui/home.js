@@ -21,7 +21,7 @@ const SLOT_UI = {
   pm_out: { g: 'g4', ic: 'home', greet: 'Ingat pauwi' },
 };
 export const SLOT_G = k => SLOT_UI[k].g;
-const AWAY_MSG = { LEAVE: ['🌴', 'Enjoy your leave'], DAYOFF: ['🏠', 'Enjoy your day-off'], HOLIDAY: [phFlag(92), 'Enjoy the holiday'] };
+const AWAY_MSG = { LEAVE: ['🌴', 'Enjoy your leave'], DAYOFF: ['🏠', 'Enjoy your day-off'], HOLIDAY: [phFlag(92), 'Enjoy the holiday'], WFH: ['💻', 'Working from home'] };
 const DEFAULT_SUB = { am_in: 'Arrive', am_out: 'Lunch', pm_in: 'Back', pm_out: 'Home' };
 
 const KEY_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h2M12 14h2M8 17h2" /></svg>';
@@ -144,7 +144,7 @@ function dotsFlash(box, kind) {
 /* ---------- the celebratory sheet for leave / day-off / holiday ---------- */
 export function enjoy(p, code, note = '') {
   const [emo, msg] = AWAY_MSG[code], hol = code === 'HOLIDAY' ? (S.holidays.find(h => h.date === now().date)?.name || '') : '';
-  openSheet(`<div class="joy" data-st><div class="emo">${emo}</div><b>${msg}, ${esc(nickOf(p))}!</b><p>No clock-in needed today.</p>${hol || note ? `<small>${esc([hol, note].filter(Boolean).join(' · '))}</small>` : ''}</div>
+  openSheet(`<div class="joy" data-st><div class="emo">${emo}</div><b>${msg}, ${esc(nickOf(p))}!</b><p>${code === 'WFH' ? 'No clock-in needed while working from home.' : 'No clock-in needed today.'}</p>${hol || note ? `<small>${esc([hol, note].filter(Boolean).join(' · '))}</small>` : ''}</div>
     <div class="act" data-st><button class="p" id="joyDone">Done</button></div>`, 'res');
   $('#joyDone').onclick = closeSheet; setTimeout(() => burst($('.joy')), 250);
 }

@@ -348,7 +348,7 @@ export async function auditPage({ offset = 0, limit = 30, no = null } = {}) {
 }
 /** How many days of each kind of remark this person has in a year: { LEAVE, DAYOFF, HOLIDAY, OTHER }. */
 export async function yearRemarkCounts(no, year) {
-  const out = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0, OTHER: 0 };
+  const out = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0, WFH: 0, OTHER: 0 };
   await db.days.where('[employeeId+date]').between([no, year + '-01-01'], [no, year + '-12-32'], true, true).each(d => { if (d.remark && out[d.remark.code] !== undefined) out[d.remark.code]++; });
   return out;
 }

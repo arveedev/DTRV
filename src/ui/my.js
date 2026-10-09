@@ -46,8 +46,8 @@ function paintMy(o = {}) {
   $('#myStats').innerHTML = `<div class="hero ${st.lates ? 'g1' : 'calm'}"><div class="n" id="heroN">${o.anim || o.dir ? 0 : st.lates}</div><div class="t"><b>late${st.lates === 1 ? '' : 's'} in ${MONTHS[M - 1]}</b><br>${st.lateMin} min total · ${st.present} days present · ${st.remarks} remark${st.remarks === 1 ? '' : 's'}</div></div>`;
   if (o.anim || o.dir) countUp($('#heroN'), st.lates, 800);
   /* leave / day-off / holiday days: this month now, this year as soon as it is read */
-  const tally = c => ['LEAVE', 'DAYOFF', 'HOLIDAY'].filter(k => c[k]).map(k => `<i class="${k}">${{ LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday' }[k]} ${c[k]}</i>`).join('') || '<em>no days off</em>';
-  const mc = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0 }; monthDays(myNo, myYM).forEach(d => { if (d.remark && mc[d.remark.code] !== undefined) mc[d.remark.code]++; });
+  const tally = c => ['LEAVE', 'DAYOFF', 'HOLIDAY', 'WFH'].filter(k => c[k]).map(k => `<i class="${k}">${{ LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday', WFH: 'WFH' }[k]} ${c[k]}</i>`).join('') || '<em>no days off</em>';
+  const mc = { LEAVE: 0, DAYOFF: 0, HOLIDAY: 0, WFH: 0 }; monthDays(myNo, myYM).forEach(d => { if (d.remark && mc[d.remark.code] !== undefined) mc[d.remark.code]++; });
   const bad = monthDays(myNo, myYM).filter(x => isIncomplete(x, x.date, today));
   const sm = monthSummary(monthDays(myNo, myYM)), hm = n => `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
   const sumLine = sm.counted || sm.avgIn != null ? `<div class="sumline">${sm.counted ? `<span>≈ <b>${hm(sm.total)}</b> worked in ${sm.counted} day${sm.counted === 1 ? '' : 's'}</span>` : ''}${sm.avgIn != null ? `<span>usual arrival <b>${t12(String(Math.floor(sm.avgIn / 60)).padStart(2, '0') + ':' + String(sm.avgIn % 60).padStart(2, '0'))}</b></span>` : ''}</div>` : '';

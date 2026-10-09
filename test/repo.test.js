@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setClock } from '../src/lib/clock.js';
 import * as repo from '../src/data/repo.js';
 import { db } from '../src/data/db.js';
+import { remarkText } from '../src/lib/rules.js';
 
 let n = 0;
 const at = (iso) => setClock(() => new Date(iso));
@@ -65,6 +66,11 @@ describe('recording', () => {
 });
 
 describe('leave / day-off / holiday', () => {
+  it('Work From Home blocks clock-in and prints as WORK FROM HOME', async () => {
+    await repo.setRemarks('024', ['2026-10-07'], { code: 'WFH', text: '' });
+    await expect(repo.recordTime('024', 'am_in', '08:20')).rejects.toMatchObject({ code: 'AWAY' });
+    expect(remarkText(repo.get('024', '2026-10-07').remark)).toBe('WORK FROM HOME');
+  });
   it('after a day-off, clock-in is refused; Others never blocks', async () => {
     await repo.setRemarks('024', ['2026-10-07'], { code: 'DAYOFF', text: '' });
     await expect(repo.recordTime('024', 'am_in', '08:20')).rejects.toMatchObject({ code: 'AWAY' });

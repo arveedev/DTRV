@@ -3,10 +3,10 @@ import { m, hm, t12 } from './util.js';
 
 export const SLOTS = ['am_in', 'am_out', 'pm_in', 'pm_out'];
 export const SLOT_LABEL = { am_in: 'AM IN', am_out: 'AM OUT', pm_in: 'PM IN', pm_out: 'PM OUT' };
-export const REMARKS = { LEAVE: 'ON LEAVE', DAYOFF: 'DAY-OFF', HOLIDAY: 'HOLIDAY', OTHER: '' };
-export const REMARK_LABEL = { LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday', OTHER: 'Others' };
+export const REMARKS = { LEAVE: 'ON LEAVE', DAYOFF: 'DAY-OFF', HOLIDAY: 'HOLIDAY', WFH: 'WORK FROM HOME', OTHER: '' };
+export const REMARK_LABEL = { LEAVE: 'Leave', DAYOFF: 'Day-off', HOLIDAY: 'Holiday', WFH: 'WFH', OTHER: 'Others' };
 /** Remarks that mean "not working today": no clock-in is allowed on such a day. */
-export const AWAY = ['LEAVE', 'DAYOFF', 'HOLIDAY'];
+export const AWAY = ['LEAVE', 'DAYOFF', 'HOLIDAY', 'WFH'];
 /** Lunch is the same for everyone, in fixed and in flexi. There is no grace period. */
 export const LUNCH_START = '12:00';
 export const LUNCH_END = '13:00';

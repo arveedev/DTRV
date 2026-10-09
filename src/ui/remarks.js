@@ -35,7 +35,7 @@ export async function openRemarkSheet(no, code = 'LEAVE', date = now().date, opt
   const codes = Object.keys(REMARK_LABEL); let cur = code;
   const sugg = await remarkSuggestions(no);
   openSheet(`<h3 data-st style="margin-bottom:12px">Remark</h3>
-    <div class="chooser" data-st style="--n:4;--p:${codes.indexOf(cur)}"><i class="th"></i>${codes.map(c => `<button data-c="${c}" class="${c === cur ? 'on' : ''}${opts.lockAway && AWAY.includes(c) ? ' off' : ''}">${REMARK_LABEL[c]}</button>`).join('')}</div>
+    <div class="chooser" data-st style="--n:${codes.length};--p:${codes.indexOf(cur)}"><i class="th"></i>${codes.map(c => `<button data-c="${c}" class="${c === cur ? 'on' : ''}${opts.lockAway && AWAY.includes(c) ? ' off' : ''}">${REMARK_LABEL[c]}</button>`).join('')}</div>
     <div id="rBody">${remarkBody(cur, date, sugg)}</div>
     <div class="btns" data-st><button class="btn" id="rCancel">Cancel</button><button class="btn primary" id="rOk">Save</button></div>`);
   bindRemarkBody();
