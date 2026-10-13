@@ -40,7 +40,11 @@ try {
   pg = await fresh('2026-10-07T08:05:00', '?demo=1');
   await keys(pg, '205'); await wait(pg, 1200);
   ok((await pg.textContent('#sheet')).includes('Good morning, Maria'), 'flexi person records AM IN');
+  { const t0 = await pg.textContent('#rsTime'); await pg.click('#rsPlus'); await pg.click('#rsPlus'); await pg.click('#rsPlus'); await pg.click('#rsMinus');
+    ok(t0.includes('8:05') && (await pg.textContent('#rsTime')).includes('8:07'), 'plus / minus move the time one minute at a time (8:05 → 8:07)');
+    await wait(pg, 900); }
   await pg.click('#rsDone'); await wait(pg, 500);
+  ok((await pg.textContent('.tg[data-s="am_in"] .st')).includes('8:07'), 'the nudged time shows on the home tile (saved)');
   const before = await pg.evaluate(() => localStorage.getItem('dtrv.lastCode'));
   await pg.click('#keys [data-k="L"]'); await keys(pg, '024'); await wait(pg, 1200);
   ok(await pg.isVisible('#myName'), 'My DTR opens after PIN');
