@@ -25,6 +25,21 @@ export function takeKeyFromLink() {
 }
 export const setupLink = () => { const k = store.get('dtrv.syncKey'); return k ? `${location.origin}/#key=${encodeURIComponent(k)}` : ''; };
 
+/** Find out which link is broken when sync says "offline": the phone's internet, the sync server, or the Vercel token function / key. Returns one plain sentence. */
+export async function diagnoseSync() {
+  const timed = (u, o) => { const c = new AbortController(), t = setTimeout(() => c.abort(), 8000); return fetch(u, { ...o, signal: c.signal }).finally(() => clearTimeout(t)); };
+  try { await timed('/favicon.ico', { cache: 'no-store' }); } catch { return "This phone can't reach the internet right now."; }
+  let tokenRes;
+  try { tokenRes = await timed('/api/token', { method: 'POST', headers: { 'content-type': 'application/json', 'x-sync-key': store.get('dtrv.syncKey') || '' }, body: '{}' }); }
+  catch { return "Can't reach this app's server (api/token). Check the connection and try again."; }
+  if (tokenRes.status === 401) return cloudUrl ? 'The sync key on this phone is wrong or missing. Type it under Sync key below (it must equal SYNC_KEY in Vercel).' : 'Wrong sync key.';
+  if (tokenRes.status === 500) { let m = ''; try { m = (await tokenRes.json()).error; } catch {} return m || 'Vercel is missing a sync setting.'; }
+  if (tokenRes.status === 404) return 'The token function is not deployed (api/token). Redeploy on Vercel.';
+  try { await timed(cloudUrl + '/', { mode: 'no-cors', cache: 'no-store' }); }
+  catch { return "Can't reach the Dexie Cloud server. Check the sync address (VITE_DEXIE_CLOUD_DB_URL) in Vercel."; }
+  return `The sync key and server look fine (${location.origin}). If it stays offline, run: npx dexie-cloud whitelist ${location.origin}`;
+}
+
 /** Passed to db.cloud.configure({ fetchTokens }). */
 export async function fetchTokens(tokenParams) {
   const res = await fetch('/api/token', {

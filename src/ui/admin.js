@@ -15,7 +15,7 @@ import { listErrors, clearErrors, pruneErrors, asText, markErrorsSeen, unseenCou
 import { openInvite } from './invite.js';
 import { autoToggle, forgetUser, rememberedUser } from './home.js';
 import { afterChange } from './app.js';
-import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
+import { cloudInfo, setSyncKey, setupLink, diagnoseSync } from './cloud.js';
 import { bioFor, bioClear } from './bio.js';
 import { listSnapshots, restoreSnapshot, takeSnapshot } from '../data/backup.js';
 import { sync, catchUp } from '../data/db.js';
@@ -399,7 +399,7 @@ function aSet(b) {
       <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore file…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden>
       <div class="hsub" style="margin-top:14px">Saved on this phone</div><div id="snapList"><div class="emptyl">Loading…</div></div></div>
     <div class="card" data-st><h4>Sync</h4>
-      <div class="syncline" id="syncLine"></div>
+      <div class="syncline" id="syncLine"></div><div id="syncWhy" hidden style="font-size:13px;color:var(--rlate);line-height:1.5;margin-top:6px"></div>
       ${cloud.on ? '' : `<div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 4px">${cloud.bad ? 'The sync address is not valid, so this app only keeps data on this phone.' : 'Sync is not set up in this version of the app, so data stays on this phone only. If you did set it up, close the app fully and reopen it to get the latest version.'}</div>`}
       <button class="btn" id="syncNowBtn" style="width:100%;margin-top:8px"${cloud.on ? '' : ' disabled'}>Sync now</button></div>
     ${cloud.bad ? '<div class="card" data-st><h4>Sync is off</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">The sync address saved in Vercel (<b style="color:var(--rink)">VITE_DEXIE_CLOUD_DB_URL</b>) is not a valid <b style="color:var(--rink)">https://…</b> address, so the app is running on this phone only.</div></div>' : ''}
@@ -451,7 +451,8 @@ function aSet(b) {
   $('#syncNowBtn').onclick = async () => {
     const b = $('#syncNowBtn'); b.disabled = true; b.textContent = 'Syncing…';
     const ok = await catchUp(8000); b.disabled = !cloud.on; b.textContent = 'Sync now';
-    toast(ok ? 'Synced and up to date' : (sync.phase === 'offline' ? "You're offline. It will retry by itself" : 'Still catching up. It keeps retrying by itself'), ok ? '' : 'err');
+    toast(ok ? 'Synced and up to date' : 'Still catching up. It keeps retrying by itself', ok ? '' : 'err');
+    const w = $('#syncWhy'); if (w) { w.hidden = ok || !cloud.on; if (!ok && cloud.on) { w.textContent = 'Checking what is wrong…'; w.textContent = await diagnoseSync(); } }
   };
   if (cloud.on) $('#syncKey').onchange = e => { setSyncKey(e.target.value.trim()); e.target.value = ''; toast('Sync key saved. Reload to sync'); };
   if (cloud.on) $('#setupLink').onclick = async () => {
