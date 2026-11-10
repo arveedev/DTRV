@@ -6,13 +6,18 @@ import { dtrCopy } from '../print/dtr.js';
 import { go, stagger, toast } from './core.js';
 import { logError } from '../lib/errlog.js';
 import { mods } from './lazy.js';
+import { catchUp } from '../data/db.js';
 
 let curPrintSt = null, printFrom = 'my', printReady = false;
 const copy = (no, ym) => dtrCopy(emp(no), ym, d => get(no, d), S.sign, e => lateSlots(e, schedOf(emp(no))));
 /* One printed page per person per month. `st.span` months, ending at `st.ym` (1 = just that month). */
 export const monthsOf = st => Array.from({ length: st.span || 1 }, (_, k) => shiftYM(st.ym, -((st.span || 1) - 1 - k)));
 export const itemsOf = st => st.nos.flatMap(no => monthsOf(st).map(ym => ({ no, ym })));
-const ensureAll = st => Promise.all(monthsOf(st).map(ensureMonth));
+let warned = 0;
+const ensureAll = async st => {
+  await Promise.all(monthsOf(st).map(ensureMonth));
+  if (!(await catchUp()) && Date.now() - warned > 20000) { warned = Date.now(); toast("Not fully synced yet. Times from other phones may be missing. Check Sync and print again.", 'err'); }
+};
 const pages = st => itemsOf(st).map(({ no, ym }) => { const c = copy(no, ym); return `<div class="a4">${c}${c}</div>`; }).join('');
 
 /** The admin list keeps this up to date so Ctrl+P prints exactly what is selected. */

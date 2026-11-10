@@ -40,6 +40,13 @@ const fromEmp = p => ({ id: 'emp:' + p.no, code: p.no, name: p.name, nick: p.nic
 const dayId = (no, d) => `day:${no}:${d}`;
 const toDay = r => ({ am_in: r.am_in ?? null, am_out: r.am_out ?? null, pm_in: r.pm_in ?? null, pm_out: r.pm_out ?? null, remark: r.remark ?? null, edited: !!r.edited, excused: !!r.excused });
 const fromDay = (no, d, x) => ({ id: dayId(no, d), employeeId: no, date: d, am_in: x.am_in, am_out: x.am_out, pm_in: x.pm_in, pm_out: x.pm_out, remark: x.remark, edited: x.edited, excused: !!x.excused });
+/** Save a day row by changing only the fields that differ. Two phones touching different times of one day then merge instead of one overwriting the other. */
+async function putDay(row) {
+  const cur = await db.days.get(row.id);
+  if (!cur) return db.days.put(row);
+  const diff = {}; for (const k of Object.keys(row)) if (JSON.stringify(row[k]) !== JSON.stringify(cur[k])) diff[k] = row[k];
+  if (Object.keys(diff).length) await db.days.update(row.id, diff);
+}
 const uid = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
 const strip = r => { if (!r) return {}; const { id, ...rest } = r; return rest; };
 
@@ -150,7 +157,7 @@ const snap = (no, d) => { const x = get(no, d); return x ? { am_in: x.am_in, am_
 async function saveDayRow(no, d, audit) {
   const x = get(no, d);
   await write(() => db.transaction('rw', db.days, db.audit, async () => {
-    if (x) await db.days.put(fromDay(no, d, x)); else await db.days.delete(dayId(no, d));
+    if (x) await putDay(fromDay(no, d, x)); else await db.days.delete(dayId(no, d));
     if (audit) await db.audit.add(audit);
   }));
 }
@@ -164,7 +171,7 @@ export async function recordTime(no, slot, time, date = now().date) {
   if (!chk.ok) throw new RepoError(chk.reason, chk.why);
   const d = ensureDay(no, date); d[slot] = time;
   await write(() => db.transaction('rw', db.days, db.punches, async () => {
-    await db.days.put(fromDay(no, date, d));
+    await putDay(fromDay(no, date, d));
     await db.punches.add({ id: uid(), employeeId: no, date, slot, time, at: new Date().toISOString(), kind: 'record' });
   }));
   return d;
@@ -175,7 +182,7 @@ export async function undoRecord(no, date, slot) {
   const d = get(no, date); if (!d || !d[slot]) return;
   const time = d[slot]; d[slot] = null; dropIfEmpty(no, date);
   await write(() => db.transaction('rw', db.days, db.punches, async () => {
-    const x = get(no, date); if (x) await db.days.put(fromDay(no, date, x)); else await db.days.delete(dayId(no, date));
+    const x = get(no, date); if (x) await putDay(fromDay(no, date, x)); else await db.days.delete(dayId(no, date));
     await db.punches.add({ id: uid(), employeeId: no, date, slot, time, at: new Date().toISOString(), kind: 'undo' });
   }));
 }

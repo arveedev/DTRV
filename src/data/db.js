@@ -31,6 +31,15 @@ export async function syncNow() {
   } catch (e) { sync.error = String(e?.message || e); }
 }
 
+/** Before something that must show every phone's times (printing): pull the latest, waiting a few seconds. True when fully up to date (or sync is off). */
+export async function catchUp(ms = 6000) {
+  if (!cloudEnabled || sync.phase === 'in-sync') return true;
+  await syncNow();
+  for (const t = Date.now(); Date.now() - t < ms && sync.phase !== 'in-sync';) await new Promise(r => setTimeout(r, 250));
+  await new Promise(r => setTimeout(r, 200));
+  return sync.phase === 'in-sync';
+}
+
 /** The sync add-on is a separate download; this loads it once and remembers it. */
 let addonP = null;
 export const loadAddon = () => (addonP ||= import('dexie-cloud-addon').catch(e => { addonP = null; throw e; }));
