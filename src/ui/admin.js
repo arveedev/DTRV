@@ -18,7 +18,7 @@ import { afterChange } from './app.js';
 import { cloudInfo, setSyncKey, setupLink } from './cloud.js';
 import { bioFor, bioClear } from './bio.js';
 import { listSnapshots, restoreSnapshot, takeSnapshot } from '../data/backup.js';
-import { sync } from '../data/db.js';
+import { sync, catchUp } from '../data/db.js';
 import { isIncomplete, missingText } from '../lib/rules.js';
 import { openDaySheet } from './remarks.js';
 import { holidaysOn, upcoming, repeatOptions, ruleId, describeRule, KIND_LABEL } from '../lib/holidays.js';
@@ -395,10 +395,13 @@ function aSet(b) {
       <div class="field"><label>Name</label><input id="gName" value="${attr(S.sign.name)}"></div><div class="field"><label>Title</label><input id="gTitle" value="${attr(S.sign.title)}"></div><div class="field"><label>Label under title</label><input id="gLabel" value="${attr(S.sign.label)}"></div></div>
     <div class="card" data-st><h4>Admin PIN</h4><div class="row2"><div class="field"><label>New PIN</label><input id="pin1" type="password" maxlength="6" inputmode="numeric"></div><div class="field"><label>Confirm</label><input id="pin2" type="password" maxlength="6" inputmode="numeric"></div></div><button class="btn" id="pinSave" style="width:100%">Change PIN</button></div>
     <div class="card" data-st><h4>Backup</h4>
-      <div class="syncline" id="syncLine"></div>
       <div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 10px">A copy is saved on this phone every day: every day for 30 days, then weekly up to 6 months, then monthly up to 2 years. You can also download one as a file.</div>
       <div class="row2"><button class="btn" id="bkSave">Download backup</button><button class="btn" id="bkLoad">Restore file…</button></div><input type="file" id="bkFile" accept="application/json,.json" hidden>
       <div class="hsub" style="margin-top:14px">Saved on this phone</div><div id="snapList"><div class="emptyl">Loading…</div></div></div>
+    <div class="card" data-st><h4>Sync</h4>
+      <div class="syncline" id="syncLine"></div>
+      ${cloud.on ? '' : `<div style="font-size:13px;color:var(--rmuted);line-height:1.5;margin:6px 0 4px">${cloud.bad ? 'The sync address is not valid, so this app only keeps data on this phone.' : 'Sync is not set up in this version of the app, so data stays on this phone only. If you did set it up, close the app fully and reopen it to get the latest version.'}</div>`}
+      <button class="btn" id="syncNowBtn" style="width:100%;margin-top:8px"${cloud.on ? '' : ' disabled'}>Sync now</button></div>
     ${cloud.bad ? '<div class="card" data-st><h4>Sync is off</h4><div style="font-size:13px;color:var(--rmuted);line-height:1.5">The sync address saved in Vercel (<b style="color:var(--rink)">VITE_DEXIE_CLOUD_DB_URL</b>) is not a valid <b style="color:var(--rink)">https://…</b> address, so the app is running on this phone only.</div></div>' : ''}
     ${cloud.error ? `<div class="card" data-st><h4>Sync problem</h4><div style="font-size:13px;color:var(--rlate);line-height:1.5">${esc(cloud.error)}</div></div>` : ''}
     ${cloud.on ? `<div class="card" data-st><h4>Sync key</h4><div class="field"><label>Type it once on each phone</label><input id="syncKey" type="password" autocomplete="off" placeholder="${cloud.hasKey ? 'saved on this phone' : 'sync key'}"></div>
@@ -444,6 +447,11 @@ function aSet(b) {
     if (!confirm('Replace everything on this phone with this backup? What is here now is saved first.')) { e.target.value = ''; return; }
     try { await takeSnapshot('before-restore-' + new Date().toISOString().slice(0, 19)); const r = await importAll(await f.text()); await ensureMonth(now().date.slice(0, 7)); autoToggle(); afterChange(); toast(`Restored · <b>${r.people}</b> people, <b>${r.days}</b> days`); renderAdmin(); } catch (err) { fail(err); }
     e.target.value = '';
+  };
+  $('#syncNowBtn').onclick = async () => {
+    const b = $('#syncNowBtn'); b.disabled = true; b.textContent = 'Syncing…';
+    const ok = await catchUp(8000); b.disabled = !cloud.on; b.textContent = 'Sync now';
+    toast(ok ? 'Synced and up to date' : (sync.phase === 'offline' ? "You're offline. It will retry by itself" : 'Still catching up. It keeps retrying by itself'), ok ? '' : 'err');
   };
   if (cloud.on) $('#syncKey').onchange = e => { setSyncKey(e.target.value.trim()); e.target.value = ''; toast('Sync key saved. Reload to sync'); };
   if (cloud.on) $('#setupLink').onclick = async () => {
