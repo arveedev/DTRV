@@ -254,6 +254,8 @@ input,select{font:inherit}
 @keyframes unlock{0%{transform:scale(1)}40%{transform:scale(1.25) rotate(-12deg)}100%{transform:scale(1.1) rotate(0)}}
 .gate h2{margin:14px 0 2px;font-size:22px}
 .gate p{margin:0;color:var(--rmuted);font-size:13px}
+.gate .forgot{background:none;border:0;color:var(--rmuted);font:600 13px Poppins,sans-serif;padding:10px;cursor:pointer;margin-top:4px}
+.gate .forgot:active{color:var(--acc)}
 .gate .back{align-self:flex-start;font-weight:600;font-size:14px;cursor:pointer;background:none;border:0;padding:0}
 
 /* ----- admin ----- */

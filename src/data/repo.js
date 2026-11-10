@@ -308,6 +308,8 @@ export async function setAdminPin(pin) {
   S.adminPin = { salt, hash };
   await write(() => db.settings.put({ id: 'admin', salt, hash }));
 }
+/** Forget the admin PIN (after the reset code was accepted by the server). The next visit to the gate asks for a new one. */
+export async function clearAdminPin() { S.adminPin = null; await write(() => db.settings.delete('admin')); }
 export async function checkAdminPin(pin) {
   if (!S.adminPin || !/^\d{6}$/.test(pin)) return false;
   return (await hashPin(pin, S.adminPin.salt)) === S.adminPin.hash;

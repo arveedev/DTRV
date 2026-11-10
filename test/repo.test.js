@@ -136,6 +136,12 @@ describe('settings, PIN, backup', () => {
     expect(await repo.checkAdminPin('12')).toBe(false);
     await expect(repo.setAdminPin('12')).rejects.toMatchObject({ code: 'BAD_PIN' });
   });
+  it('clearing the admin PIN keeps all data and lets a new PIN be set', async () => {
+    await repo.setAdminPin('123456'); await repo.recordTime('024', 'am_in', '08:20');
+    await repo.clearAdminPin();
+    expect(repo.hasAdminPin()).toBe(false); expect(await db.settings.get('admin')).toBeUndefined(); expect(repo.get('024', '2026-10-07').am_in).toBe('08:20');
+    await repo.setAdminPin('654321'); expect(await repo.checkAdminPin('654321')).toBe(true);
+  });
   it('the app starts from what is saved', async () => {
     await repo.recordTime('024', 'am_in', '08:20'); await repo.setAdminPin('123456'); repo.saveSignatory({ title: 'Boss' }); await repo.settle();
     repo.shutdown(); await repo.init({ name: db.name, cloudUrl: '' });

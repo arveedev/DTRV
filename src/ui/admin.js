@@ -3,7 +3,7 @@ import { $, $$, hm, m, t12, fmtDate, fmtRange, spanDays, addDays, shiftYM, MONTH
 import { now } from '../lib/clock.js';
 import { LUNCH_START, LUNCH_END, nickOf } from '../lib/rules.js';
 import { S, get, schedOf, emp, monthStats, monthDays, ensureMonth, saveEmployee, saveSchedule, saveSignatory, applyHoliday, removeHoliday, excuseDays, unexcuseDay,
-  hasAdminPin, setAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
+  hasAdminPin, setAdminPin, clearAdminPin, saveHolidayRules, checkAdminPin, exportAll, importAll, settle } from '../data/repo.js';
 import { go, stagger, fast, countUp, shake, buildKeys, openSheet, closeSheet, toast, pickDate, pfTime, bindTime } from './core.js';
 import { openMy } from './my.js';
 import { openPreview, printWith, setPrintSel, itemsOf, initPrint } from './print.js';
@@ -46,6 +46,7 @@ const GATE = {
 };
 function paintGate() {
   $$('#gdots div').forEach((d, i) => d.classList.toggle('f', i < gateTyped.length));
+  $('#gForgot').hidden = gateMode !== 'enter';
   $('#gateTitle').textContent = GATE[gateMode][0]; $('#gateSub').textContent = GATE[gateMode][1];
 }
 export function openGate() {
@@ -64,7 +65,25 @@ async function gateDone() {
   setTimeout(() => { box.classList.remove('ok'); go('p-admin', 'r'); aTab = S.emps.length ? 0 : 1; renderAdmin(); if (!S.emps.length) openPersonSheet(null); }, 750);
 }
 
+function forgotPin() {
+  openSheet(`<h3 data-st>Forgot the PIN?</h3><div class="sub" data-st>Type the reset code you set as <b>RESET_CODE</b> in Vercel. Your people and times stay as they are; only the PIN is cleared.</div>
+    <div class="field" data-st><label>Reset code</label><input id="rcIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="act" data-st><button id="rcNo">Cancel</button><button class="p" id="rcGo">Reset PIN</button></div>`, 'res');
+  $('#rcNo').onclick = closeSheet;
+  $('#rcGo').onclick = async () => {
+    const code = $('#rcIn').value; if (!code) { shake($('#rcIn')); return; }
+    const b = $('#rcGo'); b.disabled = true; b.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/reset', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Could not check the code');
+      await clearAdminPin(); closeSheet(); openGate(); toast('PIN cleared. Choose a new one');
+    } catch (e) { b.disabled = false; b.textContent = 'Reset PIN'; toast(esc(e.message === 'Failed to fetch' ? "Can't reach the server. Connect to the internet and try again" : e.message), 'err'); }
+  };
+}
+
 export function initAdmin() {
+  $('#gForgot').onclick = forgotPin;
   initPrint();                                   // the preview screen belongs to the admin area too
   $('#gateBack').onclick = () => { go('p-record', 'l'); autoToggle(); };
   $('#aLock').onclick = () => { adminOk = false; go('p-record', 'l'); autoToggle(); };
